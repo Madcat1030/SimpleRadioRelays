@@ -1,0 +1,1 @@
+{"parent":"minecraft:block/cube","textures":{"particle":"simpleradio_repeaters:block/bank_side","down":"simpleradio_repeaters:block/bank_side","up":"simpleradio_repeaters:block/bank_top","north":"simpleradio_repeaters:block/bank_front","south":"simpleradio_repeaters:block/bank_side","west":"simpleradio_repeaters:block/bank_side","east":"simpleradio_repeaters:block/bank_side"}}

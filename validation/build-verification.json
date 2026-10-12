@@ -1,0 +1,38 @@
+{
+  "addon": "Simple Radio Repeaters",
+  "version": "0.1.2",
+  "minecraft": "1.20.1",
+  "loader": "Fabric",
+  "simpleRadio": "1.20.1-4.5.7.9",
+  "jarSha256": "d1f331942fe2fdc34ae5296cb29661b952da63ee3869cb550543a034afa41321",
+  "javaBytecode": 17,
+  "unitTests": {
+    "passed": 16,
+    "failed": 0
+  },
+  "addonMinecraftTests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "upstreamBaseline": {
+    "passed": 3,
+    "failed": [
+      "SystemTest.closedSystem",
+      "SystemTest.garbageCollection",
+      "SystemTest.openSystem",
+      "SystemTest.shortCircuit"
+    ],
+    "unchangedWithAddon": true,
+    "comparison": "Preceding disabled-addon controls retained; same four upstream test names fail in 0.1.2"
+  },
+  "regressions": [
+    "Native copper-wire extension across a chunk boundary; cache survives reload before wire connections restore; automatic recovery without enable toggle",
+    "Authoritative saved antenna strength restores a stale block-entity cache",
+    "Confirmed wire removal publishes zero after two completed checks",
+    "Unloaded historical antenna dependencies preserve the entire snapshot without force-loading chunks",
+    "Unrelated neighbour changes do not invalidate pending snapshots",
+    "Real menu empty/rejected-item clicks, identical writes and no-op enable leave the antenna snapshot verified; actual card/catalyst/enable changes request verification; disable and catalyst removal update immediately; in-place card tuning still publishes"
+  ],
+  "liveMicrophoneTest": "User confirmed 0.1.1 wired-core reload behavior and working voice routing; 0.1.2 changes configuration-triggered verification, with radio routing unchanged",
+  "clientScreenTest": "Client code compiled; graphical screen not interactively tested"
+}
