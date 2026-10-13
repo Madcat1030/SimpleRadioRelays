@@ -1,17 +1,17 @@
 {
   "addon": "Simple Radio Repeaters",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minecraft": "1.20.1",
   "loader": "Fabric",
   "simpleRadio": "1.20.1-4.5.7.9",
-  "jarSha256": "d1f331942fe2fdc34ae5296cb29661b952da63ee3869cb550543a034afa41321",
+  "jarSha256": "a96b1193a840da8030e1c75ee47aa1663c619034ba804d10afe5d97e96549a46",
   "javaBytecode": 17,
   "unitTests": {
     "passed": 16,
     "failed": 0
   },
   "addonMinecraftTests": {
-    "passed": 7,
+    "passed": 11,
     "failed": 0
   },
   "upstreamBaseline": {
@@ -23,7 +23,7 @@
       "SystemTest.shortCircuit"
     ],
     "unchangedWithAddon": true,
-    "comparison": "Preceding disabled-addon controls retained; same four upstream test names fail in 0.1.2"
+    "comparison": "Preceding disabled-addon controls retained; same four upstream test names fail in 0.1.3; all eleven addon tests pass"
   },
   "regressions": [
     "Native copper-wire extension across a chunk boundary; cache survives reload before wire connections restore; automatic recovery without enable toggle",
@@ -31,8 +31,12 @@
     "Confirmed wire removal publishes zero after two completed checks",
     "Unloaded historical antenna dependencies preserve the entire snapshot without force-loading chunks",
     "Unrelated neighbour changes do not invalidate pending snapshots",
-    "Real menu empty/rejected-item clicks, identical writes and no-op enable leave the antenna snapshot verified; actual card/catalyst/enable changes request verification; disable and catalyst removal update immediately; in-place card tuning still publishes"
+    "Real menu empty/rejected-item clicks, identical writes and no-op enable leave the antenna snapshot verified; actual card/catalyst/enable changes request verification; disable and catalyst removal update immediately; in-place card tuning still publishes",
+    "Chunk-load event deletes a bank removed by direct section replacement without Block.onRemove; relay graph cache invalidated and saved-data round-trip omits the deleted record",
+    "Chunk-load identity reconciliation retires the old UUID while preserving the matching restored bank and its verified antenna score",
+    "Present bank with delayed block-entity restoration retains its verified record and remains eligible after the matching entity returns",
+    "Startup/refresh reconciliation queue checks already-loaded chunks without a new load event and preserves remote saved records without force-loading chunks"
   ],
-  "liveMicrophoneTest": "User confirmed 0.1.1 wired-core reload behavior and working voice routing; 0.1.2 changes configuration-triggered verification, with radio routing unchanged",
-  "clientScreenTest": "Client code compiled; graphical screen not interactively tested"
+  "liveMicrophoneTest": "User confirmed 0.1.1 wired-core reload behavior and working voice routing; 0.1.3 reconciliation is covered by headless Minecraft regression tests; no new live microphone session performed",
+  "clientScreenTest": "Client code compiled; graphical screen not interactively tested; GUI unchanged"
 }

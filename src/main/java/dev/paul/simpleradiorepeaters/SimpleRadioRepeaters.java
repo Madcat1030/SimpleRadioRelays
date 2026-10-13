@@ -8,6 +8,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
@@ -52,6 +53,8 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(TowerManager::tick);
+        ServerChunkEvents.CHUNK_LOAD.register(TowerManager::chunkLoaded);
+        ServerChunkEvents.CHUNK_UNLOAD.register(TowerManager::chunkUnloaded);
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
             dispatcher.register(literal("radiorepeaters")
                 .then(literal("status").executes(context -> {
@@ -69,7 +72,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                 .then(literal("refresh").requires(source -> source.hasPermission(2)).executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     if (manager != null) manager.refreshLoaded();
-                    context.getSource().sendSuccess(() -> Component.literal("Refreshing loaded repeater banks."), false);
+                    context.getSource().sendSuccess(() -> Component.literal("Checking saved banks in loaded chunks and refreshing loaded antennas."), false);
                     return 1;
                 }))));
         LOGGER.info("Simple Radio Repeaters ready; persistent towers do not force-load chunks.");

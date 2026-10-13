@@ -10,31 +10,40 @@ import net.minecraft.resources.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
 import java.util.*;
 
 public final class TowerManager {
     private static final Map<MinecraftServer, TowerManager> MANAGERS = new IdentityHashMap<>();
     public record Scope(String dimension, ChannelKey channel) {}
     public record Network(List<TowerRecord> towers, List<List<RelayGraph.Edge>> edges, RelayGraph graph) {}
+    private record ChunkKey(String dimension, long position) {}
     private final MinecraftServer server;
     private final TowerSavedData data;
     private final Map<UUID, RepeaterBankBlockEntity> loaded = new HashMap<>();
     private final Map<Scope, Network> networks = new HashMap<>();
+    private final Map<ChunkKey, Set<UUID>> towersByChunk = new HashMap<>();
+    private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
     private int configStamp;
     public long forwardedFrames, receiverDeliveries;
 
     private TowerManager(MinecraftServer server, TowerSavedData data) {
         this.server = server; this.data = data;
+        for (TowerRecord record : data.towers.values()) index(record);
     }
     public static TowerManager get(MinecraftServer server) { return MANAGERS.get(server); }
     public static void start(MinecraftServer server) {
         TowerSavedData data = server.overworld().getDataStorage().computeIfAbsent(TowerSavedData::load, TowerSavedData::new, TowerSavedData.NAME);
-        MANAGERS.put(server, new TowerManager(server, data));
+        TowerManager manager = new TowerManager(server, data);
+        MANAGERS.put(server, manager);
+        manager.reconcileLoadedChunks(); // Spawn chunks may have loaded before SERVER_STARTED.
         SimpleRadioRepeaters.LOGGER.info("Restored {} repeater records without loading tower chunks", data.towers.size());
     }
     public static void stop(MinecraftServer server) { MANAGERS.remove(server); }
     public static void tick(MinecraftServer server) {
         TowerManager manager = get(server); if (manager == null) return;
+        manager.reconcilePendingChunks();
         if (server.getTickCount() % 100 == 0) {
             int stamp = NativeRadioAdapter.configurationStamp();
             if (stamp != manager.configStamp) { manager.configStamp = stamp; manager.networks.clear(); }
@@ -42,7 +51,63 @@ public final class TowerManager {
     }
     private void put(TowerRecord node) {
         TowerRecord old = data.towers.get(node.id()); if (node.equals(old)) return;
+        if (old != null) unindex(old);
         data.towers.put(node.id(), node); data.setDirty(); networks.clear();
+        index(node); pendingChunks.add(chunkKey(node));
+    }
+    private static ChunkKey chunkKey(TowerRecord record) {
+        return new ChunkKey(record.dimension(), new ChunkPos(record.position()).toLong());
+    }
+    private void index(TowerRecord record) {
+        towersByChunk.computeIfAbsent(chunkKey(record), key -> new HashSet<>()).add(record.id());
+    }
+    private void unindex(TowerRecord record) {
+        ChunkKey key = chunkKey(record); Set<UUID> ids = towersByChunk.get(key);
+        if (ids != null && ids.remove(record.id()) && ids.isEmpty()) towersByChunk.remove(key);
+    }
+    private void removeRecord(UUID id) {
+        TowerRecord record = data.towers.remove(id); if (record == null) return;
+        unindex(record); loaded.remove(id); data.setDirty(); networks.clear();
+    }
+    public static void chunkLoaded(ServerLevel level, LevelChunk chunk) {
+        TowerManager manager = get(level.getServer()); if (manager == null) return;
+        ChunkKey key = new ChunkKey(level.dimension().location().toString(), chunk.getPos().toLong());
+        if (manager.towersByChunk.containsKey(key)) manager.pendingChunks.add(key);
+    }
+    public static void chunkUnloaded(ServerLevel level, LevelChunk chunk) {
+        TowerManager manager = get(level.getServer()); if (manager == null) return;
+        manager.pendingChunks.remove(new ChunkKey(level.dimension().location().toString(), chunk.getPos().toLong()));
+    }
+    /** Queue saved positions; the actual check only reads chunks already available without loading them. */
+    public void reconcileLoadedChunks() { pendingChunks.addAll(towersByChunk.keySet()); }
+    private void reconcilePendingChunks() {
+        for (ChunkKey key : List.copyOf(pendingChunks)) {
+            pendingChunks.remove(key);
+            ResourceLocation dimension = ResourceLocation.tryParse(key.dimension());
+            ServerLevel level = dimension == null ? null : server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
+            if (level == null) continue;
+            ChunkPos position = new ChunkPos(key.position());
+            LevelChunk chunk = level.getChunkSource().getChunkNow(position.x, position.z);
+            if (chunk == null) continue; // Unloaded saved records remain authoritative.
+            boolean retry = false;
+            for (UUID id : Set.copyOf(towersByChunk.getOrDefault(key, Set.of()))) {
+                TowerRecord record = data.towers.get(id); if (record == null) continue;
+                if (!chunk.getBlockState(record.position()).is(SimpleRadioRepeaters.BANK)) {
+                    removeRecord(id);
+                    SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: bank block is absent", id, key.dimension(), record.position());
+                    continue;
+                }
+                if (!level.areEntitiesLoaded(key.position())) { retry = true; continue; }
+                // CHECK resolves saved block-entity data without creating a replacement bank.
+                var entity = chunk.getBlockEntity(record.position(), LevelChunk.EntityCreationType.CHECK);
+                if (!(entity instanceof RepeaterBankBlockEntity bank)) { retry = true; continue; }
+                if (!bank.bankId().equals(id)) {
+                    removeRecord(id);
+                    SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: bank identity changed", id, key.dimension(), record.position());
+                }
+            }
+            if (retry) pendingChunks.add(key);
+        }
     }
     public boolean loaded(RepeaterBankBlockEntity bank) {
         RepeaterBankBlockEntity previous = loaded.put(bank.bankId(), bank);
@@ -52,7 +117,10 @@ public final class TowerManager {
                 || !saved.dimension().equals(bank.getLevel().dimension().location().toString()))) {
             loaded.remove(bank.bankId()); bank.regenerateId(); loaded.put(bank.bankId(), bank);
         }
-        if (previous != bank) settingsChanged(bank);
+        if (previous != bank) {
+            settingsChanged(bank);
+            pendingChunks.add(new ChunkKey(bank.getLevel().dimension().location().toString(), new ChunkPos(bank.getBlockPos()).toLong()));
+        }
         return previous != bank;
     }
     public void unloaded(RepeaterBankBlockEntity bank) {
@@ -74,8 +142,7 @@ public final class TowerManager {
     }
     public void removeAt(String dimension, BlockPos pos) {
         List<TowerRecord> removal = data.towers.values().stream().filter(n -> n.dimension().equals(dimension) && n.position().equals(pos)).toList();
-        for (TowerRecord node : removal) { data.towers.remove(node.id()); loaded.remove(node.id()); }
-        if (!removal.isEmpty()) { data.setDirty(); networks.clear(); }
+        for (TowerRecord node : removal) removeRecord(node.id());
     }
     public boolean isEligible(UUID id) { TowerRecord node = data.towers.get(id); return node != null && node.eligible(); }
     public TowerRecord snapshot(UUID id) { return data.towers.get(id); }
@@ -112,7 +179,10 @@ public final class TowerManager {
         }
         return peers.size();
     }
-    public void refreshLoaded() { loaded.values().stream().filter(b -> !b.isRemoved()).forEach(RepeaterBankBlockEntity::markDirty); }
+    public void refreshLoaded() {
+        reconcileLoadedChunks();
+        loaded.values().stream().filter(b -> !b.isRemoved()).forEach(RepeaterBankBlockEntity::markDirty);
+    }
     public String summary() {
         long eligible = data.towers.values().stream().filter(TowerRecord::eligible).count();
         long live = data.towers.values().stream().filter(n -> n.eligible() && loaded.containsKey(n.id())).count();

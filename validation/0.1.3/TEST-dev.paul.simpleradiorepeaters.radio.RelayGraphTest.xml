@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-13T19:02:56.442Z" hostname="1f13caf4cb80" time="0.03">
+  <properties/>
+  <testcase name="identicalPayloadFramesRemainDistinct()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.008"/>
+  <testcase name="separateEntrancesMergeWithoutDuplicatingRecipients()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.004"/>
+  <testcase name="hopBudgetKeepsUsefulShorterAlternatives()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aDirectedLinkDoesNotInventAReturnPath()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="cutoffAndReceptionFloorMatchNativeRules()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aDiamondSelectsTheBestPathOnce()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="ingressNoiseCannotBeRepairedAndPrefersFewerHops()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="ringsTerminateAndUseTheShortestEqualQualityRoute()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aChainReachesBeyondAnyIndividualTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.003"/>
+  <testcase name="oppositeSidesNeedTheTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

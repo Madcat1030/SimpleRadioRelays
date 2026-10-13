@@ -1,10 +1,10 @@
-# Simple Radio Repeaters 0.1.2
+# Simple Radio Repeaters 0.1.3
 
 Gameplay and implementation guide
 
 Fabric Minecraft 1.20.1 · Simple Radio 1.20.1-4.5.7.9
 
-This guide describes the released 0.1.2 code. It is intended for players building radio installations, server operators, and developers maintaining the addon. The proposed six-card model and in-world insertion controls are not implemented in this version.
+This guide describes the released 0.1.3 code. It is intended for players building radio installations, server operators, and developers maintaining the addon. The proposed six-card model and in-world insertion controls are not implemented in this version.
 
 ## Contents
 
@@ -28,7 +28,7 @@ Once verified, a stationary tower can continue relaying from its saved record wh
 
 ### 1.2 Installation and compatibility
 
-Install `simple-radio-repeaters-fabric-1.20.1-0.1.2.jar` on the server and every client. When updating, remove the previous addon jar so that only one version is installed. Existing bank inventories, identifiers, and saved network records are retained.
+Install `simple-radio-repeaters-fabric-1.20.1-0.1.3.jar` on the server and every client. When updating, remove the previous addon jar so that only one version is installed. Existing bank inventories, identifiers, and saved network records are retained.
 
 | Component | Requirement |
 | --- | --- |
@@ -129,7 +129,7 @@ Disabling or removing a catalyst does not cancel a verification that was already
 | --- | --- | --- |
 | `/radiorepeaters status` | No explicit operator requirement | Shows configured/ready records, loaded/saved counts, and packet counters |
 | `/radiorepeaters list` | Operator level 2 | Lists positions, loaded/saved/inactive state, antenna score, and channels |
-| `/radiorepeaters refresh` | Operator level 2 | Marks loaded banks for verification without loading remote towers |
+| `/radiorepeaters refresh` | Operator level 2 | Reconciles saved positions in loaded chunks and marks loaded banks for antenna verification; never loads remote chunks |
 
 The counters describe routing activity. **Forwarded frames** counts managed transmitter emissions, not physical tower-to-tower hops. **Delivered receiver packets** counts first arrivals at the receiver hook before later native acceptance and playback processing. A moving counter alone does not prove that a speaker produced audible sound.
 
@@ -155,7 +155,7 @@ For one-way or noisy reception, test the handheld-to-entry-tower leg in the affe
 
 If routing counters move but no sound is heard, check the native receiver, its wire/speaker chain, handheld state, and Simple Voice Chat playback settings. The bank's counters stop before audible playback.
 
-After changing a loaded antenna, `/radiorepeaters refresh` can request a new scan. It cannot inspect an unloaded tower or bypass missing antenna dependencies. A saved record deliberately retains its last verified geometry until a complete verification can replace it.
+After changing a loaded antenna, `/radiorepeaters refresh` can request a new scan. It also removes stale bank records in already-loaded chunks. It cannot inspect an unloaded tower or bypass missing antenna dependencies. A saved record deliberately retains its last verified geometry until a complete verification can replace it.
 
 ## 2. How the network works
 
@@ -293,13 +293,17 @@ The record format writes `Schema: 1`. This release retains that format and does 
 
 ### 3.2 Loading and unloading
 
-At server start, the manager reads saved records without visiting tower chunks. A newly ticking bank registers its loaded instance, publishes current inventory/settings over any existing record, restores a positive verified record score if its local cache is stale, and requests verification.
+At server start, the manager reads saved records without loading tower chunks. It then queues saved bank positions for checks against chunks that Minecraft has already loaded. A newly ticking bank registers its loaded instance, publishes current inventory/settings over any existing record, restores a positive verified record score if its local cache is stale, and requests verification.
 
 Loading alone does not invalidate the record. A pending scan can therefore coexist with an eligible saved tower. When the chunk unloads, the loaded-instance entry is removed and the latest settings are retained in saved data. Whether the saved node participates thereafter depends on `persistentUnloadedTowers`.
 
 Destroying the block removes records at that dimension/position and drops the bank inventory separately. Disabling, removing the required catalyst, or removing all active channels changes record eligibility immediately.
 
 If a loaded bank UUID already identifies a record at another position or dimension, the manager gives that loaded bank a new UUID. The identity check avoids overwriting the other installation's record; it is not support for moving tower contraptions.
+
+Version 0.1.3 reconciles saved bank positions when their chunk loads, after server startup for already-loaded chunks, and on explicit refresh. A chunk index restricts checks to recorded bank positions. If the loaded block is no longer a Repeater Bank, its record is deleted, the saved data is marked dirty, and cached networks are cleared. This handles chunk editors/restores that bypass normal block-removal callbacks.
+
+If the bank block is present, the manager waits for chunk entity availability and the bank's block entity before comparing UUIDs. A different UUID retires the old record without deleting the matching record for the current bank. Matching banks keep their verified antenna cache while native wires restore. Checks use non-loading chunk lookup; unloaded records are left intact. Edits that bypass callbacks while a chunk stays loaded are detected by the next reload or `/radiorepeaters refresh`.
 
 ### 3.3 Why wired cores need settling
 
@@ -338,7 +342,7 @@ Equivalent snapshots do not publish settings or reset antenna settling. Real car
 
 ### 3.6 Limits of saved geometry
 
-Saved towers are stationary abstractions based on their last verified state. The addon does not inspect unloaded terrain, force-load it to check for edits, or continuously reconcile every record against world blocks. Native antenna notifications, bank reload, and explicit refresh are the paths back to verification.
+Saved towers are stationary abstractions based on their last verified state. The addon does not inspect unloaded terrain, force-load it to check for edits, or continuously scan world blocks. It reconciles bank existence and identity at loaded-chunk boundaries; antenna geometry is checked separately. Native antenna notifications, bank reload, and explicit refresh are the paths back to verification.
 
 Relay graphs stay within a dimension. Existing direct cross-dimensional behavior is delegated to Simple Radio's native routing settings; a same-dimension relay backbone is not a cross-dimension gateway.
 
@@ -436,15 +440,17 @@ This is the world's persistent UUID-to-record map. It is obtained from overworld
 
 #### `network/TowerManager.java`
 
-The manager is scoped to a `MinecraftServer`, with an identity-keyed static map that is cleaned up at server stop. It owns saved data, loaded bank instances, cached networks keyed by `Scope(dimension, channel)`, a native-settings stamp, and routing counters.
+The manager is scoped to a `MinecraftServer`, with an identity-keyed static map that is cleaned up at server stop. It owns saved data, loaded bank instances, cached networks keyed by `Scope(dimension, channel)`, a native-settings stamp, routing counters, a dimension/chunk index of record UUIDs, and a pending reconciliation set.
 
 `loaded()` associates a live bank with its UUID, detects position/dimension identity conflicts, and publishes settings once when the live instance changes. `unloaded()` retains settings and removes that instance. `settingsChanged()` preserves verified geometry; `publish()` constructs a complete replacement from an accepted antenna scan. `updateSnapshot()` enforces server-thread writes. `removeAt()` deletes matching records and loaded references.
 
-`put()` avoids work when the replacement equals the existing record. A genuine record change marks saved data dirty and clears cached networks. Loaded/unloaded transitions also clear caches when persistence is disabled.
+`chunkLoaded()` queues only chunks with recorded banks; `chunkUnloaded()` drops pending work for departing chunks. `reconcileLoadedChunks()` queues the startup/refresh check. At the end of each server tick, `reconcilePendingChunks()` uses `getChunkNow()` to inspect only chunks already present, removes absent/mismatched banks, and retries bank identities whose entity data is unavailable. It never starts antenna scans or reads neighbouring blocks.
+
+`put()` maintains the chunk index and avoids work when the replacement equals the existing record. A genuine record change marks saved data dirty and clears cached networks. Loaded/unloaded transitions also clear caches when persistence is disabled.
 
 `network()` filters eligible matching nodes and calculates each directed edge using full sender power and native receiver settings. It returns immutable node/edge lists with a `RelayGraph`. Every 100 server ticks, `tick()` compares a stamp of relevant native tower RF settings and clears networks if it changes.
 
-`peers()` counts distinct directly reachable outgoing neighbouring UUIDs across a tower's selected channels. `summary()` and `describe()` provide command output. `refreshLoaded()` marks existing loaded banks dirty and does not request missing chunks. Packet counters are runtime manager fields and are not saved across restarts.
+`peers()` counts distinct directly reachable outgoing neighbouring UUIDs across a tower's selected channels. `summary()` and `describe()` provide command output. `refreshLoaded()` queues saved-position reconciliation and marks existing loaded banks dirty; neither operation requests missing chunks. Packet counters are runtime manager fields and are not saved across restarts.
 
 ### 4.4 Antenna discovery and verification
 
@@ -551,7 +557,7 @@ There is no `LevelChunkMixin` in this release. The former broad invalidation wat
 
 ### 5.1 Build commands
 
-Use JDK 21 for the supplied Gradle/Loom build. The addon is compiled to Java 17 bytecode. `gradle.properties` selects addon version 0.1.2; `build.gradle` pins Minecraft, official Mojang mappings, Fabric dependencies, the exact Simple Radio release, and voice-chat development dependencies.
+Use JDK 21 for the supplied Gradle/Loom build. The addon is compiled to Java 17 bytecode. `gradle.properties` selects addon version 0.1.3; `build.gradle` pins Minecraft, official Mojang mappings, Fabric dependencies, the exact Simple Radio release, and voice-chat development dependencies.
 
 ```sh
 ./gradlew build
@@ -565,21 +571,23 @@ Loom's development runtime needs the explicit Night Config core/TOML dependencie
 
 ### 5.2 Tests and recorded results
 
-| Test source | Coverage | Recorded 0.1.2 result |
+| Test source | Coverage | Recorded 0.1.3 result |
 | --- | --- | --- |
 | `src/test/.../radio/RelayGraphTest.java` | Range/floor boundaries, chains, branches, rings, directionality, hop budgets, incoming degradation, multiple entrances, frame identity | 10 passed |
 | `src/test/.../network/AntennaVerificationTest.java` | Settling, transient zero, confirmed removal, incomplete/unavailable data, dirty resets | 6 passed |
-| `gametest/RepeaterGameTests.java` | Native tuning, antenna/inventory state, saved records, unloaded routing, wire restoration, pending dependency preservation, menu configuration changes | 7 passed |
+| `gametest/RepeaterGameTests.java` | Native tuning, antenna/inventory state, saved records, unloaded routing, wire restoration, pending dependency preservation, menu configuration changes, chunk reconciliation | 11 passed |
 
-`RepeaterGameTests` contains seven fixtures. The wire-reload fixture uses a real native copper-wire extension across a chunk boundary and recreates the bank before the wire endpoints reattach. Fixture tickets load the necessary test chunks; production verification does not create those tickets. The dependency test confirms that an unavailable historical footprint leaves its saved record unchanged without loading the missing chunk.
+`RepeaterGameTests` contains eleven fixtures. The wire-reload fixture uses a real native copper-wire extension across a chunk boundary and recreates the bank before the wire endpoints reattach. Fixture tickets load the necessary test chunks; production verification does not create those tickets. The dependency test confirms that an unavailable historical footprint leaves its saved record unchanged without loading the missing chunk.
+
+Four reconciliation fixtures cover bank removal by direct section edits without callbacks, saved-data deletion and route-cache invalidation, changed bank UUIDs while preserving the matching bank, delayed bank-entity restoration, and the startup/refresh queue retaining remote unloaded records without loading them.
 
 The menu fixture performs actual empty/rejected-item clicks, equivalent writes, catalyst removal/insertion, disable/enable, card removal/insertion, and an in-place tuning-tag change. It verifies that no-ops stay ready while genuine configuration changes request verification.
 
-Three native Simple Radio tests passed and the same four native test names failed in the 0.1.2 combined run: `SystemTest.closedSystem`, `SystemTest.garbageCollection`, `SystemTest.openSystem`, and `SystemTest.shortCircuit`. The preceding disabled-addon controls had the same four failures. The combined game-test command therefore exits non-zero despite all seven addon tests passing; do not describe that command as an entirely passing suite.
+Three native Simple Radio tests passed and the same four native test names failed in the 0.1.3 combined run: `SystemTest.closedSystem`, `SystemTest.garbageCollection`, `SystemTest.openSystem`, and `SystemTest.shortCircuit`. The preceding disabled-addon controls had the same four failures. The combined game-test command therefore exits non-zero despite all eleven addon tests passing; do not describe that command as an entirely passing suite.
 
-Captured reports and the build summary are under `validation/`. In-game testing confirmed the relay layout and the 0.1.1 wired-core reload correction. The bundled GameTests use synthetic packet data and do not capture microphones or validate audible client playback. The 0.1.2 client code compiled, but its screen was not interactively exercised in a graphical client here.
+Captured reports and the build summary are under `validation/`. In-game testing confirmed the relay layout and the 0.1.1 wired-core reload correction. The bundled GameTests use synthetic packet data and do not capture microphones or validate audible client playback. The 0.1.3 client code compiled, but its screen was not interactively exercised in a graphical client here.
 
-The separate handheld audit is not part of the released test source. It exercised native owner-backed walkie/transceiver routing, owner transfer, simulated reconnect, tuning isolation, and a two-channel return path. Its results do not expand the released suite's counts above 16 unit and seven addon GameTests.
+The separate handheld audit is not part of the released test source. It exercised native owner-backed walkie/transceiver routing, owner transfer, simulated reconnect, tuning isolation, and a two-channel return path. Its results do not expand the released suite's counts above 16 unit and eleven addon GameTests.
 
 ### 5.3 Maintenance boundaries
 
@@ -598,11 +606,12 @@ A six-card interface will require coordinated changes to inventory size/indexing
 | 0.1.0 | Frequency cards, bank inventory, persistent stationary networks, directed relay routing, worst-leg degradation, and frame duplicate control |
 | 0.1.1 | Settled antenna verification, cached-score recovery, wire-reload retry/zero confirmation, and removal of broad unloaded-record invalidation |
 | 0.1.2 | Inventory/settings comparison prevents no-op refreshes; real changes request verification; disabling and catalyst removal publish immediate eligibility/display changes |
+| 0.1.3 | Loaded-chunk reconciliation deletes absent or mismatched banks, persists deletions, invalidates routes, and preserves unloaded towers and pending bank-entity restoration |
 
-This manual was checked against the 0.1.2 source archive and its recorded validation results. The released jar's SHA-256 is:
+This manual was checked against the 0.1.3 source archive and its recorded validation results. The released jar's SHA-256 is:
 
 ```text
-d1f331942fe2fdc34ae5296cb29661b952da63ee3869cb550543a034afa41321
+a96b1193a840da8030e1c75ee47aa1663c619034ba804d10afe5d97e96549a46
 ```
 
 The addon is licensed GPL-3.0-only. Required third-party mods are supplied separately by their authors. The main-mod behavior described here is based on Simple Radio 1.20.1-4.5.7.9, the release required by this addon.

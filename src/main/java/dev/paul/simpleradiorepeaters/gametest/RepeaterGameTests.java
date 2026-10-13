@@ -14,6 +14,7 @@ import dev.paul.simpleradiorepeaters.network.*;
 import dev.paul.simpleradiorepeaters.radio.RelaySourceState;
 import dev.paul.simpleradiorepeaters.screen.RepeaterBankMenu;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.*;
@@ -28,6 +29,109 @@ import java.util.*;
 /** Runs only in Fabric's dedicated game-test environment; it does not capture microphones. */
 public class RepeaterGameTests implements FabricGameTest {
     private static void check(boolean value, String description) { if (!value) throw new IllegalStateException(description); }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void chunk_load_removes_bank_deleted_without_callbacks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RepeaterBankBlockEntity bank = configuredBank(level, core, 81);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.bankId();
+            check(manager.isEligible(id), "Fixture bank must have a verified saved record");
+            ChannelKey channel = bank.channels().iterator().next();
+            var before = manager.network(level, channel);
+            BlockPos pos = bank.getBlockPos(); var chunk = level.getChunkAt(pos);
+            chunk.removeBlockEntity(pos);
+            // Model an editor restoring section data without Block.onRemove.
+            chunk.getSection(chunk.getSectionIndex(pos.getY())).setBlockState(pos.getX() & 15, pos.getY() & 15,
+                    pos.getZ() & 15, Blocks.AIR.defaultBlockState());
+            chunk.setUnsaved(true);
+            check(manager.isEligible(id), "Section replacement must bypass ordinary removal, reproducing the stale record");
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
+            helper.runAfterDelay(3, () -> {
+                check(manager.snapshot(id) == null, "Chunk-load reconciliation must delete an absent bank");
+                check(manager.network(level, channel) != before && manager.network(level, channel).towers().stream().noneMatch(n -> n.id().equals(id)),
+                        "Deleting a stale record must invalidate cached relay routes");
+                TowerSavedData data = level.getServer().overworld().getDataStorage().computeIfAbsent(TowerSavedData::load, TowerSavedData::new, TowerSavedData.NAME);
+                check(data.isDirty() && !TowerSavedData.load(data.save(new CompoundTag())).towers.containsKey(id),
+                        "The deletion must be saved so restarting cannot restore the ghost relay");
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void chunk_load_rejects_old_identity_and_preserves_current_bank(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RepeaterBankBlockEntity bank = configuredBank(level, core, 82);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord current = manager.snapshot(bank.bankId());
+            UUID oldId = UUID.randomUUID();
+            manager.updateSnapshot(new TowerRecord(oldId, current.dimension(), current.position(), current.channels(), true, true, true,
+                    100, current.footprint()));
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, level.getChunkAt(bank.getBlockPos()));
+            helper.runAfterDelay(3, () -> {
+                check(manager.snapshot(oldId) == null, "A restored bank with a different UUID must retire the old record");
+                check(manager.isEligible(bank.bankId()) && manager.snapshot(bank.bankId()).equals(current),
+                        "Identity reconciliation must retain the matching bank and its antenna cache");
+                level.setBlock(bank.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void chunk_load_waits_for_bank_entity_data(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RepeaterBankBlockEntity bank = configuredBank(level, core, 83);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord verified = manager.snapshot(bank.bankId());
+            CompoundTag nbt = bank.saveWithoutMetadata(); BlockPos pos = bank.getBlockPos(); var chunk = level.getChunkAt(pos);
+            chunk.removeBlockEntity(pos);
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
+            helper.runAfterDelay(8, () -> {
+                check(manager.snapshot(bank.bankId()).equals(verified), "A bank block awaiting its entity must keep its verified record");
+                RepeaterBankBlockEntity restored = new RepeaterBankBlockEntity(pos, bank.getBlockState()); restored.load(nbt);
+                level.setBlockEntity(restored);
+                helper.runAfterDelay(8, () -> {
+                    check(manager.isEligible(restored.bankId()) && manager.snapshot(restored.bankId()).antennaScore() == verified.antennaScore(),
+                            "Restored matching identity must survive reconciliation and antenna settling");
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+                });
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void startup_refresh_checks_loaded_records_without_loading_remote_chunks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RepeaterBankBlockEntity bank = configuredBank(level, core, 84);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.bankId();
+            BlockPos remote = core.offset(20000, 0, 0); UUID remoteId = UUID.randomUUID();
+            check(!level.hasChunkAt(remote), "Remote fixture must be unloaded");
+            TowerRecord remoteRecord = new TowerRecord(remoteId, level.dimension().location().toString(), remote,
+                    bank.channels(), true, true, true, 32, Set.of(remote.asLong()));
+            manager.updateSnapshot(remoteRecord);
+            var chunk = level.getChunkAt(bank.getBlockPos()); BlockPos pos = bank.getBlockPos();
+            chunk.removeBlockEntity(pos);
+            chunk.getSection(chunk.getSectionIndex(pos.getY())).setBlockState(pos.getX() & 15, pos.getY() & 15,
+                    pos.getZ() & 15, Blocks.AIR.defaultBlockState());
+            manager.reconcileLoadedChunks(); // Shared startup/refresh queue; do not reset other fixtures' antennas.
+            helper.runAfterDelay(3, () -> {
+                check(manager.snapshot(id) == null, "Already-loaded chunks must be reconciled without a new load event");
+                check(manager.snapshot(remoteId).equals(remoteRecord) && !level.hasChunkAt(remote),
+                        "Reconciliation must retain unloaded records without loading their chunks");
+                manager.removeAt(remoteRecord.dimension(), remote); helper.succeed();
+            });
+        });
+    }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 150)
     public void inventory_noops_do_not_restart_antenna_verification(GameTestHelper helper) {

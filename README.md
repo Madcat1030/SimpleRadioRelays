@@ -1,16 +1,18 @@
-# Simple Radio Repeaters 0.1.2
+# Simple Radio Repeaters 0.1.3
 
 A Fabric 1.20.1 addon for Simple Radio, adding a nine-channel Repeater Bank and Frequency Cards. Configured stationary towers continue relaying through saved records when their chunks unload. The addon does not keep tower chunks loaded.
 
 ## Full documentation
 
-Read the [gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) for setup, radio-power and audio-quality rules, persistence, and a detailed reference to every code module. A [PDF edition](docs/Simple-Radio-Repeaters-0.1.2-Documentation.pdf) is included for reading and printing.
+Read the [gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) for setup, radio-power and audio-quality rules, persistence, and a detailed reference to every code module. A [PDF edition](docs/Simple-Radio-Repeaters-0.1.3-Documentation.pdf) is included for reading and printing.
 
 ## Installation
 
-Replace the previous addon jar with `simple-radio-repeaters-fabric-1.20.1-0.1.2.jar` in the `mods` folder on the server and every client. Keep only one version of the addon installed. Existing banks, cards and saved network records are retained.
+Replace the previous addon jar with `simple-radio-repeaters-fabric-1.20.1-0.1.3.jar` in the `mods` folder on the server and every client. Keep only one version of the addon installed. Existing banks, cards and saved network records are retained.
 
-Version 0.1.2 prevents empty menu clicks, rejected items, identical inventory writes, and unchanged enable settings from requesting antenna verification. Actual card additions/removals or tuning changes, catalyst insertion, and switching on request verification. Removing the catalyst or switching off updates eligibility and the display immediately without starting a new antenna scan. Antenna changes, chunk restoration, and explicit refresh still request verification. The bank continues to use the existing nine-slot GUI; the separate six-card model starter is a design project for a future in-world interface.
+Version 0.1.3 removes stale saved relays when a loaded chunk no longer contains their bank, or when a restored bank has a different identity. It checks saved positions at chunk load, at startup for chunks already loaded, and when `/radiorepeaters refresh` runs. Deletions are persisted and cached routes are invalidated. Unloaded towers remain available; no chunks are loaded by these checks. A bank whose block-entity data is still restoring retains its record until its identity can be checked.
+
+The 0.1.2 menu refresh correction and 0.1.1 wired-core restoration remain in place. The bank still uses the nine-slot GUI; the six-card model is a separate design project for a future interface.
 
 Required environment:
 
@@ -52,7 +54,7 @@ A verified bank is saved with its position, channels, enabled state, catalyst pr
 
 Loading the bank again starts verification while retaining its last verified configuration. The addon gives native insulators and copper-wire connections time to restore, and waits for the previous antenna dependencies and their entity data to become available. A temporary zero-strength result cannot replace a verified antenna immediately. Pending verification retries automatically every 200 ticks (about ten seconds); a confirmed zero requires two completed scans at least 200 ticks apart. A valid restored connection refreshes the saved strength without an enable toggle.
 
-Destroying or disabling the bank removes it from routing. While the bank is unloaded, its verified antenna snapshot remains authoritative. Once loaded, native antenna dirty notifications and manual refresh request verification. A genuinely missing antenna or extension stops relaying after confirmation. The addon does not force-load chunks and does not change the base mod's wire-cut or antenna-base dirty-notification behaviour.
+Destroying or disabling the bank removes it from routing. While the bank is unloaded, its verified antenna snapshot remains authoritative. Once loaded, native antenna dirty notifications and manual refresh request verification. A genuinely missing antenna or extension stops relaying after confirmation. Chunk-load reconciliation separately removes a saved record if its bank itself is absent; this does not require an antenna scan. The addon does not force-load chunks and does not change the base mod's wire-cut or antenna-base dirty-notification behaviour.
 
 The broad neighbouring-block invalidation watcher has been removed. Nearby door, crop and redstone changes no longer invalidate unloaded tower records.
 
@@ -62,7 +64,7 @@ Actual microphones, physical speakers and player radios still use the main mod's
 
 - `/radiorepeaters status` — configured, ready, loaded and saved tower counts; network packet counters.
 - `/radiorepeaters list` — tower positions, saved/live status, antenna scores and channels. Requires operator level 2.
-- `/radiorepeaters refresh` — recheck currently loaded banks without loading remote ones. Requires operator level 2.
+- `/radiorepeaters refresh` — reconcile saved bank positions in loaded chunks and recheck loaded antennas without loading remote ones. Requires operator level 2.
 
 For the first voice test, use two players too far apart to hear each other's handhelds directly, with both able to reach one tower. Check both directions. Then test a tower chain and repeat after leaving the middle towers' chunks unloaded.
 
@@ -99,9 +101,9 @@ On Windows, use `gradlew.bat`. Output jars are under `build/libs`; the file endi
 
 - Verification results for this revision are recorded in `validation/build-verification.json`.
 - Routing tests cover range, directed links, branches, rings, hop limits, interference and duplicate-frame handling. Verification-policy tests cover settling, transient zero results, retry timing, restoration and confirmed removal.
-- Minecraft game tests cover native card tuning, native antenna scanning and bank inventory, saved-record serialization, saved-tower packet routing, a real copper-wire extension that restores after bank reload, confirmed wire removal, preservation of snapshots during partial loading without forcing chunks, and real menu clicks that leave configuration unchanged. The menu regression also checks real card/catalyst/power changes and in-place card retuning.
-- The seven included Simple Radio game tests were also run with the addon disabled in the preceding controls. The same three passed and the same four failed with and without the addon: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four fail in this revision. The combined game-test command therefore exits with a failure even though all seven addon tests pass. Reports are under `run/gametest/reports` and `run/baseline/reports`; `./gradlew runBaseGameTest` runs the comparison.
+- Minecraft game tests cover native card tuning, native antenna scanning and bank inventory, saved-record serialization, saved-tower packet routing, a real copper-wire extension that restores after bank reload, confirmed wire removal, preservation of snapshots during partial loading without forcing chunks, real menu clicks that leave configuration unchanged, and four chunk-reconciliation regressions. The new regressions cover section edits that bypass normal block removal, persistent deletion and route-cache invalidation, restored identity mismatch, delayed block-entity data, and checking already-loaded chunks without forcing remote chunks to load. The menu regression also checks real card/catalyst/power changes and in-place card retuning.
+- The seven included Simple Radio game tests were also run with the addon disabled in the preceding controls. The same three passed and the same four failed with and without the addon: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four fail in this revision. The combined game-test command therefore exits with a failure even though all eleven addon tests pass. Reports are under `run/gametest/reports` and `run/baseline/reports`; `./gradlew runBaseGameTest` runs the comparison.
 
-The user's in-game voice tests established the working A/B/C relay arrangement and confirmed the 0.1.1 wired-core reload correction. Version 0.1.2 changes when inventory/settings changes request antenna verification; it does not change radio power, interference, channel bridging or playback. The wired-core reload correction remains covered by its Minecraft regression test. `/radiorepeaters status` shows whether the bank's record remains eligible.
+The user's in-game voice tests established the working A/B/C relay arrangement and confirmed the 0.1.1 wired-core reload correction. Version 0.1.3 changes saved-bank reconciliation; it does not change radio power, interference, channel bridging or playback. The wired-core reload correction remains covered by its Minecraft regression test. `/radiorepeaters status` shows whether the bank's record remains eligible.
 
 Licensed GPL-3.0-only. The source project includes its license; required third-party mods are distributed separately by their authors.
