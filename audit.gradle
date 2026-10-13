@@ -1,0 +1,16 @@
+def auditSources = new File(gradle.startParameter.initScripts.find { it.name == 'audit.gradle' }.parentFile, 'java').absolutePath
+allprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin('fabric-loom')) {
+            project.sourceSets.main.java.srcDir(auditSources)
+            project.tasks.named('processResources').configure {
+                doLast {
+                    def metadata = new File(destinationDir, 'fabric.mod.json')
+                    def json = new groovy.json.JsonSlurper().parse(metadata)
+                    json.entrypoints['fabric-gametest'].add('dev.paul.simpleradiorepeaters.audit.HandheldAuditGameTests')
+                    metadata.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+                }
+            }
+        }
+    }
+}
