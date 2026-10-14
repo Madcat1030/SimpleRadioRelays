@@ -1,0 +1,82 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "front": "simpleradio_repeaters:block/relay_front",
+    "side": "simpleradio_repeaters:block/relay_side",
+    "top": "simpleradio_repeaters:block/relay_top",
+    "screen": "simpleradio_repeaters:block/relay_screen",
+    "catalyst": "simpleradio_repeaters:block/catalyst",
+    "particle": "simpleradio_repeaters:block/relay_side"
+  },
+  "elements": [
+    {
+      "name": "inserted_catalyst",
+      "from": [
+        2,
+        2,
+        -2
+      ],
+      "to": [
+        6,
+        6,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ],
+          "texture": "#catalyst"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ],
+          "texture": "#catalyst"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            4
+          ],
+          "texture": "#catalyst"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            4
+          ],
+          "texture": "#catalyst"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            4,
+            3
+          ],
+          "texture": "#catalyst"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            4,
+            3
+          ],
+          "texture": "#catalyst"
+        }
+      }
+    }
+  ]
+}

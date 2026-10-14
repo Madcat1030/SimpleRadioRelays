@@ -3,7 +3,6 @@ package dev.paul.simpleradiorepeaters;
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.item.FrequencyCardItem;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
-import dev.paul.simpleradiorepeaters.screen.RepeaterBankMenu;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -15,8 +14,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -30,26 +27,30 @@ import static net.minecraft.commands.Commands.literal;
 public final class SimpleRadioRepeaters implements ModInitializer {
     public static final String ID = "simpleradio_repeaters";
     public static final Logger LOGGER = LoggerFactory.getLogger(ID);
-    public static final RepeaterBankBlock BANK = new RepeaterBankBlock(BlockBehaviour.Properties.of()
+    public static final RelayBlock RELAY = new RelayBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
+    public static final ChannelBankBlock CHANNEL_BANK = new ChannelBankBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final FrequencyCardItem CARD = new FrequencyCardItem(new Item.Properties().stacksTo(1));
-    public static BlockEntityType<RepeaterBankBlockEntity> BANK_ENTITY;
-    public static MenuType<RepeaterBankMenu> BANK_MENU;
+    public static BlockEntityType<RelayBlockEntity> RELAY_ENTITY;
+    public static BlockEntityType<ChannelBankBlockEntity> CHANNEL_BANK_ENTITY;
 
     public static ResourceLocation id(String path) { return new ResourceLocation(ID, path); }
     @Override public void onInitialize() {
         RepeatersConfig.load();
-        Registry.register(BuiltInRegistries.BLOCK, id("repeater_bank"), BANK);
-        Registry.register(BuiltInRegistries.ITEM, id("repeater_bank"), new BlockItem(BANK, new Item.Properties()));
+        Registry.register(BuiltInRegistries.BLOCK, id("relay"), RELAY);
+        Registry.register(BuiltInRegistries.ITEM, id("relay"), new BlockItem(RELAY, new Item.Properties()));
+        Registry.register(BuiltInRegistries.BLOCK, id("channel_bank"), CHANNEL_BANK);
+        Registry.register(BuiltInRegistries.ITEM, id("channel_bank"), new BlockItem(CHANNEL_BANK, new Item.Properties()));
         Registry.register(BuiltInRegistries.ITEM, id("frequency_card"), CARD);
-        BANK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("repeater_bank"),
-                FabricBlockEntityTypeBuilder.create(RepeaterBankBlockEntity::new, BANK).build());
-        BANK_MENU = Registry.register(BuiltInRegistries.MENU, id("repeater_bank"),
-                new MenuType<>(RepeaterBankMenu::new, FeatureFlags.VANILLA_SET));
+        RELAY_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("relay"),
+                FabricBlockEntityTypeBuilder.create(RelayBlockEntity::new, RELAY).build());
+        CHANNEL_BANK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("channel_bank"),
+                FabricBlockEntityTypeBuilder.create(ChannelBankBlockEntity::new, CHANNEL_BANK).build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id("repeaters"), FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.simpleradio_repeaters"))
-                .icon(() -> new ItemStack(BANK))
-                .displayItems((parameters, output) -> { output.accept(BANK); output.accept(CARD); }).build());
+                .icon(() -> new ItemStack(RELAY))
+                .displayItems((parameters, output) -> { output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(CARD); }).build());
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(TowerManager::tick);
@@ -72,7 +73,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                 .then(literal("refresh").requires(source -> source.hasPermission(2)).executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     if (manager != null) manager.refreshLoaded();
-                    context.getSource().sendSuccess(() -> Component.literal("Checking saved banks in loaded chunks and refreshing loaded antennas."), false);
+                    context.getSource().sendSuccess(() -> Component.literal("Checking saved relays and card banks in loaded chunks and refreshing loaded antennas."), false);
                     return 1;
                 }))));
         LOGGER.info("Simple Radio Repeaters ready; persistent towers do not force-load chunks.");

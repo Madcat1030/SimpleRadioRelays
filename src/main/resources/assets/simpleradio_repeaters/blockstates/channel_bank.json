@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,connected=false": {
+      "model": "simpleradio_repeaters:block/channel_bank"
+    },
+    "facing=north,connected=true": {
+      "model": "simpleradio_repeaters:block/channel_bank_connected"
+    },
+    "facing=east,connected=false": {
+      "model": "simpleradio_repeaters:block/channel_bank",
+      "y": 90
+    },
+    "facing=east,connected=true": {
+      "model": "simpleradio_repeaters:block/channel_bank_connected",
+      "y": 90
+    },
+    "facing=south,connected=false": {
+      "model": "simpleradio_repeaters:block/channel_bank",
+      "y": 180
+    },
+    "facing=south,connected=true": {
+      "model": "simpleradio_repeaters:block/channel_bank_connected",
+      "y": 180
+    },
+    "facing=west,connected=false": {
+      "model": "simpleradio_repeaters:block/channel_bank",
+      "y": 270
+    },
+    "facing=west,connected=true": {
+      "model": "simpleradio_repeaters:block/channel_bank_connected",
+      "y": 270
+    }
+  }
+}

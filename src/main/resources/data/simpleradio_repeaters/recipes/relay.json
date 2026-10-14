@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "RTS",
+    "ICI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "R": {
+      "item": "simpleradio:receiver"
+    },
+    "T": {
+      "item": "minecraft:redstone"
+    },
+    "S": {
+      "item": "simpleradio:transmitter"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:relay",
+    "count": 1
+  }
+}

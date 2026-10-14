@@ -3,7 +3,7 @@
   "id": "simpleradio_repeaters",
   "version": "${version}",
   "name": "Simple Radio Repeaters",
-  "description": "Frequency-card repeater banks with persistent antenna networks for Simple Radio.",
+  "description": "In-world six-card banks and catalyst-powered relays with persistent antenna networks for Simple Radio.",
   "authors": ["Paul", "OpenAI"],
   "license": "GPL-3.0-only",
   "environment": "*",

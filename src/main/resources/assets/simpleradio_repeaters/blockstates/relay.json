@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,active=false": {
+      "model": "simpleradio_repeaters:block/relay"
+    },
+    "facing=north,active=true": {
+      "model": "simpleradio_repeaters:block/relay_active"
+    },
+    "facing=east,active=false": {
+      "model": "simpleradio_repeaters:block/relay",
+      "y": 90
+    },
+    "facing=east,active=true": {
+      "model": "simpleradio_repeaters:block/relay_active",
+      "y": 90
+    },
+    "facing=south,active=false": {
+      "model": "simpleradio_repeaters:block/relay",
+      "y": 180
+    },
+    "facing=south,active=true": {
+      "model": "simpleradio_repeaters:block/relay_active",
+      "y": 180
+    },
+    "facing=west,active=false": {
+      "model": "simpleradio_repeaters:block/relay",
+      "y": 270
+    },
+    "facing=west,active=true": {
+      "model": "simpleradio_repeaters:block/relay_active",
+      "y": 270
+    }
+  }
+}

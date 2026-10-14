@@ -12,7 +12,6 @@ import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.item.FrequencyCardItem;
 import dev.paul.simpleradiorepeaters.network.*;
 import dev.paul.simpleradiorepeaters.radio.RelaySourceState;
-import dev.paul.simpleradiorepeaters.screen.RepeaterBankMenu;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.core.BlockPos;
@@ -21,7 +20,6 @@ import net.minecraft.gametest.framework.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.*;
-import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.ChunkPos;
 import java.util.*;
@@ -31,13 +29,13 @@ public class RepeaterGameTests implements FabricGameTest {
     private static void check(boolean value, String description) { if (!value) throw new IllegalStateException(description); }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
-    public void chunk_load_removes_bank_deleted_without_callbacks(GameTestHelper helper) {
+    public void chunk_load_removes_relay_deleted_without_callbacks(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 81);
+        RelayBlockEntity bank = configuredRelay(level, core, 81);
         helper.runAfterDelay(40, () -> {
-            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.bankId();
+            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.relayId();
             check(manager.isEligible(id), "Fixture bank must have a verified saved record");
             ChannelKey channel = bank.channels().iterator().next();
             var before = manager.network(level, channel);
@@ -62,20 +60,20 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
-    public void chunk_load_rejects_old_identity_and_preserves_current_bank(GameTestHelper helper) {
+    public void chunk_load_rejects_old_identity_and_preserves_current_relay(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 82);
+        RelayBlockEntity bank = configuredRelay(level, core, 82);
         helper.runAfterDelay(40, () -> {
-            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord current = manager.snapshot(bank.bankId());
+            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord current = manager.snapshot(bank.relayId());
             UUID oldId = UUID.randomUUID();
             manager.updateSnapshot(new TowerRecord(oldId, current.dimension(), current.position(), current.channels(), true, true, true,
                     100, current.footprint()));
             ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, level.getChunkAt(bank.getBlockPos()));
             helper.runAfterDelay(3, () -> {
                 check(manager.snapshot(oldId) == null, "A restored bank with a different UUID must retire the old record");
-                check(manager.isEligible(bank.bankId()) && manager.snapshot(bank.bankId()).equals(current),
+                check(manager.isEligible(bank.relayId()) && manager.snapshot(bank.relayId()).equals(current),
                         "Identity reconciliation must retain the matching bank and its antenna cache");
                 level.setBlock(bank.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
             });
@@ -83,22 +81,22 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
-    public void chunk_load_waits_for_bank_entity_data(GameTestHelper helper) {
+    public void chunk_load_waits_for_relay_entity_data(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 83);
+        RelayBlockEntity bank = configuredRelay(level, core, 83);
         helper.runAfterDelay(40, () -> {
-            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord verified = manager.snapshot(bank.bankId());
+            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord verified = manager.snapshot(bank.relayId());
             CompoundTag nbt = bank.saveWithoutMetadata(); BlockPos pos = bank.getBlockPos(); var chunk = level.getChunkAt(pos);
             chunk.removeBlockEntity(pos);
             ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
             helper.runAfterDelay(8, () -> {
-                check(manager.snapshot(bank.bankId()).equals(verified), "A bank block awaiting its entity must keep its verified record");
-                RepeaterBankBlockEntity restored = new RepeaterBankBlockEntity(pos, bank.getBlockState()); restored.load(nbt);
+                check(manager.snapshot(bank.relayId()).equals(verified), "A bank block awaiting its entity must keep its verified record");
+                RelayBlockEntity restored = new RelayBlockEntity(pos, bank.getBlockState()); restored.load(nbt);
                 level.setBlockEntity(restored);
                 helper.runAfterDelay(8, () -> {
-                    check(manager.isEligible(restored.bankId()) && manager.snapshot(restored.bankId()).antennaScore() == verified.antennaScore(),
+                    check(manager.isEligible(restored.relayId()) && manager.snapshot(restored.relayId()).antennaScore() == verified.antennaScore(),
                             "Restored matching identity must survive reconciliation and antenna settling");
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); helper.succeed();
                 });
@@ -111,9 +109,9 @@ public class RepeaterGameTests implements FabricGameTest {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 84);
+        RelayBlockEntity bank = configuredRelay(level, core, 84);
         helper.runAfterDelay(40, () -> {
-            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.bankId();
+            TowerManager manager = TowerManager.get(level.getServer()); UUID id = bank.relayId();
             BlockPos remote = core.offset(20000, 0, 0); UUID remoteId = UUID.randomUUID();
             check(!level.hasChunkAt(remote), "Remote fixture must be unloaded");
             TowerRecord remoteRecord = new TowerRecord(remoteId, level.dimension().location().toString(), remote,
@@ -134,48 +132,52 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 150)
-    public void inventory_noops_do_not_restart_antenna_verification(GameTestHelper helper) {
+    public void in_world_noops_do_not_restart_antenna_verification(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 96);
+        RelayBlockEntity relay = configuredRelay(level, core, 96);
         helper.runAfterDelay(40, () -> {
-            TowerManager manager = TowerManager.get(level.getServer());
+            TowerManager manager = TowerManager.get(level.getServer()); ChannelBankBlockEntity bank = relay.findAssignedBank();
             var player = helper.makeMockPlayer(); player.setPos(bank.getBlockPos().getCenter());
-            RepeaterBankMenu menu = (RepeaterBankMenu) bank.createMenu(77, player.getInventory(), player);
-            check(menu.status() == 0 && manager.isEligible(bank.bankId()), "Fixture must have finished antenna verification");
-            TowerRecord snapshot = manager.snapshot(bank.bankId());
-            bank.setChanged(); bank.setItem(0, bank.getItem(0).copy()); bank.setEnabled(true);
-            menu.clicked(1, 0, ClickType.PICKUP, player); // Empty channel slot.
-            menu.setCarried(new ItemStack(Items.DIRT)); menu.clicked(1, 0, ClickType.PICKUP, player);
-            check(menu.getCarried().is(Items.DIRT) && bank.getItem(1).isEmpty(), "Wrong items must stay outside channel slots");
-            RepeaterBankBlockEntity.tick(level, bank.getBlockPos(), bank.getBlockState(), bank);
-            check(menu.status() == 0 && manager.snapshot(bank.bankId()).equals(snapshot),
-                    "Rejected items, empty clicks and equivalent writes must not start a relay check");
-            bank.removeItem(9, 1);
-            check(menu.status() == 2 && !manager.isEligible(bank.bankId()), "Catalyst removal must immediately stop relaying");
-            bank.setItem(9, new ItemStack(Items.GILDED_BLACKSTONE));
-            check(menu.status() == 6, "Adding the catalyst must start verification while retaining the antenna cache");
+            check(relay.displayStatus() == 0 && manager.isEligible(relay.relayId()), "Fixture must finish antenna verification");
+            TowerRecord snapshot = manager.snapshot(relay.relayId());
+            bank.setChanged(); bank.setItem(0, bank.getItem(0).copy()); relay.setEnabled(true);
+            var blankHit = new net.minecraft.world.phys.BlockHitResult(bank.getBlockPos().getCenter().add(-.25, .3, -.5),
+                    Direction.NORTH, bank.getBlockPos(), false);
+            SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, bank.getBlockPos(), player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, blankHit);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.DIRT));
+            SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, bank.getBlockPos(), player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, blankHit);
+            check(player.getMainHandItem().is(Items.DIRT) && bank.getItem(1).isEmpty(), "Wrong items must stay outside card slots");
+            RelayBlockEntity.tick(level, relay.getBlockPos(), relay.getBlockState(), relay);
+            check(relay.displayStatus() == 0 && manager.snapshot(relay.relayId()).equals(snapshot),
+                    "Rejected items, empty slots and equivalent writes must not start a relay check");
+            ItemStack catalyst = relay.removeCatalyst();
+            check(relay.displayStatus() == 2 && !manager.isEligible(relay.relayId()), "Catalyst removal must immediately stop relaying");
+            relay.installCatalyst(catalyst, false);
+            check(relay.displayStatus() == 6, "Catalyst insertion must verify while retaining the antenna cache");
             helper.runAfterDelay(30, () -> {
-                check(menu.status() == 0, "Actual catalyst insertion must complete verification");
-                bank.setEnabled(false);
-                check(menu.status() == 4 && !manager.isEligible(bank.bankId()), "Disabling must immediately update status and eligibility");
-                bank.setEnabled(true);
-                check(menu.status() == 6 && manager.isEligible(bank.bankId()), "Turning on must trigger one verification");
+                check(relay.displayStatus() == 0, "Catalyst verification must finish");
+                relay.setEnabled(false);
+                check(relay.displayStatus() == 4 && !manager.isEligible(relay.relayId()), "Disabling must immediately stop relaying");
+                relay.setEnabled(true);
+                check(relay.displayStatus() == 6 && manager.isEligible(relay.relayId()), "Turning on must trigger verification");
                 helper.runAfterDelay(30, () -> {
-                    check(menu.status() == 0, "Enable verification must finish");
+                    check(relay.displayStatus() == 0, "Enable verification must finish");
                     ItemStack card = bank.removeItem(0, 1);
-                    check(menu.status() == 3 && !manager.isEligible(bank.bankId()), "Removing the last card must immediately remove its channel");
+                    check(relay.displayStatus() == 3 && !manager.isEligible(relay.relayId()), "Last-card removal must immediately remove its channel");
                     bank.setItem(0, card);
-                    check(menu.status() == 6 && manager.isEligible(bank.bankId()), "Adding a card must request verification");
+                    check(relay.displayStatus() == 6 && manager.isEligible(relay.relayId()), "Adding a card must verify");
                     helper.runAfterDelay(30, () -> {
-                        check(menu.status() == 0, "Card verification must finish");
+                        check(relay.displayStatus() == 0, "Card verification must finish");
                         var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
-                        String newNumber = frequencies.incrementFrequency(frequencies.defaultFrequency(), 97);
-                        bank.getItem(0).getOrCreateTag().putString("frequency", newNumber); bank.setChanged();
-                        check(menu.status() == 6 && manager.snapshot(bank.bankId()).channels().contains(new ChannelKey(newNumber, "AM")),
-                                "An in-place change to card tuning must still publish and verify its configuration");
-                        level.setBlock(bank.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+                        String number = frequencies.incrementFrequency(frequencies.defaultFrequency(), 97);
+                        bank.getItem(0).getOrCreateTag().putString("frequency", number); bank.setChanged();
+                        check(relay.displayStatus() == 6 && manager.snapshot(relay.relayId()).channels().contains(new ChannelKey(number, "AM")),
+                                "In-place card tuning must publish and verify the new channel");
+                        level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
                     });
                 });
             });
@@ -194,28 +196,28 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
-    public void bank_scans_native_antenna_and_saves_inventory(GameTestHelper helper) {
+    public void split_hardware_scans_antenna_and_saves_components(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(3, 2, 3));
-        BlockPos bankPos = core.north();
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        level.setBlock(bankPos, SimpleRadioRepeaters.BANK.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = (RepeaterBankBlockEntity) level.getBlockEntity(bankPos);
-        ItemStack card = new ItemStack(SimpleRadioRepeaters.CARD);
-        var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
-        SimpleRadioRepeaters.CARD.setFrequency(card, frequencies.incrementFrequency(frequencies.defaultFrequency(), 98), Frequency.Modulation.AMPLITUDE);
-        bank.setItem(0, card); bank.setItem(9, new ItemStack(Items.GILDED_BLACKSTONE));
+        RelayBlockEntity relay = configuredRelay(level, core, 98); ChannelBankBlockEntity bank = relay.findAssignedBank();
         helper.runAfterDelay(30, () -> {
-            TowerManager manager = TowerManager.get(level.getServer()); bank.refresh(manager);
-            check(bank.getAntennaPower() > 0, "Antenna scan must produce native antenna power");
-            check(manager.isEligible(bank.bankId()), "Configured bank must be eligible");
-            CompoundTag saved = bank.saveWithoutMetadata();
-            RepeaterBankBlockEntity restored = new RepeaterBankBlockEntity(bankPos, bank.getBlockState()); restored.load(saved);
-            check(restored.bankId().equals(bank.bankId()), "Bank identity must survive save/reload");
-            check(restored.getItem(0).is(SimpleRadioRepeaters.CARD) && restored.getItem(9).is(Items.GILDED_BLACKSTONE), "Cards and catalyst must survive save/reload");
-            bank.setEnabled(false); check(!manager.isEligible(bank.bankId()), "Disable must immediately remove the tower from routing");
-            level.setBlock(bankPos, Blocks.AIR.defaultBlockState(), 3);
-            check(manager.records().stream().noneMatch(n -> n.id().equals(bank.bankId())), "Destroying a bank must remove the saved node"); helper.succeed();
+            TowerManager manager = TowerManager.get(level.getServer()); relay.refresh(manager);
+            check(relay.getAntennaPower() > 0 && manager.isEligible(relay.relayId()), "Split hardware must scan the native antenna");
+            CompoundTag saved = relay.saveWithoutMetadata();
+            RelayBlockEntity restored = new RelayBlockEntity(relay.getBlockPos(), relay.getBlockState()); restored.load(saved);
+            check(restored.relayId().equals(relay.relayId()) && restored.hasCatalyst(), "Relay identity and direct catalyst must survive reload");
+            check(!saved.contains("Items") && !((Object) restored instanceof net.minecraft.world.Container), "Relay must have no inventory");
+            ChannelBankBlockEntity restoredBank = new ChannelBankBlockEntity(bank.getBlockPos(), bank.getBlockState());
+            restoredBank.load(bank.saveWithoutMetadata());
+            check(restoredBank.bankId().equals(bank.bankId()) && restoredBank.getItem(0).is(SimpleRadioRepeaters.CARD),
+                    "The separate bank must retain its six-card inventory and identity");
+            check(restoredBank.getContainerSize() == 6 && restored.cardBank().id().equals(bank.bankId()), "Relay must refer to the separate six-slot bank");
+            relay.setEnabled(false); check(!manager.isEligible(relay.relayId()), "Disabling must immediately remove the tower from routes");
+            level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+            check(manager.snapshot(relay.relayId()) == null, "Destroying a Relay must remove its network record");
+            check(bank.getItem(0).is(SimpleRadioRepeaters.CARD), "Removing the Relay must leave the separate Bank and cards intact");
+            helper.succeed();
         });
     }
 
@@ -239,7 +241,7 @@ public class RepeaterGameTests implements FabricGameTest {
         level.setBlock(remoteCore.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         level.setBlock(nearPos, SimpleRadioBlocks.INSULATOR.defaultBlockState().setValue(InsulatorBlock.FACING, Direction.EAST), 3);
         level.setBlock(farPos, SimpleRadioBlocks.INSULATOR.defaultBlockState().setValue(InsulatorBlock.FACING, Direction.WEST), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 90);
+        RelayBlockEntity bank = configuredRelay(level, core, 90);
         helper.runAfterDelay(10, () -> {
             InsulatorBlockEntity near = (InsulatorBlockEntity) level.getBlockEntity(nearPos);
             InsulatorBlockEntity far = (InsulatorBlockEntity) level.getBlockEntity(farPos);
@@ -249,7 +251,7 @@ public class RepeaterGameTests implements FabricGameTest {
             bank.markDirty();
             helper.runAfterDelay(30, () -> {
                 TowerManager manager = TowerManager.get(level.getServer());
-                check(bank.getAntennaPower() > 0 && manager.isEligible(bank.bankId()), "Wired antenna must first be verified");
+                check(bank.getAntennaPower() > 0 && manager.isEligible(bank.relayId()), "Wired antenna must first be verified");
                 int score = bank.getAntennaPower();
                 CompoundTag tag = bank.saveWithoutMetadata();
                 tag.putInt("AntennaScore", 0); // A block-entity cache can lag the authoritative saved network record.
@@ -257,22 +259,22 @@ public class RepeaterGameTests implements FabricGameTest {
                 AntennaScanner.Result early = AntennaScanner.scan(level, bank.getBlockPos(), bank.corePos());
                 check(early.complete() && early.score() == 0, "Reproduce native lookup's transient zero before the wire reattaches");
                 bank.setRemoved();
-                RepeaterBankBlockEntity restored = new RepeaterBankBlockEntity(bank.getBlockPos(), bank.getBlockState());
+                RelayBlockEntity restored = new RelayBlockEntity(bank.getBlockPos(), bank.getBlockState());
                 restored.load(tag); level.setBlockEntity(restored);
-                RepeaterBankBlockEntity.tick(level, restored.getBlockPos(), restored.getBlockState(), restored);
+                RelayBlockEntity.tick(level, restored.getBlockPos(), restored.getBlockState(), restored);
                 check(restored.getAntennaPower() == score, "Reload must recover the authoritative cached score");
-                check(manager.isEligible(restored.bankId()), "The first reload tick must retain relay eligibility");
+                check(manager.isEligible(restored.relayId()), "The first reload tick must retain relay eligibility");
                 helper.runAfterDelay(30, () -> {
                     check(near.hasWire(wire) && far.hasWire(wire), "Native wire tick must reconnect both endpoints");
-                    check(restored.getAntennaPower() == score && manager.isEligible(restored.bankId()), "Bank must recover without an enable toggle");
+                    check(restored.getAntennaPower() == score && manager.isEligible(restored.relayId()), "Bank must recover without an enable toggle");
                     check(restored.saveWithoutMetadata().getInt("AntennaScore") == score, "Refreshed score must be saved in the block entity");
                     wire.burnOut(); restored.markDirty(); // Explicit refresh; do not patch upstream cut-wire notifications.
                     helper.runAfterDelay(30, () -> {
-                        check(manager.isEligible(restored.bankId()), "One settled empty scan must not discard the cache");
+                        check(manager.isEligible(restored.relayId()), "One settled empty scan must not discard the cache");
                     });
                     helper.runAfterDelay(250, () -> {
-                        check(!manager.isEligible(restored.bankId()), "A genuinely removed wire must eventually stop relaying");
-                        check(manager.snapshot(restored.bankId()).antennaScore() == 0, "Confirmed disconnection must publish a zero score");
+                        check(!manager.isEligible(restored.relayId()), "A genuinely removed wire must eventually stop relaying");
+                        check(manager.snapshot(restored.relayId()).antennaScore() == 0, "Confirmed disconnection must publish a zero score");
                         level.setBlock(restored.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
                         for (ChunkPos chunk : fixtureChunks) level.setChunkForced(chunk.x, chunk.z, false);
                         helper.succeed();
@@ -288,22 +290,22 @@ public class RepeaterGameTests implements FabricGameTest {
         BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = configuredBank(level, core, 92);
+        RelayBlockEntity bank = configuredRelay(level, core, 92);
         helper.runAfterDelay(40, () -> {
             TowerManager manager = TowerManager.get(level.getServer());
-            TowerRecord verified = manager.snapshot(bank.bankId());
+            TowerRecord verified = manager.snapshot(bank.relayId());
             check(verified != null && verified.eligible(), "Fixture antenna must have a verified record");
             BlockPos unavailable = core.offset(20000, 0, 0);
             check(!level.hasChunkAt(unavailable), "The historical antenna dependency must be unloaded");
             Set<Long> footprint = new HashSet<>(verified.footprint()); footprint.add(unavailable.asLong());
             TowerRecord snapshot = new TowerRecord(verified.id(), verified.dimension(), verified.position(), verified.channels(),
-                    verified.enabled(), verified.catalyst(), verified.verified(), verified.antennaScore(), footprint);
+                    verified.enabled(), verified.catalyst(), verified.verified(), verified.antennaScore(), footprint, verified.cardBank());
             manager.updateSnapshot(snapshot); bank.markDirty();
             level.setBlock(core.east(), Blocks.STONE.defaultBlockState(), 3);
-            check(manager.isEligible(bank.bankId()), "An unrelated neighbouring block change must not invalidate the snapshot");
+            check(manager.isEligible(bank.relayId()), "An unrelated neighbouring block change must not invalidate the snapshot");
             helper.runAfterDelay(30, () -> {
-                check(manager.snapshot(bank.bankId()).equals(snapshot), "Partial loading must preserve the entire saved snapshot");
-                check(manager.isEligible(bank.bankId()), "The saved antenna must continue relaying while verification waits");
+                check(manager.snapshot(bank.relayId()).equals(snapshot), "Partial loading must preserve the entire saved snapshot");
+                check(manager.isEligible(bank.relayId()), "The saved antenna must continue relaying while verification waits");
                 check(!level.hasChunkAt(unavailable), "Verification must not load the unavailable chunk");
                 level.setBlock(bank.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
                 helper.succeed();
@@ -311,25 +313,230 @@ public class RepeaterGameTests implements FabricGameTest {
         });
     }
 
-    private static RepeaterBankBlockEntity configuredBank(ServerLevel level, BlockPos core, int channelOffset) {
-        BlockPos pos = core.north(); level.setBlock(pos, SimpleRadioRepeaters.BANK.defaultBlockState(), 3);
-        RepeaterBankBlockEntity bank = (RepeaterBankBlockEntity) level.getBlockEntity(pos);
+    private static RelayBlockEntity configuredRelay(ServerLevel level, BlockPos core, int channelOffset) {
+        BlockPos pos = core.north(); level.setBlock(pos, SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
+        level.setBlock(pos.above(), SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        RelayBlockEntity relay = (RelayBlockEntity) level.getBlockEntity(pos);
+        ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos.above());
+        bank.setItem(0, tunedCard(channelOffset)); relay.installCatalyst(new ItemStack(Items.GILDED_BLACKSTONE), false);
+        relay.bankChanged(); return relay;
+    }
+    private static ItemStack tunedCard(int offset) {
         ItemStack card = new ItemStack(SimpleRadioRepeaters.CARD);
         var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
-        SimpleRadioRepeaters.CARD.setFrequency(card, frequencies.incrementFrequency(frequencies.defaultFrequency(), channelOffset), Frequency.Modulation.AMPLITUDE);
-        bank.setItem(0, card); bank.setItem(9, new ItemStack(Items.GILDED_BLACKSTONE));
-        return bank;
+        SimpleRadioRepeaters.CARD.setFrequency(card, frequencies.incrementFrequency(frequencies.defaultFrequency(), offset), Frequency.Modulation.AMPLITUDE);
+        return card;
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 50)
+    public void missing_card_bank_invalidates_saved_relay_without_loading_it(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos); bank.setItem(0, tunedCard(101));
+        TowerManager manager = TowerManager.get(level.getServer()); UUID id = UUID.randomUUID();
+        BlockPos remote = pos.offset(20000, 0, 0); check(!level.hasChunkAt(remote), "Saved Relay fixture must be unloaded");
+        TowerRecord record = new TowerRecord(id, level.dimension().location().toString(), remote,
+                Set.of(bank.cardStates().get(0).channel()), true, true, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
+        manager.updateSnapshot(record);
+        helper.runAfterDelay(3, () -> {
+            check(manager.isEligible(id), "Matching Bank identity must preserve the saved Relay");
+            var chunk = level.getChunkAt(pos); chunk.removeBlockEntity(pos);
+            chunk.getSection(chunk.getSectionIndex(pos.getY())).setBlockState(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15, Blocks.AIR.defaultBlockState());
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
+            helper.runAfterDelay(3, () -> {
+                TowerRecord cleared = manager.snapshot(id);
+                check(cleared != null && !cleared.eligible() && cleared.cardBank() == null && cleared.channels().isEmpty(),
+                        "Absent Bank must disable a saved Relay even when its own chunk is unloaded");
+                check(cleared.antennaScore() == 32 && !level.hasChunkAt(remote), "Controller checks must retain antenna metadata without loading the Relay");
+                check(TowerRecord.load(cleared.save()).equals(cleared), "Controller removal must survive saving");
+                manager.removeAt(record.dimension(), remote); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void stale_relay_nbt_cannot_restore_a_removed_bank(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RelayBlockEntity relay = configuredRelay(level, core, 102);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); CompoundTag old = relay.saveWithoutMetadata();
+            ChannelBankBlockEntity bank = relay.findAssignedBank();
+            level.getChunkAt(relay.getBlockPos()).removeBlockEntity(relay.getBlockPos());
+            level.setBlock(bank.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+            check(!manager.isEligible(relay.relayId()) && manager.snapshot(relay.relayId()).cardBank() == null,
+                    "Removing a Bank must immediately clear its saved Relay configuration");
+            RelayBlockEntity restored = new RelayBlockEntity(relay.getBlockPos(), relay.getBlockState()); restored.load(old); level.setBlockEntity(restored);
+            helper.runAfterDelay(3, () -> {
+                check(restored.cardBank() == null && restored.channels().isEmpty() && !manager.isEligible(restored.relayId()),
+                        "Older Relay NBT must not revive a removed controller");
+                level.setBlock(restored.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void card_bank_entity_loading_preserves_configuration(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RelayBlockEntity relay = configuredRelay(level, core, 103);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); TowerRecord saved = manager.snapshot(relay.relayId());
+            ChannelBankBlockEntity bank = relay.findAssignedBank(); CompoundTag tag = bank.saveWithoutMetadata();
+            var chunk = level.getChunkAt(bank.getBlockPos()); chunk.removeBlockEntity(bank.getBlockPos());
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
+            helper.runAfterDelay(8, () -> {
+                check(saved.equals(manager.snapshot(relay.relayId())) && manager.isEligible(relay.relayId()),
+                        "A Bank block awaiting entity data must retain the verified channel cache");
+                ChannelBankBlockEntity restored = new ChannelBankBlockEntity(bank.getBlockPos(), bank.getBlockState()); restored.load(tag); level.setBlockEntity(restored);
+                helper.runAfterDelay(8, () -> {
+                    check(saved.equals(manager.snapshot(relay.relayId())), "Matching Bank identity must recover without a toggle");
+                    ChannelBankBlockEntity copy = new ChannelBankBlockEntity(bank.getBlockPos(), bank.getBlockState()); copy.load(restored.getUpdateTag());
+                    RelayBlockEntity relayCopy = new RelayBlockEntity(relay.getBlockPos(), relay.getBlockState()); relayCopy.load(relay.getUpdateTag());
+                    check(copy.cardStates().equals(restored.cardStates()) && copy.getUpdatePacket() != null,
+                            "Client update data must include card presence, frequency and modulation");
+                    check(relayCopy.hasCatalyst() && relayCopy.getAntennaPower() == relay.getAntennaPower()
+                            && relayCopy.displayStatus() == relay.displayStatus() && relayCopy.displayPeers() == relay.displayPeers(),
+                            "Client update data must include the catalyst and live screen values");
+                    level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+                });
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void six_card_interactions_target_the_visible_card_in_every_direction(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        var player = helper.makeMockPlayer(); player.getAbilities().instabuild = false;
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
+            ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos); bank.clearContent();
+            for (int i = 0; i < 6; i++) {
+                ItemStack held = tunedCard(110 + i); check(bank.insert(held, false) && held.isEmpty(), "Card insertion must consume exactly one item");
+            }
+            ItemStack extra = tunedCard(120); check(!bank.insert(extra, false) && extra.getCount() == 1, "A full Bank must preserve the held card");
+            net.minecraft.world.phys.Vec3 local = switch (facing) {
+                case EAST -> new net.minecraft.world.phys.Vec3(1, 3.0 / 16, 12.0 / 16);
+                case SOUTH -> new net.minecraft.world.phys.Vec3(4.0 / 16, 3.0 / 16, 1);
+                case WEST -> new net.minecraft.world.phys.Vec3(0, 3.0 / 16, 4.0 / 16);
+                default -> new net.minecraft.world.phys.Vec3(12.0 / 16, 3.0 / 16, 0);
+            };
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            var hit = new net.minecraft.world.phys.BlockHitResult(local.add(pos.getX(), pos.getY(), pos.getZ()), facing, pos, false);
+            SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            check(bank.getItem(4).isEmpty() && !bank.getItem(0).isEmpty() && !bank.getItem(5).isEmpty(),
+                    "Clicking the bottom-left card must eject that card regardless of facing");
+        }
+        helper.succeed();
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void saved_record_round_trip(GameTestHelper helper) {
         TowerRecord record = new TowerRecord(UUID.randomUUID(), helper.getLevel().dimension().location().toString(),
                 new BlockPos(9000, 80, 9000), Set.of(new ChannelKey("123.4", "AM"), new ChannelKey("123.4", "FM")),
-                true, true, true, 12, Set.of(new BlockPos(9000, 80, 9000).asLong()));
+                true, true, true, 12, Set.of(new BlockPos(9000, 80, 9000).asLong()), new CardBankRef(new BlockPos(9000, 81, 9000), UUID.randomUUID()));
         check(record.equals(TowerRecord.load(record.save())), "Saved tower metadata must round-trip without merging AM/FM");
         TowerSavedData data = new TowerSavedData(); data.towers.put(record.id(), record);
         TowerSavedData restored = TowerSavedData.load(data.save(new CompoundTag()));
         check(restored.towers.get(record.id()).equals(record), "Whole network store must restore unchanged"); helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 50)
+    public void changed_card_bank_identity_retires_the_saved_binding(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos);
+        bank.setItem(0, tunedCard(99));
+        BlockPos remote = pos.offset(20000, 0, 0); UUID id = UUID.randomUUID();
+        TowerManager manager = TowerManager.get(level.getServer());
+        TowerRecord record = new TowerRecord(id, level.dimension().location().toString(), remote,
+                Set.of(bank.cardStates().get(0).channel()), true, true, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
+        manager.updateSnapshot(record);
+        helper.runAfterDelay(3, () -> {
+            check(manager.isEligible(id), "Matching Bank identity must remain eligible");
+            var chunk = level.getChunkAt(pos); chunk.removeBlockEntity(pos);
+            ChannelBankBlockEntity replacement = new ChannelBankBlockEntity(pos, bank.getBlockState());
+            check(!replacement.bankId().equals(bank.bankId()), "Replacement must have a different identity"); level.setBlockEntity(replacement);
+            ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, chunk);
+            helper.runAfterDelay(3, () -> {
+                check(!manager.isEligible(id) && manager.snapshot(id).cardBank() == null,
+                        "A different Bank at the same position must retire the old saved binding");
+                check(!level.hasChunkAt(remote), "Identity reconciliation must not load the Relay");
+                manager.removeAt(record.dimension(), remote); helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void bank_connection_prefers_the_relay_below_and_never_shares_cards(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(3, 3, 3));
+        level.setBlock(pos.below(), SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
+        level.setBlock(pos.north(), SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
+        level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        RelayBlockEntity below = (RelayBlockEntity) level.getBlockEntity(pos.below());
+        RelayBlockEntity side = (RelayBlockEntity) level.getBlockEntity(pos.north());
+        ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos); bank.setItem(0, tunedCard(125));
+        below.bankChanged(); side.bankChanged();
+        check(bank.relay() == below && below.findAssignedBank() == bank && side.findAssignedBank() == null,
+                "A Bank must prefer the Relay below and belong to only one Relay");
+        check(below.channels().size() == 1 && side.channels().isEmpty(), "Unassigned Relays must not use the Bank's cards");
+        level.setBlock(pos.below(), Blocks.AIR.defaultBlockState(), 3); side.bankChanged();
+        check(bank.relay() == side && side.channels().size() == 1 && !bank.getItem(0).isEmpty(),
+                "A remaining adjacent Relay must attach after the preferred owner is removed"); helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void relay_direct_catalyst_clicks_have_no_inventory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(pos, SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
+        RelayBlockEntity relay = (RelayBlockEntity) level.getBlockEntity(pos); var player = helper.makeMockPlayer();
+        player.getAbilities().instabuild = false;
+        var hand = net.minecraft.world.InteractionHand.MAIN_HAND;
+        var hit = new net.minecraft.world.phys.BlockHitResult(pos.getCenter(), Direction.NORTH, pos, false);
+        ItemStack held = new ItemStack(Items.GILDED_BLACKSTONE, 2); player.setItemInHand(hand, held);
+        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
+        check(held.getCount() == 1 && relay.hasCatalyst(), "Right-click must insert exactly one catalyst");
+        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
+        check(held.getCount() == 1, "An occupied socket must leave the held catalyst alone");
+        player.setItemInHand(hand, ItemStack.EMPTY); player.setShiftKeyDown(true);
+        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
+        check(!relay.enabled() && relay.hasCatalyst(), "Sneaking must toggle power without ejecting the catalyst");
+        player.setShiftKeyDown(false);
+        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
+        check(!relay.hasCatalyst() && player.getInventory().contains(new ItemStack(Items.GILDED_BLACKSTONE)), "An empty-hand click must return the catalyst");
+        check(!relay.saveWithoutMetadata().contains("Items") && !((Object) relay instanceof net.minecraft.world.Container),
+                "Catalyst interaction must not require a Relay inventory"); helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void bank_edits_while_relay_unloaded_override_old_relay_nbt(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RelayBlockEntity relay = configuredRelay(level, core, 126);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer()); ChannelBankBlockEntity bank = relay.findAssignedBank();
+            CompoundTag oldRelay = relay.saveWithoutMetadata();
+            level.getChunkAt(relay.getBlockPos()).removeBlockEntity(relay.getBlockPos());
+            bank.removeItem(0, 1);
+            check(!manager.isEligible(relay.relayId()) && manager.snapshot(relay.relayId()).channels().isEmpty(),
+                    "Editing a loaded Bank must immediately update its unloaded Relay's saved channels");
+            CompoundTag emptyBank = bank.saveWithoutMetadata();
+            level.getChunkAt(bank.getBlockPos()).removeBlockEntity(bank.getBlockPos());
+            RelayBlockEntity restored = new RelayBlockEntity(relay.getBlockPos(), relay.getBlockState()); restored.load(oldRelay); level.setBlockEntity(restored);
+            helper.runAfterDelay(5, () -> {
+                check(restored.channels().isEmpty() && !manager.isEligible(restored.relayId()),
+                        "Old Relay NBT must not restore removed cards while the Bank's entity is still loading");
+                ChannelBankBlockEntity restoredBank = new ChannelBankBlockEntity(bank.getBlockPos(), bank.getBlockState());
+                restoredBank.load(emptyBank); level.setBlockEntity(restoredBank);
+                helper.runAfterDelay(5, () -> {
+                    check(restored.channels().isEmpty() && !manager.isEligible(restored.relayId()), "Restoring the empty Bank must keep the channel inactive");
+                    level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+                });
+            });
+        });
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)

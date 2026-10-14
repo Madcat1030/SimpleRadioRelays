@@ -1,109 +1,66 @@
-# Simple Radio Repeaters 0.1.3
+# Simple Radio Repeaters 0.2.0
 
-A Fabric 1.20.1 addon for Simple Radio, adding a nine-channel Repeater Bank and Frequency Cards. Configured stationary towers continue relaying through saved records when their chunks unload. The addon does not keep tower chunks loaded.
+A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-## Full documentation
+**0.2.0 starts fresh.** Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
-Read the [gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) for setup, radio-power and audio-quality rules, persistence, and a detailed reference to every code module. A [PDF edition](docs/Simple-Radio-Repeaters-0.1.3-Documentation.pdf) is included for reading and printing.
+## Install
 
-## Installation
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.0.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
-Replace the previous addon jar with `simple-radio-repeaters-fabric-1.20.1-0.1.3.jar` in the `mods` folder on the server and every client. Keep only one version of the addon installed. Existing banks, cards and saved network records are retained.
+- Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
+- Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
+- Simple Voice Chat 1.20.1-2.6.0+.
 
-Version 0.1.3 removes stale saved relays when a loaded chunk no longer contains their bank, or when a restored bank has a different identity. It checks saved positions at chunk load, at startup for chunks already loaded, and when `/radiorepeaters refresh` runs. Deletions are persisted and cached routes are invalidated. Unloaded towers remain available; no chunks are loaded by these checks. A bank whose block-entity data is still restoring retains its record until its identity can be checked.
+The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18. No additional chunk loader, voice-chat port or resource pack is required.
 
-The 0.1.2 menu refresh correction and 0.1.1 wired-core restoration remain in place. The bank still uses the nine-slot GUI; the six-card model is a separate design project for a future interface.
+## Build a tower
 
-Required environment:
+1. Build the normal antenna on its core, including a native copper-wire extension if needed.
+2. Place a Radio Relay against a horizontal side of the core, facing outward.
+3. Place a Repeater Bank directly above it. The Bank copies the Relay's facing and plugs into its top ports.
+4. Tune Frequency Cards in the native radiosmithing station and right-click the Bank to insert them.
+5. Right-click the Relay with gilded blackstone. Wait for a positive `ANT` score and `READY`.
 
-- Minecraft **1.20.1**, Fabric Loader **0.19.0 or later**, Java **17 or later**.
-- **Simple Radio 1.20.1-4.5.7.9**, exactly. This build does not support Simple Radio 3.4.6.
-- Simple Voice Chat **1.20.1-2.6.0 or later**. Development checks use 2.6.18.
-- Fabric API, and Simple Radio's Lexiconfig dependency **1.4.x**. Development checks use Fabric API 0.92.5+1.20.1 and Lexiconfig 1.4.21-epic.
+The Bank has two columns of three slots. Right-click an occupied card with an empty hand to remove that card. Clicking an empty slot does nothing; clicking elsewhere returns the first occupied card. On the Relay, an empty-hand click removes the catalyst; sneak + empty-hand toggles power. Unsupported items and no-op clicks do not restart antenna verification.
 
-Keep the main mods installed. No additional voice-chat port, plugin, resource pack or chunk loader is required.
+The Relay uses one adjacent Bank, preferably above it. A Bank belongs to one Relay. Side and bottom adjacency work electrically, but the model's connector pins are designed for stacking. Duplicate cards select a channel once. AM and FM remain distinct.
 
-[Simple Radio reference release](https://modrinth.com/mod/simple-radio/version/f9TIjf7X)
+## Radio behavior
 
-## First tower
+A handheld must reach an entry Relay using its own transmitter. Every Relay departure uses that tower's full RF power, while audio retains the worst interference along the selected path. The final wireless leg can degrade it further. Hearing a strong tower broadcast does not guarantee that a distant handheld can reply.
 
-1. Build the usual Simple Radio antenna on a solid core block.
-2. Place the Repeater Bank against a horizontal side of that core. Clicking the core's side makes the bank face outward, with the core behind it.
-3. Craft a Frequency Card and put it in the existing radiosmithing station. Select the same frequency and AM/FM modulation as your handhelds, then press Apply.
-4. Open the bank and put the card in one of the nine channel slots.
-5. Put one **gilded blackstone** in the catalyst slot. It is not consumed while relaying.
-6. Leave the bank Enabled. The panel should say **Ready to relay**, show a positive antenna score and light the bank's front indicator green.
+Verified towers continue relaying from saved records while unloaded. Routing, attachment and reconciliation do not force missing chunks to load. Wired-core reloads retain their last verified antenna while native insulators and wires restore. Missing or replaced Relays and Banks are reconciled when their chunks become available, preventing persistent ghost connections.
 
-Blank cards stay inactive until Apply is pressed. Matching numeric frequencies on AM and FM are separate channels. Duplicate matching cards count as one channel and do not add range or extra copies of the voice.
+`ANT` is native antenna strength. `LINK` counts distinct outgoing tower neighbors across the selected channels, not players or all towers in a chain. The screen also shows pending verification, missing components and disabled status.
 
-The repeater needs no microphone, speaker, receiver or transmitter block attached separately. Existing microphone/transmitter and receiver/speaker stations can participate through their normal radios.
+## Documentation and editable models
 
-## More towers
+- [Gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md): setup, controls, RF behavior, persistence, configuration and code reference.
+- [Model editing guide](art/Model-Editing-Guide.md): Blockbench groups, exact coordinates, partial exports and Java text placement.
+- `art/blockbench/Relay.bbmodel` and `Repeater-Bank.bbmodel`: editable Java Block/Item projects with embedded 16×16 textures.
+- `art/Repeater-Bank-0.2.0-Native-Preview.png`: actual Minecraft model/font rendering, including empty and occupied states.
 
-Put matching cards in the other banks. Each tower only needs to reach its neighbours under Simple Radio's radio rules; the first and last towers do not need to reach one another. Chains, branches and rings are supported. The addon chooses one direct or repeated delivery per receiver and prevents circulating copies of the same frame.
+The master models show inserted components in separate groups. Those components are excluded from the base runtime models and rendered only when present. `art/make_assets.py` reproduces the original supplied assets; do not rerun it over hand edits.
 
-Use a second card in each relevant bank for another channel. A single antenna can serve up to nine distinct frequency/modulation pairs in one bank.
+## Commands and configuration
 
-A handheld must successfully transmit to an entry tower. Hearing the tower's stronger outgoing broadcast does not guarantee a return link. Antenna score is a structure-strength value, not a universal block-range display. The addon uses the main mod's configured power, attenuation and reception settings.
+`/radiorepeaters status` shows counts and packet counters. `/radiorepeaters list` and `/radiorepeaters refresh` require operator level 2. Refresh checks saved component positions in loaded chunks and rechecks loaded antennas.
 
-Weak incoming audio stays weak after amplification; a repeater refreshes RF power while retaining the worst interference on the selected path.
+The server config is `config/simpleradio-repeaters.json`, with defaults `maxRelayHops: 64`, `persistentUnloadedTowers: true` and `requireCatalyst: true`. Restart after edits. The new saved network is `data/simpleradio_repeaters_relays.dat` in the overworld; the 0.1.x network store is ignored.
 
-## Unloaded towers
+## Build and verification
 
-A verified bank is saved with its position, channels, enabled state, catalyst presence and antenna score. It remains part of the network when nobody is nearby and its chunk unloads. The records survive a server restart without loading every tower.
-
-Loading the bank again starts verification while retaining its last verified configuration. The addon gives native insulators and copper-wire connections time to restore, and waits for the previous antenna dependencies and their entity data to become available. A temporary zero-strength result cannot replace a verified antenna immediately. Pending verification retries automatically every 200 ticks (about ten seconds); a confirmed zero requires two completed scans at least 200 ticks apart. A valid restored connection refreshes the saved strength without an enable toggle.
-
-Destroying or disabling the bank removes it from routing. While the bank is unloaded, its verified antenna snapshot remains authoritative. Once loaded, native antenna dirty notifications and manual refresh request verification. A genuinely missing antenna or extension stops relaying after confirmation. Chunk-load reconciliation separately removes a saved record if its bank itself is absent; this does not require an antenna scan. The addon does not force-load chunks and does not change the base mod's wire-cut or antenna-base dirty-notification behaviour.
-
-The broad neighbouring-block invalidation watcher has been removed. Nearby door, crop and redstone changes no longer invalidate unloaded tower records.
-
-Actual microphones, physical speakers and player radios still use the main mod's live endpoints. This release supports stationary installations and keeps relay networks within one dimension. Existing direct cross-dimension behavior is left to the main mod's settings.
-
-## Useful checks
-
-- `/radiorepeaters status` — configured, ready, loaded and saved tower counts; network packet counters.
-- `/radiorepeaters list` — tower positions, saved/live status, antenna scores and channels. Requires operator level 2.
-- `/radiorepeaters refresh` — reconcile saved bank positions in loaded chunks and recheck loaded antennas without loading remote ones. Requires operator level 2.
-
-For the first voice test, use two players too far apart to hear each other's handhelds directly, with both able to reach one tower. Check both directions. Then test a tower chain and repeat after leaving the middle towers' chunks unloaded.
-
-If the bank says **No connected antenna**, check the core behind the bank and the antenna above that core or its copper-wire extension. **Relaying; checking antenna** means the verified snapshot remains active during restoration. **Waiting for antenna connection** means verification is pending and no eligible snapshot is currently available. If voice passes directly but fails through towers, check both frequency and modulation, catalyst, Enabled state and handheld uplink distance.
-
-## Server configuration
-
-The first launch creates `config/simpleradio-repeaters.json`:
-
-```json
-{
-  "maxRelayHops": 64,
-  "persistentUnloadedTowers": true,
-  "requireCatalyst": true
-}
-```
-
-Restart after changing these settings. `persistentUnloadedTowers: false` makes unloaded towers unavailable. Turning off the catalyst requirement permits banks without gilded blackstone. Main-mod power settings still determine radio reach and quality. The old `antennaRefreshTicks` setting is replaced by the fixed pending-verification interval of 200 ticks.
-
-Saved network data is part of the world save, in the overworld's `data/simpleradio_repeaters_towers.dat`. Normal bank inventory/settings are also saved in their block entities.
-
-## Build from source
-
-Use JDK **21** for the Gradle/Loom toolchain. The addon compiles to Java **17** bytecode.
+Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 
 ```sh
 ./gradlew build
 ./gradlew runGameTest
+./gradlew runBaseGameTest
 ```
 
-On Windows, use `gradlew.bat`. Output jars are under `build/libs`; the file ending in `-sources.jar` is source code, not the installable addon. The included game tests use Fabric's headless test environment and synthetic packet data; they do not capture microphones.
+All 16 unit tests and 19 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.0/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. Native client review verifies actual model loading, conditional parts, labels and all four facing states.
 
-## Verification
+Four upstream Simple Radio tests fail in the addon-disabled baseline too: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The combined GameTest task therefore exits nonzero for those failures; addon regressions are reported separately. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 
-- Verification results for this revision are recorded in `validation/build-verification.json`.
-- Routing tests cover range, directed links, branches, rings, hop limits, interference and duplicate-frame handling. Verification-policy tests cover settling, transient zero results, retry timing, restoration and confirmed removal.
-- Minecraft game tests cover native card tuning, native antenna scanning and bank inventory, saved-record serialization, saved-tower packet routing, a real copper-wire extension that restores after bank reload, confirmed wire removal, preservation of snapshots during partial loading without forcing chunks, real menu clicks that leave configuration unchanged, and four chunk-reconciliation regressions. The new regressions cover section edits that bypass normal block removal, persistent deletion and route-cache invalidation, restored identity mismatch, delayed block-entity data, and checking already-loaded chunks without forcing remote chunks to load. The menu regression also checks real card/catalyst/power changes and in-place card retuning.
-- The seven included Simple Radio game tests were also run with the addon disabled in the preceding controls. The same three passed and the same four failed with and without the addon: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four fail in this revision. The combined game-test command therefore exits with a failure even though all eleven addon tests pass. Reports are under `run/gametest/reports` and `run/baseline/reports`; `./gradlew runBaseGameTest` runs the comparison.
-
-The user's in-game voice tests established the working A/B/C relay arrangement and confirmed the 0.1.1 wired-core reload correction. Version 0.1.3 changes saved-bank reconciliation; it does not change radio power, interference, channel bridging or playback. The wired-core reload correction remains covered by its Minecraft regression test. `/radiorepeaters status` shows whether the bank's record remains eligible.
-
-Licensed GPL-3.0-only. The source project includes its license; required third-party mods are distributed separately by their authors.
+The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.0. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.

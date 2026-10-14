@@ -1,0 +1,89 @@
+package dev.paul.simpleradiorepeaters.client;
+
+import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.math.Axis;
+import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
+import dev.paul.simpleradiorepeaters.block.*;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.*;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.*;
+import java.io.File;
+
+/** Temporary native-renderer QA harness, removed before the release build. */
+final class ModelPreviewQa extends Screen {
+    private int frames;
+    private ModelPreviewQa() { super(Component.literal("Repeater models")); }
+    static void install() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.getOverlay() == null && !(client.screen instanceof ModelPreviewQa)) client.setScreen(new ModelPreviewQa());
+        });
+    }
+    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        if (Boolean.getBoolean("repeaters.facingQa")) { facingPreview(graphics); return; }
+        graphics.fill(0, 0, width, height, 0xff161e21);
+        graphics.drawString(font, "SIMPLE RADIO REPEATERS / 0.2.0", 48, 36, 0xffbed1c5, false);
+        graphics.drawString(font, "Native Minecraft models, textures and live text renderer", 48, 58, 0xff8d9e99, false);
+        scene(graphics, width * .28, height * .67, 165, true, true, false, Direction.NORTH);
+        scene(graphics, width * .67, height * .44, 125, false, false, false, Direction.NORTH);
+        scene(graphics, width * .86, height * .44, 125, false, true, false, Direction.NORTH);
+        scene(graphics, width * .67, height * .83, 125, false, false, true, Direction.NORTH);
+        scene(graphics, width * .86, height * .83, 125, false, true, true, Direction.NORTH);
+        graphics.drawCenteredString(font, "Assembled: Relay + six-card Bank", (int)(width * .28), (int)(height * .89), 0xffb4c8bd);
+        graphics.drawCenteredString(font, "Relay / empty", (int)(width * .67), (int)(height * .50), 0xffb4c8bd);
+        graphics.drawCenteredString(font, "Relay / catalyst", (int)(width * .86), (int)(height * .50), 0xffb4c8bd);
+        graphics.drawCenteredString(font, "Bank / empty", (int)(width * .67), (int)(height * .88), 0xffb4c8bd);
+        graphics.drawCenteredString(font, "Bank / six cards", (int)(width * .86), (int)(height * .88), 0xffb4c8bd);
+        graphics.flush();
+        if (++frames == 30) Screenshot.grab(new File("."), "Repeater-Bank-0.2.0-Native-Preview.png", minecraft.getMainRenderTarget(), message -> {
+            SimpleRadioRepeaters.LOGGER.info("MODEL_QA screenshot: {}", message.getString()); minecraft.stop();
+        });
+    }
+    private void facingPreview(GuiGraphics graphics) {
+        graphics.fill(0, 0, width, height, 0xff161e21);
+        graphics.drawString(font, "RELAY + BANK / FOUR FACING STATES / NATIVE RENDERER", 48, 36, 0xffbed1c5, false);
+        Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+        for (int i = 0; i < 4; i++) {
+            double x = width * (.16 + i * .23);
+            scene(graphics, x, height * .80, 190, true, true, false, directions[i]);
+            graphics.drawCenteredString(font, directions[i].getName().toUpperCase(), (int)x, (int)(height * .82), 0xffb4c8bd);
+        }
+        graphics.flush();
+        if (++frames == 30) Screenshot.grab(new File("."), "Repeater-Bank-0.2.0-Facing-QA.png", minecraft.getMainRenderTarget(), message -> minecraft.stop());
+    }
+    private void scene(GuiGraphics graphics, double cx, double cy, float scale, boolean assembled, boolean loaded, boolean bankOnly, Direction facing) {
+        var pose = graphics.pose(); pose.pushPose(); pose.translate(cx, cy, 250);
+        float facingView = switch (facing) { case EAST -> 90; case SOUTH -> 180; case WEST -> -90; default -> 0; };
+        boolean frontal = Boolean.getBoolean("repeaters.facingQa");
+        pose.scale(scale, -scale, scale); pose.mulPose(Axis.XP.rotationDegrees(frontal ? 0 : 25)); pose.mulPose(Axis.YP.rotationDegrees((frontal ? 180 : 225) + facingView));
+        pose.translate(-.5, 0, -.5); Lighting.setupFor3DItems();
+        if (!bankOnly) {
+            var state = SimpleRadioRepeaters.RELAY.defaultBlockState().setValue(RelayBlock.FACING, facing).setValue(RelayBlock.ACTIVE, loaded);
+            RelayBlockEntity relay = new RelayBlockEntity(BlockPos.ZERO, state);
+            CompoundTag tag = new CompoundTag(); tag.putInt("AntennaScore", loaded ? 32 : 0); tag.putInt("DisplayStatus", loaded ? 0 : 2);
+            tag.putInt("DisplayPeers", loaded ? 3 : 0); tag.putBoolean("Enabled", true);
+            if (loaded) tag.put("Catalyst", new ItemStack(Items.GILDED_BLACKSTONE).save(new CompoundTag())); relay.load(tag);
+            minecraft.getBlockRenderer().renderSingleBlock(state, pose, graphics.bufferSource(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            minecraft.getBlockEntityRenderDispatcher().getRenderer(relay).render(relay, 0, pose, graphics.bufferSource(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        }
+        if (assembled || bankOnly) {
+            pose.pushPose(); if (assembled) pose.translate(0, 1, 0);
+            var state = SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing).setValue(ChannelBankBlock.CONNECTED, assembled);
+            ChannelBankBlockEntity bank = new ChannelBankBlockEntity(BlockPos.ZERO, state);
+            if (loaded) for (int i = 0; i < 6; i++) {
+                ItemStack card = new ItemStack(SimpleRadioRepeaters.CARD); card.getOrCreateTag().putString("frequency", String.format("000.%02d", i + 1));
+                card.getTag().putString("modulation", i % 2 == 0 ? "AM" : "FM"); bank.setItem(i, card);
+            }
+            minecraft.getBlockRenderer().renderSingleBlock(state, pose, graphics.bufferSource(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            minecraft.getBlockEntityRenderDispatcher().getRenderer(bank).render(bank, 0, pose, graphics.bufferSource(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            pose.popPose();
+        }
+        graphics.flush(); pose.popPose();
+    }
+}

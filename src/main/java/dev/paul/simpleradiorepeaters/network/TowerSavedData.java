@@ -6,7 +6,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import java.util.*;
 
 public final class TowerSavedData extends SavedData {
-    public static final String NAME = "simpleradio_repeaters_towers";
+    // The split hardware intentionally starts a fresh network; 0.1.x records are not imported.
+    public static final String NAME = "simpleradio_repeaters_relays";
     public final Map<UUID, TowerRecord> towers = new HashMap<>();
     public static TowerSavedData load(CompoundTag tag) {
         TowerSavedData data = new TowerSavedData(); ListTag nodes = tag.getList("Towers", Tag.TAG_COMPOUND);

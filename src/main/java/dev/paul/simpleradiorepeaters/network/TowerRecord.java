@@ -6,17 +6,25 @@ import dev.paul.simpleradiorepeaters.RepeatersConfig;
 import java.util.*;
 
 public record TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
-                          boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint) {
+                          boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint, CardBankRef cardBank) {
     public TowerRecord { position = position.immutable(); channels = Set.copyOf(channels); footprint = Set.copyOf(footprint); }
+    public TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
+                       boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint) {
+        this(id, dimension, position, channels, enabled, catalyst, verified, antennaScore, footprint, null);
+    }
     public boolean eligible() { return enabled && (!RepeatersConfig.INSTANCE.requireCatalyst || catalyst) && verified && antennaScore > 0 && !channels.isEmpty(); }
     public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, boolean catalyst) {
-        return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint);
+        return settings(selected, enabled, catalyst, cardBank);
     }
-    public TowerRecord invalidate() { return new TowerRecord(id, dimension, position, channels, enabled, catalyst, false, antennaScore, footprint); }
+    public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, boolean catalyst, CardBankRef controller) {
+        return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint, controller);
+    }
+    public TowerRecord invalidate() { return new TowerRecord(id, dimension, position, channels, enabled, catalyst, false, antennaScore, footprint, cardBank); }
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag(); tag.putUUID("Id", id); tag.putString("Dimension", dimension); tag.putLong("Position", position.asLong());
         tag.putBoolean("Enabled", enabled); tag.putBoolean("Catalyst", catalyst); tag.putBoolean("Verified", verified); tag.putInt("Score", antennaScore);
         tag.putLongArray("Footprint", footprint.stream().mapToLong(Long::longValue).toArray());
+        if (cardBank != null) { tag.putLong("CardBankPosition", cardBank.position().asLong()); tag.putUUID("CardBankId", cardBank.id()); }
         ListTag selected = new ListTag(); channels.stream().sorted().forEach(channel -> selected.add(channel.save())); tag.put("Channels", selected); return tag;
     }
     public static TowerRecord load(CompoundTag tag) {
@@ -24,7 +32,9 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
         Set<ChannelKey> channels = new TreeSet<>(); ListTag list = tag.getList("Channels", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) { ChannelKey key = ChannelKey.from(list.getCompound(i)); if (key != null) channels.add(key); }
         Set<Long> footprint = new HashSet<>(); for (long pos : tag.getLongArray("Footprint")) footprint.add(pos);
+        CardBankRef controller = tag.hasUUID("CardBankId") && tag.contains("CardBankPosition", Tag.TAG_LONG)
+                ? new CardBankRef(BlockPos.of(tag.getLong("CardBankPosition")), tag.getUUID("CardBankId")) : null;
         return new TowerRecord(tag.getUUID("Id"), tag.getString("Dimension"), BlockPos.of(tag.getLong("Position")), channels,
-                tag.getBoolean("Enabled"), tag.getBoolean("Catalyst"), tag.getBoolean("Verified"), Math.max(0, tag.getInt("Score")), footprint);
+                tag.getBoolean("Enabled"), tag.getBoolean("Catalyst"), tag.getBoolean("Verified"), Math.max(0, tag.getInt("Score")), footprint, controller);
     }
 }

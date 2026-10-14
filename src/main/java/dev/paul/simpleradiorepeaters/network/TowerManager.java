@@ -21,7 +21,7 @@ public final class TowerManager {
     private record ChunkKey(String dimension, long position) {}
     private final MinecraftServer server;
     private final TowerSavedData data;
-    private final Map<UUID, RepeaterBankBlockEntity> loaded = new HashMap<>();
+    private final Map<UUID, RelayBlockEntity> loaded = new HashMap<>();
     private final Map<Scope, Network> networks = new HashMap<>();
     private final Map<ChunkKey, Set<UUID>> towersByChunk = new HashMap<>();
     private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
@@ -53,17 +53,24 @@ public final class TowerManager {
         TowerRecord old = data.towers.get(node.id()); if (node.equals(old)) return;
         if (old != null) unindex(old);
         data.towers.put(node.id(), node); data.setDirty(); networks.clear();
-        index(node); pendingChunks.add(chunkKey(node));
+        index(node); pendingChunks.addAll(chunkKeys(node));
     }
     private static ChunkKey chunkKey(TowerRecord record) {
         return new ChunkKey(record.dimension(), new ChunkPos(record.position()).toLong());
     }
+    private static Set<ChunkKey> chunkKeys(TowerRecord record) {
+        Set<ChunkKey> keys = new HashSet<>(); keys.add(chunkKey(record));
+        if (record.cardBank() != null) keys.add(new ChunkKey(record.dimension(), new ChunkPos(record.cardBank().position()).toLong()));
+        return keys;
+    }
     private void index(TowerRecord record) {
-        towersByChunk.computeIfAbsent(chunkKey(record), key -> new HashSet<>()).add(record.id());
+        for (ChunkKey key : chunkKeys(record)) towersByChunk.computeIfAbsent(key, ignored -> new HashSet<>()).add(record.id());
     }
     private void unindex(TowerRecord record) {
-        ChunkKey key = chunkKey(record); Set<UUID> ids = towersByChunk.get(key);
-        if (ids != null && ids.remove(record.id()) && ids.isEmpty()) towersByChunk.remove(key);
+        for (ChunkKey key : chunkKeys(record)) {
+            Set<UUID> ids = towersByChunk.get(key);
+            if (ids != null && ids.remove(record.id()) && ids.isEmpty()) towersByChunk.remove(key);
+        }
     }
     private void removeRecord(UUID id) {
         TowerRecord record = data.towers.remove(id); if (record == null) return;
@@ -92,48 +99,89 @@ public final class TowerManager {
             boolean retry = false;
             for (UUID id : Set.copyOf(towersByChunk.getOrDefault(key, Set.of()))) {
                 TowerRecord record = data.towers.get(id); if (record == null) continue;
-                if (!chunk.getBlockState(record.position()).is(SimpleRadioRepeaters.BANK)) {
-                    removeRecord(id);
-                    SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: bank block is absent", id, key.dimension(), record.position());
-                    continue;
+                if (chunkKey(record).equals(key)) {
+                    if (!chunk.getBlockState(record.position()).is(SimpleRadioRepeaters.RELAY)) {
+                        removeRecord(id);
+                        SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: relay block is absent", id, key.dimension(), record.position());
+                        continue;
+                    }
+                    if (!level.areEntitiesLoaded(key.position())) { retry = true; continue; }
+                    // CHECK resolves saved data without manufacturing a new identity.
+                    var entity = chunk.getBlockEntity(record.position(), LevelChunk.EntityCreationType.CHECK);
+                    if (!(entity instanceof RelayBlockEntity relay)) { retry = true; continue; }
+                    if (!relay.relayId().equals(id)) {
+                        removeRecord(id);
+                        SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: relay identity changed", id, key.dimension(), record.position());
+                        continue;
+                    }
                 }
-                if (!level.areEntitiesLoaded(key.position())) { retry = true; continue; }
-                // CHECK resolves saved block-entity data without creating a replacement bank.
-                var entity = chunk.getBlockEntity(record.position(), LevelChunk.EntityCreationType.CHECK);
-                if (!(entity instanceof RepeaterBankBlockEntity bank)) { retry = true; continue; }
-                if (!bank.bankId().equals(id)) {
-                    removeRecord(id);
-                    SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: bank identity changed", id, key.dimension(), record.position());
+                CardBankRef controller = record.cardBank();
+                if (controller != null && new ChunkPos(controller.position()).toLong() == key.position()) {
+                    if (!chunk.getBlockState(controller.position()).is(SimpleRadioRepeaters.CHANNEL_BANK)) {
+                        clearController(record);
+                        continue;
+                    }
+                    if (!level.areEntitiesLoaded(key.position())) { retry = true; continue; }
+                    var entity = chunk.getBlockEntity(controller.position(), LevelChunk.EntityCreationType.CHECK);
+                    if (!(entity instanceof ChannelBankBlockEntity bank)) { retry = true; continue; }
+                    if (!bank.bankId().equals(controller.id())) clearController(record);
+                    else controllerChanged(level, bank);
                 }
             }
             if (retry) pendingChunks.add(key);
         }
     }
-    public boolean loaded(RepeaterBankBlockEntity bank) {
-        RepeaterBankBlockEntity previous = loaded.put(bank.bankId(), bank);
-        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
-        TowerRecord saved = data.towers.get(bank.bankId());
-        if (saved != null && (!saved.position().equals(bank.getBlockPos())
-                || !saved.dimension().equals(bank.getLevel().dimension().location().toString()))) {
-            loaded.remove(bank.bankId()); bank.regenerateId(); loaded.put(bank.bankId(), bank);
-        }
-        if (previous != bank) {
-            settingsChanged(bank);
-            pendingChunks.add(new ChunkKey(bank.getLevel().dimension().location().toString(), new ChunkPos(bank.getBlockPos()).toLong()));
-        }
-        return previous != bank;
+    private void clearController(TowerRecord record) {
+        CardBankRef controller = record.cardBank(); if (controller == null) return;
+        put(record.settings(Set.of(), record.enabled(), record.catalyst(), null));
+        RelayBlockEntity relay = loaded.get(record.id());
+        if (relay != null && !relay.isRemoved()) relay.controllerRemoved(controller.position());
     }
-    public void unloaded(RepeaterBankBlockEntity bank) {
-        settingsChanged(bank); loaded.remove(bank.bankId(), bank);
+    public void controllerRemovedAt(ServerLevel level, BlockPos pos) {
+        ChunkKey key = new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong());
+        for (UUID id : Set.copyOf(towersByChunk.getOrDefault(key, Set.of()))) {
+            TowerRecord record = data.towers.get(id);
+            if (record != null && record.cardBank() != null && record.cardBank().position().equals(pos)) clearController(record);
+        }
+    }
+    /** A loaded card module can update an unloaded Relay's authoritative channel snapshot. */
+    public void controllerChanged(ServerLevel level, ChannelBankBlockEntity bank) {
+        ChunkKey key = new ChunkKey(level.dimension().location().toString(), new ChunkPos(bank.getBlockPos()).toLong());
+        Set<ChannelKey> channels = new TreeSet<>();
+        for (var card : bank.cardStates()) { ChannelKey channel = card.channel(); if (channel != null) channels.add(channel); }
+        for (UUID id : Set.copyOf(towersByChunk.getOrDefault(key, Set.of()))) {
+            TowerRecord record = data.towers.get(id); CardBankRef controller = record == null ? null : record.cardBank();
+            if (controller != null && controller.position().equals(bank.getBlockPos()) && controller.id().equals(bank.bankId())) {
+                put(record.settings(channels, record.enabled(), record.catalyst(), controller));
+                RelayBlockEntity relay = loaded.get(id); if (relay != null && !relay.isRemoved()) relay.bankChanged();
+            }
+        }
+    }
+    public boolean loaded(RelayBlockEntity relay) {
+        RelayBlockEntity previous = loaded.put(relay.relayId(), relay);
+        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
+        TowerRecord saved = data.towers.get(relay.relayId());
+        if (saved != null && (!saved.position().equals(relay.getBlockPos())
+                || !saved.dimension().equals(relay.getLevel().dimension().location().toString()))) {
+            loaded.remove(relay.relayId()); relay.regenerateId(); loaded.put(relay.relayId(), relay);
+        }
+        if (previous != relay) {
+            settingsChanged(relay);
+            pendingChunks.add(new ChunkKey(relay.getLevel().dimension().location().toString(), new ChunkPos(relay.getBlockPos()).toLong()));
+        }
+        return previous != relay;
+    }
+    public void unloaded(RelayBlockEntity relay) {
+        if (loaded.get(relay.relayId()) == relay) { settingsChanged(relay); loaded.remove(relay.relayId(), relay); }
         if (!RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
     }
-    public void settingsChanged(RepeaterBankBlockEntity bank) {
-        TowerRecord saved = data.towers.get(bank.bankId());
-        if (saved != null) put(saved.settings(bank.channels(), bank.enabled(), bank.hasCatalyst()));
+    public void settingsChanged(RelayBlockEntity relay) {
+        TowerRecord saved = data.towers.get(relay.relayId());
+        if (saved != null) put(saved.settings(relay.channels(), relay.enabled(), relay.hasCatalyst(), relay.cardBank()));
     }
-    public void publish(RepeaterBankBlockEntity bank, AntennaScanner.Result antenna) {
-        updateSnapshot(new TowerRecord(bank.bankId(), bank.getLevel().dimension().location().toString(), bank.getBlockPos(), bank.channels(),
-                bank.enabled(), bank.hasCatalyst(), true, antenna.score(), antenna.footprint()));
+    public void publish(RelayBlockEntity relay, AntennaScanner.Result antenna) {
+        updateSnapshot(new TowerRecord(relay.relayId(), relay.getLevel().dimension().location().toString(), relay.getBlockPos(), relay.channels(),
+                relay.enabled(), relay.hasCatalyst(), true, antenna.score(), antenna.footprint(), relay.cardBank()));
     }
     /** Accept a verified snapshot from a stationary tower adapter, on the server thread. */
     public void updateSnapshot(TowerRecord record) {
@@ -181,7 +229,7 @@ public final class TowerManager {
     }
     public void refreshLoaded() {
         reconcileLoadedChunks();
-        loaded.values().stream().filter(b -> !b.isRemoved()).forEach(RepeaterBankBlockEntity::markDirty);
+        loaded.values().stream().filter(b -> !b.isRemoved()).forEach(RelayBlockEntity::markDirty);
     }
     public String summary() {
         long eligible = data.towers.values().stream().filter(TowerRecord::eligible).count();

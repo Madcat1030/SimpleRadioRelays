@@ -1,20 +1,8 @@
 {
   "itemGroup.simpleradio_repeaters": "Simple Radio Repeaters",
-  "block.simpleradio_repeaters.repeater_bank": "Repeater Bank",
+  "block.simpleradio_repeaters.relay": "Radio Relay",
+  "block.simpleradio_repeaters.channel_bank": "Repeater Bank",
   "item.simpleradio_repeaters.frequency_card": "Frequency Card",
   "tooltip.simpleradio_repeaters.untuned": "Untuned",
-  "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then insert into a repeater bank.",
-  "screen.simpleradio_repeaters.channels": "Channels",
-  "screen.simpleradio_repeaters.catalyst": "Catalyst",
-  "screen.simpleradio_repeaters.enabled": "Enabled",
-  "screen.simpleradio_repeaters.disabled": "Disabled",
-  "screen.simpleradio_repeaters.status.0": "Ready to relay",
-  "screen.simpleradio_repeaters.status.1": "No connected antenna",
-  "screen.simpleradio_repeaters.status.2": "Add gilded blackstone",
-  "screen.simpleradio_repeaters.status.3": "Insert a tuned card",
-  "screen.simpleradio_repeaters.status.4": "Repeater disabled",
-  "screen.simpleradio_repeaters.status.5": "Waiting for antenna connection",
-  "screen.simpleradio_repeaters.status.6": "Relaying; checking antenna",
-  "screen.simpleradio_repeaters.strength": "Antenna: %s   Channels: %s",
-  "screen.simpleradio_repeaters.peers": "Tower links: %s"
+  "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then right-click a Repeater Bank to insert."
 }

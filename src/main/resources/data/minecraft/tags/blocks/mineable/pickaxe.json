@@ -1,1 +1,7 @@
-{"replace":false,"values":["simpleradio_repeaters:repeater_bank"]}
+{
+  "replace": false,
+  "values": [
+    "simpleradio_repeaters:relay",
+    "simpleradio_repeaters:channel_bank"
+  ]
+}
