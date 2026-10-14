@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.2.1
+# Simple Radio Repeaters 0.2.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-**0.2.1 retains existing 0.2.0 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+**0.2.2 retains existing 0.2.0 and 0.2.1 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
 ## Install
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.1.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.2.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -19,10 +19,10 @@ The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epi
 1. Build the normal antenna on its core, including a native copper-wire extension if needed.
 2. Place a Radio Relay against a horizontal side of the core, facing outward.
 3. Place a Repeater Bank directly above it. The Bank copies the Relay's facing and plugs into its top ports.
-4. Tune Frequency Cards in the native radiosmithing station and right-click the Bank to insert them.
+4. Tune Frequency Cards in the native radiosmithing station and right-click the Bank's front slots to insert them.
 5. Right-click the Relay with gilded blackstone. Wait for a positive `ANT` score and `READY`.
 
-The Bank has two columns of three slots. Right-click an occupied card with an empty hand to remove that card. Clicking an empty slot does nothing; clicking elsewhere returns the first occupied card. On the Relay, an empty-hand click removes the catalyst; sneak + empty-hand toggles power. Unsupported items and no-op clicks do not restart antenna verification.
+The Bank has two columns of three slots. Right-click a front slot with a card to insert it into that slot; an occupied slot leaves the held card alone. A card click elsewhere on the front fills the first available slot, starting at the top left and proceeding row by row. Card clicks on the other faces do nothing. With an empty hand, only clicking an occupied card on the front removes it. Other empty-hand clicks do nothing. On the Relay, an empty-hand click removes the catalyst; sneak + empty-hand toggles power. Unsupported items and no-op clicks do not restart antenna verification.
 
 Version 0.2.1 compares routes by audio quality, then remaining arrival power, then hop count. A nearby Relay can therefore feed a native wired receiver with a strong carrier even when a more distant exit would sound equally good. Audio retains the worst interference; RF regeneration does not clean it up.
 
@@ -63,8 +63,8 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 ./gradlew runBaseGameTest
 ```
 
-All 16 unit tests and 23 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.1/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. New 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications.
+All 16 unit tests and 24 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.2/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
 
-Four upstream Simple Radio tests fail in the addon-disabled baseline too: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The combined GameTest task therefore exits nonzero for those failures; addon regressions are reported separately. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
+Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.2 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 
-The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.0. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.
+The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.2. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.

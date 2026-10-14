@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.2.1
+# Simple Radio Repeaters 0.2.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A separate six-card Repeater Bank selects the channels, and both blocks expose their controls and status in the world.
 
-Version 0.2.1 retains the blocks, cards, catalysts, identities and saved network from 0.2.0. Version 0.2.0 introduced a clean break from the combined 0.1.x bank. It introduces new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild existing towers using the two new blocks.
+Version 0.2.2 retains the blocks, cards, catalysts, identities and saved network from 0.2.0 and 0.2.1. It changes only the Bank's in-world card controls. Version 0.2.0 introduced a clean break from the combined 0.1.x bank. It introduced new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild 0.1.x towers using the two new blocks.
 
 ## Installation and first tower
 
@@ -12,7 +12,7 @@ Install the addon on the server and every client. Replace the previous addon JAR
 2. Place a **Radio Relay** against a horizontal side of the core. The Relay faces outward, with the core behind it.
 3. Put a **Repeater Bank** directly above the Relay. It copies the Relay's facing when placed and plugs into the two top sockets.
 4. Tune a Frequency Card in the native radiosmithing station. Select the same frequency and AM/FM modulation as the radios, then press Apply.
-5. Right-click anywhere on the Bank with the card to insert it into the first available slot.
+5. Right-click a front slot on the Bank with the card to insert it into that slot. A click elsewhere on the front fills the first available slot.
 6. Right-click anywhere on the Relay with **gilded blackstone** to install its catalyst. The catalyst is retained during use.
 7. Wait for the screen to show a positive antenna score and `READY`.
 
@@ -24,16 +24,17 @@ The Relay requires no additional microphone, speaker, receiver or transmitter bl
 
 | Block and action | Result |
 | --- | --- |
-| Bank: right-click with a Frequency Card | Insert into the first free slot; a full Bank leaves the held card alone |
-| Bank: empty-hand click on an occupied card | Return that specific card to the player's inventory |
-| Bank: empty-hand click on an empty slot | No change |
-| Bank: empty-hand click elsewhere | Return the first occupied card, starting at the top left |
+| Bank: card click on a front slot | Insert into that slot; an occupied slot leaves the held card alone |
+| Bank: card click elsewhere on the front | Insert into the first available slot; a full Bank leaves the held card alone |
+| Bank: card click on any other face | No change |
+| Bank: empty-hand click on an occupied front card | Return that specific card to the player's inventory |
+| Bank: any other empty-hand click | No change |
 | Relay: right-click with gilded blackstone | Install one catalyst if the socket is empty |
 | Relay: empty-hand right-click | Return the installed catalyst |
 | Relay: sneak + empty-hand right-click | Toggle the Relay on or off without removing its catalyst |
 | Either block: click with an unsupported item | No configuration change |
 
-Card insertion order is top left, top right, middle left, middle right, bottom left, bottom right. Returned components go into the player's inventory, or drop nearby if it is full. Breaking the Bank drops its cards and disables its saved channel binding. Breaking the Relay drops its catalyst and removes its network record; the separate Bank and its cards remain in place.
+Automatic insertion from a front click outside the slots uses top left, top right, middle left, middle right, bottom left, bottom right, skipping occupied slots. Direct slot clicks never replace a card or fall back to another slot. Survival insertion consumes one held card; creative insertion keeps the held card. Returned components go into the player's inventory, or drop nearby if it is full. Breaking the Bank drops its cards and disables its saved channel binding. Breaking the Relay drops its catalyst and removes its network record; the separate Bank and its cards remain in place.
 
 One Bank belongs to one Relay, and a Relay uses one Bank. Stacking is preferred. Side and bottom adjacency also work electrically. A Bank prefers the Relay below it, then north, east, south, west and above. A Relay prefers a Bank above it, then north, east, south, west and below. Both sides must agree on the assignment. An existing connection is retained while its other chunk or entity data is unavailable, so partial loading does not redirect the cards to another nearby Relay.
 
@@ -127,9 +128,9 @@ The tick registers the loaded instance, restores the verified antenna cache, per
 
 ### ChannelBankBlock and ChannelBankBlockEntity
 
-`ChannelBankBlock` contains the horizontal facing and connected indicator properties. Its selection shape follows the shallow rack. On placement it copies an adjacent Relay's facing. Right-clicking with a card fills the first empty slot. Empty-hand clicks use the transformed hit location to select a card; clicks outside the slot rectangles eject the first occupied card. Unsupported items and empty slots leave configuration unchanged. Client prediction checks the same occupied/free conditions as the server, while the server owns every item transfer.
+`ChannelBankBlock` contains the horizontal facing and connected indicator properties. Its selection shape follows the shallow rack. On placement it copies an adjacent Relay's facing. Its `use` handler rejects non-front hits before considering an item transfer. Front hits are transformed into the model's north-facing coordinates. With a card, a slot hit targets that slot; only hits outside the slot rectangles use `firstEmptySlot`. Occupied targets reject insertion without replacing the card or selecting another slot. With an empty hand, only an occupied slot hit removes a card. Unsupported items, empty slots and front background clicks leave configuration unchanged. Client prediction checks the same face and occupied/free conditions as the server, while the server owns every item transfer.
 
-`ChannelBankBlockEntity` is the only card container. It has exactly six one-item slots, a Bank UUID and a saved owner-position hint. The Container interface supports ordinary item handling and drops; it does not create a GUI. `CardState` snapshots distinguish physical slot presence and channel tuning from no-op writes. A real card change saves and syncs the Bank, then informs the loaded Relay or updates its saved record if the Relay is unloaded.
+`ChannelBankBlockEntity` is the only card container. It has exactly six one-item slots, a Bank UUID and a saved owner-position hint. `insert(slot, held, creative)` validates the requested slot and card before copying one item and consuming it in survival. The Container interface supports ordinary item handling and drops; it does not create a GUI. `CardState` snapshots distinguish physical slot presence and channel tuning from no-op writes. A real card change saves and syncs the Bank, then informs the loaded Relay or updates its saved record if the Relay is unloaded.
 
 The Bank rechecks attachment every ten ticks or after a relevant neighbor change. Its saved owner hint avoids claiming a different Relay while its existing owner's chunk is unavailable. Its update tag includes the actual card ItemStacks, so the client renderer can show occupied slots and the correct labels after insertion, retuning or chunk reload.
 
@@ -193,10 +194,10 @@ Use JDK 21 for the Gradle/Loom toolchain. Output bytecode targets Java 17.
 
 On Windows use `gradlew.bat`. The installable JAR is under `build/libs`; a `-sources.jar` is source code. Game tests use synthetic packet data and do not capture microphones.
 
-All 16 unit tests and 23 addon Minecraft tests passed. The release's exact results are recorded in `validation/build-verification.json`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions additionally reproduce the A/B/C native copper-wire channel bridge, the equal-quality weak-carrier failure, return delivery during reload verification, periodic recovery after missed mast notifications and scan progress during repeated build notifications. The existing regressions cover native tuning, split component persistence, direct catalyst clicks, six-card interaction in all facings, deterministic attachment, no-op clicks, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
+All 16 unit tests and 24 addon Minecraft tests passed. The release's exact results are recorded in `validation/build-verification.json` and `validation/0.2.2/`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions additionally reproduce the A/B/C native copper-wire channel bridge, the equal-quality weak-carrier failure, return delivery during reload verification, periodic recovery after missed mast notifications and scan progress during repeated build notifications. Card interaction checks exercise all six front slots out of order in all four facings, occupied-target rejection with another slot free, off-slot first-available insertion, survival and creative item handling, and no-op clicks on every non-front face and empty front backgrounds. The existing regressions cover native tuning, split component persistence, direct catalyst clicks, deterministic attachment, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
 
 The unchanged models retain the 0.2.0 native client review, which renders the empty and occupied hardware, live labels and four facing states through Minecraft's actual model and font pipeline. This verifies asset loading and render placement. Multiplayer voice playback and shader/resource-pack combinations still require in-game checks.
 
-Four native Simple Radio system tests also fail with the addon disabled: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The combined game-test task exits nonzero for those failures even when every addon regression passes. The baseline and combined XML reports are included so those results can be assessed separately.
+Four native Simple Radio system tests failed with the addon disabled in the 0.2.1 headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four failures occur in the 0.2.2 combined run, so the combined game-test task exits nonzero even when every addon regression passes. The earlier baseline and current combined XML reports are included so those results can be assessed separately. Their underlying cause is unresolved; they are baseline test failures in this environment, not established live-server bugs.
 
 Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.

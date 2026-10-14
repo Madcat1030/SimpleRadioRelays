@@ -52,14 +52,15 @@ public final class ChannelBankBlock extends BaseEntityBlock {
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty() && !held.is(SimpleRadioRepeaters.CARD)) return InteractionResult.PASS;
+        if (hit.getDirection() != state.getValue(FACING)) return InteractionResult.PASS;
         if (!(level.getBlockEntity(pos) instanceof ChannelBankBlockEntity bank)) return InteractionResult.PASS;
+        int slot = BankConnection.cardAt(BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation()));
         if (held.is(SimpleRadioRepeaters.CARD)) {
-            if (bank.firstEmptySlot() < 0) return InteractionResult.FAIL;
+            if (slot < 0) slot = bank.firstEmptySlot();
+            if (slot < 0 || !bank.getItem(slot).isEmpty()) return InteractionResult.FAIL;
             if (level.isClientSide) return InteractionResult.SUCCESS;
-            return bank.insert(held, player.getAbilities().instabuild) ? InteractionResult.CONSUME : InteractionResult.FAIL;
+            return bank.insert(slot, held, player.getAbilities().instabuild) ? InteractionResult.CONSUME : InteractionResult.FAIL;
         }
-        int slot = hit.getDirection() == state.getValue(FACING) ? BankConnection.cardAt(BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation())) : -1;
-        if (slot < 0) slot = bank.firstOccupiedSlot();
         if (slot < 0 || bank.getItem(slot).isEmpty()) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
         ChannelBankBlockEntity.give(player, bank.removeItem(slot, 1)); return InteractionResult.CONSUME;

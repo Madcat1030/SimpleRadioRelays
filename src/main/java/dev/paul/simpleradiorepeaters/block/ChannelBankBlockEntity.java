@@ -58,9 +58,8 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
             level.setBlock(pos, state.setValue(ChannelBankBlock.CONNECTED, connected), Block.UPDATE_CLIENTS);
     }
     public int firstEmptySlot() { for (int slot = 0; slot < 6; slot++) if (items.get(slot).isEmpty()) return slot; return -1; }
-    public int firstOccupiedSlot() { for (int slot = 0; slot < 6; slot++) if (!items.get(slot).isEmpty()) return slot; return -1; }
-    public boolean insert(ItemStack held, boolean creative) {
-        int slot = firstEmptySlot(); if (slot < 0 || !held.is(SimpleRadioRepeaters.CARD)) return false;
+    public boolean insert(int slot, ItemStack held, boolean creative) {
+        if (slot < 0 || slot >= items.size() || !items.get(slot).isEmpty() || !held.is(SimpleRadioRepeaters.CARD)) return false;
         ItemStack card = held.copy(); card.setCount(1); items.set(slot, card);
         if (!creative) held.shrink(1); setChanged(); return true;
     }

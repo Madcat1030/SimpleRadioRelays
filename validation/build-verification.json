@@ -1,43 +1,44 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
   "java_bytecode": 17,
-  "jar_sha256": "86855c1ff19e63f4e0844577815bae40a11c5e0427aff5f8c6447aea64db07de",
+  "jar_sha256": "faa4fe39530f1b16569cc13aad6be02c69014493e04017bf608b1d8704a69ef7",
+  "build": "passed",
   "unit_tests": {
     "total": 16,
     "failures": 0
   },
   "addon_minecraft_tests": {
-    "total": 23,
+    "total": 24,
     "failures": 0
   },
-  "upstream_failures": [
+  "native_baseline_failures": [
     "SystemTest.closedSystem",
     "SystemTest.garbageCollection",
     "SystemTest.openSystem",
     "SystemTest.shortCircuit"
   ],
-  "disabled_addon_failures": [
-    "SystemTest.closedSystem",
-    "SystemTest.garbageCollection",
-    "SystemTest.openSystem",
-    "SystemTest.shortCircuit"
-  ],
-  "combined_game_test_exit": 4,
-  "before_fix_regressions": [
-    "relaydiagnosticsgametests.equal_audio_quality_must_not_strand_the_wired_bridge_with_a_weak_carrier",
-    "relaydiagnosticsgametests.repeated_build_notifications_do_not_keep_postponing_the_scan",
-    "relaydiagnosticsgametests.missed_mast_notification_is_recovered_on_the_native_antenna_cycle"
-  ],
-  "confirmed_reload_packet_delivery": true,
-  "bridge_fixture": "Real native receiver/transmitter block entities and copper wire; held radio references; unloaded saved B node; synthetic encoded payload captured before speaker decoding",
+  "addon_disabled_control_version": "0.2.1",
+  "matches_previous_addon_disabled_control": true,
+  "game_test_server_exit": 4,
+  "gradle_build_and_game_test_command_exit": 1,
+  "baseline_failure_scope": "Headless test environment; root causes unresolved; not confirmed live-server bugs",
   "changes": [
-    "Equal-quality deliveries prefer higher remaining carrier power before fewer hops",
-    "Periodic loaded-antenna fallback on gameTime % 200 == 0",
-    "Pending build notifications share a settling window"
+    "Cards target the clicked front slot",
+    "Off-slot front card clicks use the first available slot",
+    "Card and empty-hand interactions are ignored on all non-front faces",
+    "Empty-hand clicks remove only the occupied front slot that was clicked"
   ],
-  "compatibility": "0.2.0 block IDs, NBT, catalysts, cards and saved network retained",
-  "rendering": "Unchanged byte-for-byte from the native-reviewed 0.2.0 client/models/assets",
+  "interaction_coverage": [
+    "All six slots inserted out of order in all four facings",
+    "Occupied targets preserve both cards even if another slot is free",
+    "First-available fallback and full-bank rejection",
+    "Survival consumes one card; creative preserves the held card",
+    "Front background, empty slot, and side/back/top/bottom no-ops"
+  ],
+  "compatibility": "0.2.0 and 0.2.1 block IDs, NBT, catalysts, cards and saved network retained",
+  "radio_network_and_antenna_code": "Unchanged byte-for-byte from 0.2.1 source",
+  "models_and_renderers": "Unchanged byte-for-byte from native-reviewed 0.2.0 assets/renderers",
   "voice_audio_playback": "Not exercised by synthetic-packet GameTests"
 }

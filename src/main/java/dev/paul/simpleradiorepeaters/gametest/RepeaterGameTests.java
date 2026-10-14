@@ -413,21 +413,93 @@ public class RepeaterGameTests implements FabricGameTest {
         for (Direction facing : Direction.Plane.HORIZONTAL) {
             level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
             ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos); bank.clearContent();
-            for (int i = 0; i < 6; i++) {
-                ItemStack held = tunedCard(110 + i); check(bank.insert(held, false) && held.isEmpty(), "Card insertion must consume exactly one item");
+            for (int slot : new int[] {5, 3, 1, 4, 2, 0}) {
+                var hit = bankFrontHit(pos, facing, slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, (13.0 - slot / 2 * 5) / 16);
+                ItemStack held = tunedCard(110 + slot); held.setCount(2);
+                player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+                var result = SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                        net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                check(result == net.minecraft.world.InteractionResult.CONSUME && held.getCount() == 1
+                                && bank.getItem(slot).getCount() == 1 && ItemStack.isSameItemSameTags(bank.getItem(slot), held),
+                        "A front-slot click must insert one matching card into that slot in every facing");
+                check(bank.getItem(0).isEmpty() == (slot != 0), "Targeted insertion must leave earlier empty slots alone");
             }
-            ItemStack extra = tunedCard(120); check(!bank.insert(extra, false) && extra.getCount() == 1, "A full Bank must preserve the held card");
-            net.minecraft.world.phys.Vec3 local = switch (facing) {
-                case EAST -> new net.minecraft.world.phys.Vec3(1, 3.0 / 16, 12.0 / 16);
-                case SOUTH -> new net.minecraft.world.phys.Vec3(4.0 / 16, 3.0 / 16, 1);
-                case WEST -> new net.minecraft.world.phys.Vec3(0, 3.0 / 16, 4.0 / 16);
-                default -> new net.minecraft.world.phys.Vec3(12.0 / 16, 3.0 / 16, 0);
-            };
+            ItemStack extra = tunedCard(120); player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, extra);
+            var blankHit = bankFrontHit(pos, facing, .5, .5);
+            check(SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, blankHit) == net.minecraft.world.InteractionResult.FAIL
+                    && extra.getCount() == 1, "An off-slot click on a full Bank must preserve the held card");
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-            var hit = new net.minecraft.world.phys.BlockHitResult(local.add(pos.getX(), pos.getY(), pos.getZ()), facing, pos, false);
+            var hit = bankFrontHit(pos, facing, 12.0 / 16, 3.0 / 16);
             SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
             check(bank.getItem(4).isEmpty() && !bank.getItem(0).isEmpty() && !bank.getItem(5).isEmpty(),
                     "Clicking the bottom-left card must eject that card regardless of facing");
+            check(player.getInventory().contains(tunedCard(114)), "The removed card must retain its tuning in the player's inventory");
+
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, extra);
+            check(SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, 4.0 / 16, 3.0 / 16))
+                    == net.minecraft.world.InteractionResult.FAIL && extra.getCount() == 1 && bank.getItem(4).isEmpty(),
+                    "An occupied target must not replace its card or spill into another empty slot");
+            check(SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, blankHit) == net.minecraft.world.InteractionResult.CONSUME
+                    && extra.isEmpty() && ItemStack.isSameItemSameTags(bank.getItem(4), tunedCard(120)),
+                    "A front click outside the slots must fill the first available slot");
+
+            bank.removeItem(2, 1); bank.removeItem(5, 1);
+            player.getAbilities().instabuild = true; ItemStack creative = tunedCard(121);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, creative);
+            SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, 4.0 / 16, 3.0 / 16));
+            check(creative.getCount() == 1 && bank.getItem(2).isEmpty()
+                            && ItemStack.isSameItemSameTags(bank.getItem(5), creative),
+                    "Creative insertion must target the clicked slot without consuming the held card");
+            player.getAbilities().instabuild = false;
+        }
+        helper.succeed();
+    }
+
+    private static net.minecraft.world.phys.BlockHitResult bankFrontHit(BlockPos pos, Direction facing, double x, double y) {
+        net.minecraft.world.phys.Vec3 local = switch (facing) {
+            case EAST -> new net.minecraft.world.phys.Vec3(1, y, x);
+            case SOUTH -> new net.minecraft.world.phys.Vec3(1 - x, y, 1);
+            case WEST -> new net.minecraft.world.phys.Vec3(0, y, 1 - x);
+            default -> new net.minecraft.world.phys.Vec3(x, y, 0);
+        };
+        return new net.minecraft.world.phys.BlockHitResult(local.add(pos.getX(), pos.getY(), pos.getZ()), facing, pos, false);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void card_bank_front_background_and_other_faces_leave_inventory_unchanged(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        var player = helper.makeMockPlayer(); player.getAbilities().instabuild = false;
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
+            ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos); bank.clearContent();
+            for (int slot = 0; slot < 5; slot++) bank.setItem(slot, tunedCard(130 + slot));
+            CompoundTag before = bank.saveWithoutMetadata();
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            for (var hit : List.of(bankFrontHit(pos, facing, .5, .5), bankFrontHit(pos, facing, 4.0 / 16, 3.0 / 16))) {
+                check(SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                        net.minecraft.world.InteractionHand.MAIN_HAND, hit) == net.minecraft.world.InteractionResult.PASS
+                        && before.equals(bank.saveWithoutMetadata()), "Empty-hand background and empty-slot clicks must do nothing");
+            }
+            var bounds = bank.getBlockState().getShape(level, pos).bounds();
+            for (Direction side : Direction.values()) {
+                if (side == facing) continue;
+                double x = side == Direction.WEST ? bounds.minX : side == Direction.EAST ? bounds.maxX : (bounds.minX + bounds.maxX) / 2;
+                double y = side == Direction.DOWN ? bounds.minY : side == Direction.UP ? bounds.maxY : (bounds.minY + bounds.maxY) / 2;
+                double z = side == Direction.NORTH ? bounds.minZ : side == Direction.SOUTH ? bounds.maxZ : (bounds.minZ + bounds.maxZ) / 2;
+                var hit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(x, y, z)
+                        .add(pos.getX(), pos.getY(), pos.getZ()), side, pos, false);
+                for (ItemStack held : List.of(ItemStack.EMPTY, tunedCard(140))) {
+                    player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+                    check(SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                            net.minecraft.world.InteractionHand.MAIN_HAND, hit) == net.minecraft.world.InteractionResult.PASS
+                            && before.equals(bank.saveWithoutMetadata()) && (held.isEmpty() || held.getCount() == 1),
+                            "Non-front faces must leave both the Bank and the player's held item unchanged");
+                }
+            }
         }
         helper.succeed();
     }
