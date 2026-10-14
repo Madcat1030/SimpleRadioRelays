@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-14T20:34:32.191Z" hostname="6d79ba1b972d" time="0.03">
+  <properties/>
+  <testcase name="newlyLoadedConnectionsGetTimeToRestore()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.012"/>
+  <testcase name="oneEmptyScanCannotDiscardThePreviousAntenna()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.001"/>
+  <testcase name="unavailableAntennaChunksRestartConfirmation()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.0"/>
+  <testcase name="dirtyNotificationBeginsNewVerification()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.001"/>
+  <testcase name="unresolvedWireEndpointsAreStillPending()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.0"/>
+  <testcase name="confirmedRemovalEventuallyStopsRelaying()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

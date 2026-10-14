@@ -11,7 +11,6 @@ import java.util.function.Predicate;
 
 /** Selects one direct or repeated wireless delivery, then uses the original receiving pipeline. */
 public final class RelayRouter {
-    private record Choice(RadioSource source, double severity, int hops) {}
     private RelayRouter() {}
     public static boolean tryRoute(RadioTransmitter transmitter, RadioSource original, Predicate<RadioRouter> criteria) {
         if (!transmitter.active || !original.isValid() || transmitter.frequency == null || transmitter.frequencingType == null
@@ -76,13 +75,13 @@ public final class RelayRouter {
             if (receiver.owner == null && receiver.position != null && receiver.position.level instanceof ServerLevel receiverLevel
                     && !receiverLevel.hasChunkAt(receiver.position.realLocation())) continue;
 
-            Choice best = null;
+            List<RelayDeliverySelection.Candidate<RadioSource>> candidates = new ArrayList<>();
             RadioSource direct = copy(prepared);
             if (transmitter.shouldRouteTo(direct, receiver)) {
                 direct = transmitter.prepareSource(direct, receiver);
                 if (direct.transmissionPower > 0 && noise(direct) < 100
                         && (transmitter.routeCriteria == null || transmitter.routeCriteria.test(direct, receiver)))
-                    best = new Choice(direct, noise(direct), 0);
+                    candidates.add(new RelayDeliverySelection.Candidate<>(direct, noise(direct), direct.transmissionPower, 0));
             }
 
             if (receiver.getLocation().level == level) {
@@ -95,11 +94,6 @@ public final class RelayRouter {
                     if (received == null) continue;
                     double severity = Math.max(path.severity(), received.severity());
                     float remaining = (float) received.power();
-                    // Equal audio quality can hide a nearly exhausted carrier. Preserve the strongest
-                    // arrival for native wire/forwarding stages before using hop count as the tie-break.
-                    if (best != null && (best.severity() < severity || (best.severity() == severity
-                            && (best.source().transmissionPower > remaining
-                            || (best.source().transmissionPower == remaining && best.hops() <= path.hops()))))) continue;
                     RadioSource repeated = copy(prepared);
                     repeated.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id;
                     repeated.transmissionCap = power; repeated.transmissionPower = remaining;
@@ -107,9 +101,10 @@ public final class RelayRouter {
                     ((RelaySourceState) repeated).repeaters$setInheritedSeverity(severity);
                     repeated.visit(receiver);
                     if (transmitter.routeCriteria != null && !transmitter.routeCriteria.test(repeated, receiver)) continue;
-                    best = new Choice(repeated, severity, path.hops());
+                    candidates.add(new RelayDeliverySelection.Candidate<>(repeated, severity, repeated.transmissionPower, path.hops()));
                 }
             }
+            var best = RelayDeliverySelection.select(candidates);
             if (best != null) receiver.accept(best.source());
         }
         return true;

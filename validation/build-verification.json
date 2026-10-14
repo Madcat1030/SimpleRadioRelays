@@ -1,43 +1,42 @@
 {
-  "version": "0.2.3",
+  "version": "0.2.4",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
+  "java_bytecode": 17,
   "build": "passed",
-  "jar_sha256": "5f473414eed19149fa9839720f5afb9850caab53a54b24fbe48992d14b644571",
+  "jar_sha256": "593bfd701536d622a7e3e864cce0681ce459bcd3e0cf4778491bebba4591dadf",
   "unit_tests": {
-    "total": 16,
-    "failures": 0,
-    "errors": 0
+    "total": 21,
+    "failures": 0
   },
-  "packaged_recipe_checks": "passed",
-  "recipes": [
-    {
-      "recipe": "relay",
-      "wire_row": 1,
-      "wire_column": 2,
-      "result_count": 1
-    },
-    {
-      "recipe": "channel_bank",
-      "wire_row": 3,
-      "wire_column": 2,
-      "result_count": 1
-    },
-    {
-      "recipe": "frequency_card",
-      "wire_row": 3,
-      "wire_column": 2,
-      "result_count": 1
-    }
+  "addon_minecraft_tests": {
+    "total": 25,
+    "failures": 0
+  },
+  "quality_tolerance": 1.0,
+  "quality_band_anchor": "Cleanest valid candidate for each receiver",
+  "candidate_priority": [
+    "Highest remaining arrival power within the quality band",
+    "Cleaner actual interference at equal power",
+    "Fewer hops at equal power and interference"
   ],
-  "changed_release_entries": [
-    "data/simpleradio_repeaters/recipes/channel_bank.json",
-    "data/simpleradio_repeaters/recipes/frequency_card.json",
-    "data/simpleradio_repeaters/recipes/relay.json",
-    "fabric.mod.json"
+  "actual_interference": "Preserved from the chosen route; never flattened to the cleanest route",
+  "regression_reproduced_on": "0.2.3",
+  "before_fix_addon_failures": [
+    "relaydiagnosticsgametests.near_side_receiver_must_not_strand_the_bridge_when_the_relay_is_on_the_far_side"
   ],
-  "java_classes": "Every compiled class is byte-identical to the released 0.2.2 JAR",
-  "minecraft_tests": "Not rerun for recipe data changes; prior 0.2.2 results: 24 addon tests passed",
-  "previous_minecraft_test_reports": "validation/0.2.2/",
-  "compatibility": "Existing 0.2.x blocks, cards, inventories and saved network retained"
+  "native_baseline_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "matches_previous_addon_disabled_control": true,
+  "addon_disabled_control_version": "0.2.1",
+  "game_test_server_exit": 4,
+  "gradle_build_and_game_test_command_exit": 1,
+  "baseline_failure_scope": "Headless environment; root causes unresolved; not confirmed live-server bugs",
+  "compatibility": "Existing 0.2.0 through 0.2.3 hardware, inventories and saved network retained",
+  "recipes_models_and_rendering": "Unchanged from 0.2.3; copper-wire recipes retained",
+  "voice_audio_playback": "Synthetic packet routing verified; decoded multiplayer audio not exercised"
 }
