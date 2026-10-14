@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.2.0
+# Simple Radio Repeaters 0.2.1
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A separate six-card Repeater Bank selects the channels, and both blocks expose their controls and status in the world.
 
-Version 0.2.0 is a clean break from the combined 0.1.x bank. It introduces new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild existing towers using the two new blocks.
+Version 0.2.1 retains the blocks, cards, catalysts, identities and saved network from 0.2.0. Version 0.2.0 introduced a clean break from the combined 0.1.x bank. It introduces new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild existing towers using the two new blocks.
 
 ## Installation and first tower
 
@@ -57,13 +57,25 @@ The green Relay LED represents routing eligibility. It can remain green during `
 
 The addon uses Simple Radio's configured transmission power, reception power, reception floor and attenuation. A handheld must reach an entry tower using its own transmitter strength. Hearing a tower's stronger broadcast does not guarantee that the handheld can transmit back to it.
 
-Each relay departure uses that tower's full transmitter power. The audio retains the worst interference encountered on the chosen path. Repeating a weak signal restores its RF reach while preserving its degraded audio. The final wireless leg can worsen the quality again; a good final leg does not repair an earlier bad leg. A long, poor hop matters more than several short, good hops. The routing algorithm selects the path with the lowest worst interference, breaking ties in favor of fewer hops, and also considers a direct wireless delivery.
+Each relay departure uses that tower's full transmitter power. The audio retains the worst interference encountered on the chosen path. Repeating a weak signal restores its RF reach while preserving its degraded audio. The final wireless leg can worsen the quality again; a good final leg does not repair an earlier bad leg. A long, poor hop matters more than several short, good hops. The routing algorithm selects the delivery with the lowest worst interference. Equal-quality deliveries are compared by remaining arrival power, then by fewer hops. It also considers a direct wireless delivery. Within the graph, equal-quality paths to the same exit still prefer fewer tower visits.
 
 For additive attenuation, the native calculation first rejects a leg if transmission power plus reception power cannot cover distance times the loss factor. It then subtracts the effective distance from transmission power, accounting for the receiver's reception power and floor. Remaining power is compared with the sender's degradation threshold to calculate interference. A leg with no remaining power or complete interference is unavailable.
 
 The towers use the native transmitter and receiver block types. With the target Simple Radio version, tower transmitter power is the configured native transmitter power plus antenna score times transmitter aptitude; tower reception uses the corresponding receiver settings. A catalyst is an eligibility requirement in this addon. The addon does not independently apply a catalyst-efficiency multiplier to these calculations.
 
-Relays repeat matching frequency/modulation pairs. They do not translate between channels. A receiver on one channel wired through a transmitter on another channel remains a native station that can bridge those channels. The existing A → B → C → B → A arrangement therefore continues to work when C performs that wired bridge and the relevant Banks select both channels.
+Relays repeat matching frequency/modulation pairs. They do not translate between channels. A receiver on one channel wired through a transmitter on another channel remains a native station that can bridge those channels. The existing A → B → C → B → A arrangement therefore works when C performs that wired bridge and the relevant Banks select both channels.
+
+## A/B/C bridge behavior and the 0.2.1 fixes
+
+A Relay is a routing node, rather than a physical receiver that intercepts every nearby packet first. C's native receiver can be fed by B directly if that is the chosen exit. In 0.2.0, equal audio quality favored fewer hops, so a nearly exhausted B-to-receiver carrier could win over an equally degraded but regenerated carrier from C. A subsequent native wire or the short entry leg into C's return Relay could then exhaust that remaining power. C's received-packet counter rose even though no return packet reached A.
+
+Version 0.2.1 keeps audio quality first, then chooses the stronger remaining carrier. This lets C's local Relay provide RF power for the wired bridge when that delivery sounds equally good. The inherited degradation remains unchanged. A regression reproduces the old failure near the RF cutoff, using real native receiver/transmitter block entities and a copper wire, then verifies successful return without improving the deliberately weak audio.
+
+The native transmitter on the second channel passes through the addon routing code again. It can enter through the local matching Relay at C or through another tower it can reach, such as B. An ordinary wireless C-to-B entry leg is possible; it does not prevent B from amplifying and continuing the relay route. Native receiver-to-transmitter wiring alone does not automatically reset an already-frequenced source to the new antenna's full departure power.
+
+A separate regression covers the normal two-channel A/B/C arrangement with a held transceiver, native C receiver/wire/transmitter and an owner-backed receiving radio. Removing C's cards provides a negative control for the weaker native bridge. Restoring the cards and recreating C's Relay entity confirms that packets still return while its screen reports `CHECK`.
+
+The global received counter records managed receiver-handler arrivals. A rising total may reflect only C's incoming receiver; it is not proof that the second channel returned to A or that a speaker played the packet.
 
 ## Persistence and chunk restoration
 
@@ -71,7 +83,7 @@ The server saves verified stationary Relay records independently of loaded block
 
 On reload, a Relay restores the authoritative saved antenna score and adopts any Bank changes already observed by the server. Its local cache stores card configuration, not physical card items. The actual ItemStacks exist only in the Bank. A loaded Bank can update the saved channels even while the Relay's entity is unloaded. An older Relay NBT cache cannot resurrect cards that were removed from the Bank.
 
-Antenna verification preserves the wired-core restoration behavior from 0.1.1. It waits for the previous dependency chunks and their entity data, checks that insulator routers and wire endpoints have restored, and gives the native network time to settle. Pending verification retries every 200 ticks, approximately ten seconds at normal tick rate. Replacing a verified antenna with zero strength requires two complete zero scans at least 200 ticks apart. A temporary zero or incomplete scan leaves the previous snapshot available. A real disconnection is eventually confirmed without an enable toggle.
+Antenna verification preserves the wired-core restoration behavior from 0.1.1. It waits for the previous dependency chunks and their entity data, checks that insulator routers and wire endpoints have restored, and gives the native network time to settle. Loaded, settled Relays also scan on the same `gameTime % 200 == 0` boundary used by native receivers and transmitters, recovering antenna changes whose notification was missed. Pending verification retries every 200 ticks, approximately ten seconds at normal tick rate. Replacing a verified antenna with zero strength requires two complete zero scans at least 200 ticks apart. A temporary zero or incomplete scan leaves the previous snapshot available. Repeated dirty notifications are coalesced while a check is already pending, so building does not keep restarting the 20-tick settling window. A real disconnection is eventually confirmed without an enable toggle.
 
 Ghost checks operate independently of antenna scans. At chunk load, startup and manual refresh, the manager checks saved component positions in already-loaded chunks. A missing Relay block or changed Relay identity removes its record. A missing Bank or changed Bank identity clears the Relay's channels and Bank binding while retaining the antenna metadata. Both results are persisted and invalidate cached routes. A matching block awaiting its entity data is retried rather than treated as absent.
 
@@ -111,7 +123,7 @@ For a voice check, start with two players who cannot reach each other's handheld
 
 `refreshBank` preserves a known Bank while its data is pending, otherwise selects a mutually assigned adjacent Bank and copies its card configuration. `setChanged` compares settings snapshots before requesting antenna verification: actual card/configuration changes, catalyst insertion and enabling matter; equivalent writes do not. Removing a catalyst or disabling a Relay immediately updates routing eligibility. Reload adopts the saved controller/channel snapshot before publishing local settings, preventing stale local NBT from restoring a removed component or card.
 
-The tick registers the loaded instance, restores the verified antenna cache, performs pending scans and refreshes display values. Screen state and link count are checked once per second. A client update is sent when display values or installed components change, rather than every tick. Standard block-entity update packets and chunk update tags carry the same render data.
+The tick registers the loaded instance, restores the verified antenna cache, performs pending scans, schedules the 200-tick periodic fallback and refreshes display values. `markDirty` starts a settling window only when moving from a settled state to a pending check. A burst of antenna notifications shares that window. Periodic checks do not reset an ongoing zero-strength confirmation. Screen state and link count are checked once per second. A client update is sent when display values or installed components change, rather than every tick. Standard block-entity update packets and chunk update tags carry the same render data.
 
 ### ChannelBankBlock and ChannelBankBlockEntity
 
@@ -181,9 +193,9 @@ Use JDK 21 for the Gradle/Loom toolchain. Output bytecode targets Java 17.
 
 On Windows use `gradlew.bat`. The installable JAR is under `build/libs`; a `-sources.jar` is source code. Game tests use synthetic packet data and do not capture microphones.
 
-All 16 unit tests and 19 addon Minecraft tests passed. The release's exact results are recorded in `validation/build-verification.json`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions cover native tuning, split component persistence, direct catalyst clicks, six-card interaction in all facings, deterministic attachment, no-op clicks, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
+All 16 unit tests and 23 addon Minecraft tests passed. The release's exact results are recorded in `validation/build-verification.json`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions additionally reproduce the A/B/C native copper-wire channel bridge, the equal-quality weak-carrier failure, return delivery during reload verification, periodic recovery after missed mast notifications and scan progress during repeated build notifications. The existing regressions cover native tuning, split component persistence, direct catalyst clicks, six-card interaction in all facings, deterministic attachment, no-op clicks, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
 
-Native client model review renders the empty and occupied hardware, live labels and four facing states through Minecraft's actual model and font pipeline. This verifies asset loading and render placement. Multiplayer voice playback and shader/resource-pack combinations still require in-game checks.
+The unchanged models retain the 0.2.0 native client review, which renders the empty and occupied hardware, live labels and four facing states through Minecraft's actual model and font pipeline. This verifies asset loading and render placement. Multiplayer voice playback and shader/resource-pack combinations still require in-game checks.
 
 Four native Simple Radio system tests also fail with the addon disabled: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The combined game-test task exits nonzero for those failures even when every addon regression passes. The baseline and combined XML reports are included so those results can be assessed separately.
 

@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.2.0
+# Simple Radio Repeaters 0.2.1
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-**0.2.0 starts fresh.** Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+**0.2.1 retains existing 0.2.0 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
 ## Install
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.0.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.1.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -24,6 +24,8 @@ The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epi
 
 The Bank has two columns of three slots. Right-click an occupied card with an empty hand to remove that card. Clicking an empty slot does nothing; clicking elsewhere returns the first occupied card. On the Relay, an empty-hand click removes the catalyst; sneak + empty-hand toggles power. Unsupported items and no-op clicks do not restart antenna verification.
 
+Version 0.2.1 compares routes by audio quality, then remaining arrival power, then hop count. A nearby Relay can therefore feed a native wired receiver with a strong carrier even when a more distant exit would sound equally good. Audio retains the worst interference; RF regeneration does not clean it up.
+
 The Relay uses one adjacent Bank, preferably above it. A Bank belongs to one Relay. Side and bottom adjacency work electrically, but the model's connector pins are designed for stacking. Duplicate cards select a channel once. AM and FM remain distinct.
 
 ## Radio behavior
@@ -31,6 +33,8 @@ The Relay uses one adjacent Bank, preferably above it. A Bank belongs to one Rel
 A handheld must reach an entry Relay using its own transmitter. Every Relay departure uses that tower's full RF power, while audio retains the worst interference along the selected path. The final wireless leg can degrade it further. Hearing a strong tower broadcast does not guarantee that a distant handheld can reply.
 
 Verified towers continue relaying from saved records while unloaded. Routing, attachment and reconciliation do not force missing chunks to load. Wired-core reloads retain their last verified antenna while native insulators and wires restore. Missing or replaced Relays and Banks are reconciled when their chunks become available, preventing persistent ghost connections.
+
+Loaded Relays also recheck antennas on the native 200-tick world-time boundary, about ten seconds at normal tick rate. Missed dirty notifications no longer leave the score stale. Bursts of build notifications share a settling window rather than restarting it every tick. Reload `CHECK` retains the verified network record.
 
 `ANT` is native antenna strength. `LINK` counts distinct outgoing tower neighbors across the selected channels, not players or all towers in a chain. The screen also shows pending verification, missing components and disabled status.
 
@@ -59,7 +63,7 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 ./gradlew runBaseGameTest
 ```
 
-All 16 unit tests and 19 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.0/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. Native client review verifies actual model loading, conditional parts, labels and all four facing states.
+All 16 unit tests and 23 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.1/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. New 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications.
 
 Four upstream Simple Radio tests fail in the addon-disabled baseline too: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The combined GameTest task therefore exits nonzero for those failures; addon regressions are reported separately. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 

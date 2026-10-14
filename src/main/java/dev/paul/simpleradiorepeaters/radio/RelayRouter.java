@@ -94,10 +94,15 @@ public final class RelayRouter {
                             power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel);
                     if (received == null) continue;
                     double severity = Math.max(path.severity(), received.severity());
-                    if (best != null && (best.severity() < severity || (best.severity() == severity && best.hops() <= path.hops()))) continue;
+                    float remaining = (float) received.power();
+                    // Equal audio quality can hide a nearly exhausted carrier. Preserve the strongest
+                    // arrival for native wire/forwarding stages before using hop count as the tie-break.
+                    if (best != null && (best.severity() < severity || (best.severity() == severity
+                            && (best.source().transmissionPower > remaining
+                            || (best.source().transmissionPower == remaining && best.hops() <= path.hops()))))) continue;
                     RadioSource repeated = copy(prepared);
                     repeated.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id;
-                    repeated.transmissionCap = power; repeated.transmissionPower = (float) received.power();
+                    repeated.transmissionCap = power; repeated.transmissionPower = remaining;
                     repeated.frequencyMedium = transmitter.frequency;
                     ((RelaySourceState) repeated).repeaters$setInheritedSeverity(severity);
                     repeated.visit(receiver);

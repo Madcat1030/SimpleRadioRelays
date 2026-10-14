@@ -1,67 +1,43 @@
 {
-  "version": "0.2.0",
-  "minecraft": {
-    "addon_tests": 19,
-    "addon_failures": 0,
-    "native_tests": 7,
-    "native_failures": [
-      "SystemTest.closedSystem",
-      "SystemTest.garbageCollection",
-      "SystemTest.openSystem",
-      "SystemTest.shortCircuit"
-    ],
-    "disabled_addon_baseline_failures": [
-      "SystemTest.closedSystem",
-      "SystemTest.garbageCollection",
-      "SystemTest.openSystem",
-      "SystemTest.shortCircuit"
-    ],
-    "same_native_failures_in_both": true
-  },
+  "version": "0.2.1",
+  "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
   "java_bytecode": 17,
-  "installable_jar_sha256": "ddc79d8eba09059adeec9bf601742aba3642856f1d4682eceaebb84672628078",
-  "build": {
-    "compileJava": "passed",
-    "remapJar": "passed",
-    "unitTests": {
-      "tests": 16,
-      "failures": 0
-    },
-    "combined_command": "build runGameTest",
-    "overall_exit_code": 4,
-    "reason": "Four native Simple Radio failures; addon tests all pass"
+  "jar_sha256": "86855c1ff19e63f4e0844577815bae40a11c5e0427aff5f8c6447aea64db07de",
+  "unit_tests": {
+    "total": 16,
+    "failures": 0
   },
-  "client_rendering": {
-    "native_client_launch": "passed",
-    "models_and_live_text": "reviewed",
-    "facings": [
-      "north",
-      "east",
-      "south",
-      "west"
-    ],
-    "empty_and_occupied_components": "reviewed",
-    "preview_harness_removed_from_release": true,
-    "multiplayer_voice_playback": "not exercised by this release validation"
+  "addon_minecraft_tests": {
+    "total": 23,
+    "failures": 0
   },
-  "assets": {
-    "block_texture_size": [
-      16,
-      16
-    ],
-    "model_geometry": "integer model pixels",
-    "uv_density": "one texel per model pixel on every face",
-    "conditional_models": 7,
-    "blockbench_projects": 2,
-    "all_six_face_definitions": "verified"
-  },
-  "compatibility": {
-    "combined_0_1_x_banks": "not migrated",
-    "old_network_store": "ignored",
-    "frequency_card_item_and_tuning_format": "retained",
-    "relay_inventory": "none",
-    "card_inventory": "separate six-slot Bank"
-  },
-  "rf_code": "All six radio module source files unchanged from 0.1.3"
+  "upstream_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "disabled_addon_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "combined_game_test_exit": 4,
+  "before_fix_regressions": [
+    "relaydiagnosticsgametests.equal_audio_quality_must_not_strand_the_wired_bridge_with_a_weak_carrier",
+    "relaydiagnosticsgametests.repeated_build_notifications_do_not_keep_postponing_the_scan",
+    "relaydiagnosticsgametests.missed_mast_notification_is_recovered_on_the_native_antenna_cycle"
+  ],
+  "confirmed_reload_packet_delivery": true,
+  "bridge_fixture": "Real native receiver/transmitter block entities and copper wire; held radio references; unloaded saved B node; synthetic encoded payload captured before speaker decoding",
+  "changes": [
+    "Equal-quality deliveries prefer higher remaining carrier power before fewer hops",
+    "Periodic loaded-antenna fallback on gameTime % 200 == 0",
+    "Pending build notifications share a settling window"
+  ],
+  "compatibility": "0.2.0 block IDs, NBT, catalysts, cards and saved network retained",
+  "rendering": "Unchanged byte-for-byte from the native-reviewed 0.2.0 client/models/assets",
+  "voice_audio_playback": "Not exercised by synthetic-packet GameTests"
 }

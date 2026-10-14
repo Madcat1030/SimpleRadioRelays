@@ -41,7 +41,11 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     @Nullable public CardBankRef cardBank() { return cardBank; }
     public void setEnabled(boolean value) { if (enabled != value) { enabled = value; setChanged(); } }
     @Override public int getAntennaPower() { return antennaPower; }
-    @Override public void markDirty() { dirty = true; nextRefresh = 0; verification.reset(); }
+    @Override public void markDirty() {
+        // Coalesce a burst of mast/block changes; restarting every tick can postpone settling forever.
+        if (dirty) return;
+        dirty = true; nextRefresh = 0; verification.reset();
+    }
     public boolean hasCatalyst() { return catalyst.is(Items.GILDED_BLACKSTONE); }
     public boolean installCatalyst(ItemStack held, boolean creative) {
         if (hasCatalyst() || !held.is(Items.GILDED_BLACKSTONE)) return false;
@@ -134,7 +138,13 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
             if (saved != null && saved.verified() && saved.antennaScore() > 0) relay.antennaPower = saved.antennaScore();
             relay.markDirty();
         }
-        if (relay.dirty && level.getGameTime() >= relay.nextRefresh) relay.refresh(manager);
+        long now = level.getGameTime();
+        // Native RX/TX antenna calculations use this same 200-tick world-time boundary.
+        // Also recover changes whose native dirty notification never reached the core.
+        if (!relay.dirty && now % AntennaVerification.RETRY_TICKS == 0) {
+            relay.dirty = true; relay.nextRefresh = now;
+        }
+        if (relay.dirty && now >= relay.nextRefresh) relay.refresh(manager);
         if (level.getGameTime() % 20 == 0) relay.updateDisplayedState(manager);
     }
     public void refresh(TowerManager manager) {
@@ -180,7 +190,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         for (int i = 0; i < selected.size(); i++) cards.add(CardState.load(selected.getCompound(i)));
         cachedCards = cards.isEmpty() ? emptyCards() : List.copyOf(cards);
         status = tag.contains("DisplayStatus") ? tag.getInt("DisplayStatus") : 2; displayPeers = tag.getInt("DisplayPeers");
-        lastSettings = settingsSnapshot(); firstTick = true; lastDisplay = null; markDirty();
+        lastSettings = settingsSnapshot(); firstTick = true; lastDisplay = null;
+        dirty = false; markDirty();
     }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag); tag.putUUID("RelayId", relayId);

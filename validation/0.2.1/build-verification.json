@@ -1,0 +1,43 @@
+{
+  "version": "0.2.1",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "java_bytecode": 17,
+  "jar_sha256": "86855c1ff19e63f4e0844577815bae40a11c5e0427aff5f8c6447aea64db07de",
+  "unit_tests": {
+    "total": 16,
+    "failures": 0
+  },
+  "addon_minecraft_tests": {
+    "total": 23,
+    "failures": 0
+  },
+  "upstream_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "disabled_addon_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "combined_game_test_exit": 4,
+  "before_fix_regressions": [
+    "relaydiagnosticsgametests.equal_audio_quality_must_not_strand_the_wired_bridge_with_a_weak_carrier",
+    "relaydiagnosticsgametests.repeated_build_notifications_do_not_keep_postponing_the_scan",
+    "relaydiagnosticsgametests.missed_mast_notification_is_recovered_on_the_native_antenna_cycle"
+  ],
+  "confirmed_reload_packet_delivery": true,
+  "bridge_fixture": "Real native receiver/transmitter block entities and copper wire; held radio references; unloaded saved B node; synthetic encoded payload captured before speaker decoding",
+  "changes": [
+    "Equal-quality deliveries prefer higher remaining carrier power before fewer hops",
+    "Periodic loaded-antenna fallback on gameTime % 200 == 0",
+    "Pending build notifications share a settling window"
+  ],
+  "compatibility": "0.2.0 block IDs, NBT, catalysts, cards and saved network retained",
+  "rendering": "Unchanged byte-for-byte from the native-reviewed 0.2.0 client/models/assets",
+  "voice_audio_playback": "Not exercised by synthetic-packet GameTests"
+}

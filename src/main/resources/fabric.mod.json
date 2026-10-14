@@ -10,7 +10,7 @@
   "entrypoints": {
     "main": ["dev.paul.simpleradiorepeaters.SimpleRadioRepeaters"],
     "client": ["dev.paul.simpleradiorepeaters.client.RepeatersClient"],
-    "fabric-gametest": ["dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests"]
+    "fabric-gametest": ["dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests", "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests"]
   },
   "mixins": ["simpleradio_repeaters.mixins.json"],
   "depends": {
