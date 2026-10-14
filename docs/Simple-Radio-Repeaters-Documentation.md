@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.2.2
+# Simple Radio Repeaters 0.2.3
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A separate six-card Repeater Bank selects the channels, and both blocks expose their controls and status in the world.
 
-Version 0.2.2 retains the blocks, cards, catalysts, identities and saved network from 0.2.0 and 0.2.1. It changes only the Bank's in-world card controls. Version 0.2.0 introduced a clean break from the combined 0.1.x bank. It introduced new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild 0.1.x towers using the two new blocks.
+Version 0.2.3 retains the blocks, cards, catalysts, identities and saved network from 0.2.0 through 0.2.2. It changes only crafting recipes. The Bank keeps the front-face card controls introduced in 0.2.2. Version 0.2.0 introduced a clean break from the combined 0.1.x bank. It introduced new Relay and Bank block IDs and a new saved-network file. Old combined blocks, their inventories and their network records are not migrated. Frequency Cards keep their item ID and tuning format. Rebuild 0.1.x towers using the two new blocks.
 
 ## Installation and first tower
 
@@ -19,6 +19,42 @@ Install the addon on the server and every client. Replace the previous addon JAR
 The Relay has no container, menu or inventory slots. Its catalyst is a directly installed component. The Bank holds six physical cards and has no inventory screen. Blank cards can be inserted, but they do not activate a channel until tuned. Matching numeric frequencies on AM and FM are separate channels. Duplicate matching cards select the channel once; they do not increase range or duplicate audio.
 
 The Relay requires no additional microphone, speaker, receiver or transmitter block. Normal handhelds and wired stations participate through their existing radio endpoints.
+
+## Crafting recipes
+
+All three recipes are shaped crafting-table recipes and produce one item. Copper wire is Simple Radio's `simpleradio:copper_wire`; glass means a full glass block. The Relay's gilded blackstone catalyst is installed separately.
+
+### Radio Relay
+
+| Left | Center | Right |
+| --- | --- | --- |
+| Iron ingot | Copper wire | Iron ingot |
+| Simple Radio receiver | Redstone dust | Simple Radio transmitter |
+| Iron ingot | Copper ingot | Iron ingot |
+
+Total: 4 iron ingots, 1 copper wire, 1 copper ingot, 1 redstone dust, 1 receiver and 1 transmitter. File: `src/main/resources/data/simpleradio_repeaters/recipes/relay.json`.
+
+### Repeater Bank
+
+| Left | Center | Right |
+| --- | --- | --- |
+| Iron ingot | Copper ingot | Iron ingot |
+| Glass block | Redstone dust | Glass block |
+| Iron ingot | Copper wire | Iron ingot |
+
+Total: 4 iron ingots, 1 copper ingot, 1 copper wire, 2 glass blocks and 1 redstone dust. File: `src/main/resources/data/simpleradio_repeaters/recipes/channel_bank.json`.
+
+### Frequency Card
+
+| Left | Center | Right |
+| --- | --- | --- |
+| Empty | Paper | Empty |
+| Copper ingot | Redstone dust | Copper ingot |
+| Empty | Copper wire | Empty |
+
+Total: 1 paper, 2 copper ingots, 1 redstone dust and 1 copper wire. The result is a blank card, which is tuned at the radiosmithing station. File: `src/main/resources/data/simpleradio_repeaters/recipes/frequency_card.json`.
+
+Version 0.2.3 replaces the Relay's top-center copper ingot, the Bank's bottom-center copper ingot and the Card's bottom-center paper with copper wire. Recipe IDs and result counts remain the same.
 
 ## In-world controls
 
@@ -194,10 +230,10 @@ Use JDK 21 for the Gradle/Loom toolchain. Output bytecode targets Java 17.
 
 On Windows use `gradlew.bat`. The installable JAR is under `build/libs`; a `-sources.jar` is source code. Game tests use synthetic packet data and do not capture microphones.
 
-All 16 unit tests and 24 addon Minecraft tests passed. The release's exact results are recorded in `validation/build-verification.json` and `validation/0.2.2/`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions additionally reproduce the A/B/C native copper-wire channel bridge, the equal-quality weak-carrier failure, return delivery during reload verification, periodic recovery after missed mast notifications and scan progress during repeated build notifications. Card interaction checks exercise all six front slots out of order in all four facings, occupied-target rejection with another slot free, off-slot first-available insertion, survival and creative item handling, and no-op clicks on every non-front face and empty front backgrounds. The existing regressions cover native tuning, split component persistence, direct catalyst clicks, deterministic attachment, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
+The 0.2.3 build and packaged recipe checks passed. All Java code, render assets, item identities and saved data formats are unchanged from 0.2.2; Minecraft tests were not rerun for these recipe-only changes. The earlier 0.2.2 run passed all 16 unit tests and 24 addon Minecraft tests, with reports under `validation/0.2.2/`. Current build and recipe verification are recorded in `validation/build-verification.json` and `validation/0.2.3/`. Unit tests cover directed routing, rings, branches, hop limits, interference and verification timing. Minecraft regressions additionally reproduce the A/B/C native copper-wire channel bridge, the equal-quality weak-carrier failure, return delivery during reload verification, periodic recovery after missed mast notifications and scan progress during repeated build notifications. Card interaction checks exercise all six front slots out of order in all four facings, occupied-target rejection with another slot free, off-slot first-available insertion, survival and creative item handling, and no-op clicks on every non-front face and empty front backgrounds. The existing regressions cover native tuning, split component persistence, direct catalyst clicks, deterministic attachment, wired-core recovery, confirmed wire removal, saved routing without chunk loading, missing and replaced component identities, delayed entity data and stale Relay NBT after Bank edits/removal.
 
 The unchanged models retain the 0.2.0 native client review, which renders the empty and occupied hardware, live labels and four facing states through Minecraft's actual model and font pipeline. This verifies asset loading and render placement. Multiplayer voice playback and shader/resource-pack combinations still require in-game checks.
 
-Four native Simple Radio system tests failed with the addon disabled in the 0.2.1 headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four failures occur in the 0.2.2 combined run, so the combined game-test task exits nonzero even when every addon regression passes. The earlier baseline and current combined XML reports are included so those results can be assessed separately. Their underlying cause is unresolved; they are baseline test failures in this environment, not established live-server bugs.
+Four native Simple Radio system tests failed with the addon disabled in the 0.2.1 headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four failures occur in the 0.2.2 combined run, so the combined game-test task exits nonzero even when every addon regression passes. The earlier baseline and 0.2.2 combined XML reports are included so those results can be assessed separately. Their underlying cause is unresolved; they are baseline test failures in this environment, not established live-server bugs.
 
 Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.

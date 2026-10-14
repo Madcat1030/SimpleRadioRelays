@@ -1,18 +1,30 @@
-# Simple Radio Repeaters 0.2.2
+# Simple Radio Repeaters 0.2.3
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-**0.2.2 retains existing 0.2.0 and 0.2.1 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+**0.2.3 retains existing 0.2.0 through 0.2.2 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
 ## Install
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.2.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.3.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
 - Simple Voice Chat 1.20.1-2.6.0+.
 
 The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18. No additional chunk loader, voice-chat port or resource pack is required.
+
+## Crafting recipes
+
+Each shaped crafting recipe produces one item. Copper wire means Simple Radio's `simpleradio:copper_wire` item.
+
+| Item | Ingredients |
+| --- | --- |
+| Radio Relay | 4 iron ingots, 1 copper ingot, 1 copper wire, 1 redstone dust, 1 Simple Radio receiver, 1 Simple Radio transmitter |
+| Repeater Bank | 4 iron ingots, 1 copper ingot, 1 copper wire, 2 glass blocks, 1 redstone dust |
+| Frequency Card | 1 paper, 2 copper ingots, 1 copper wire, 1 redstone dust |
+
+In 0.2.3, wire replaces the Relay's top-center copper ingot, the Bank's bottom-center copper ingot and the Card's bottom-center paper. The [gameplay guide](docs/Simple-Radio-Repeaters-Documentation.md#crafting-recipes) shows the exact layouts. Recipe JSON files are under `src/main/resources/data/simpleradio_repeaters/recipes/`.
 
 ## Build a tower
 
@@ -63,8 +75,8 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 ./gradlew runBaseGameTest
 ```
 
-All 16 unit tests and 24 addon Minecraft tests passed. The release results and XML reports are under `validation/0.2.2/` and `validation/build-verification.json`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
+Version 0.2.3 changes recipe data only. The build and packaged recipe checks passed; results are under `validation/0.2.3/` and `validation/build-verification.json`. The unchanged Java code retains the 0.2.2 results: all 16 unit tests and 24 addon Minecraft tests passed, with reports under `validation/0.2.2/`. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
 
 Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.2 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 
-The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.2. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.
+The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.3. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.

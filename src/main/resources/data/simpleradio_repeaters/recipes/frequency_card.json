@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "pattern": [" P ", "CRC", " P "],
-  "key": {"P": {"item": "minecraft:paper"}, "C": {"item": "minecraft:copper_ingot"}, "R": {"item": "minecraft:redstone"}},
+  "pattern": [" P ", "CRC", " W "],
+  "key": {"P": {"item": "minecraft:paper"}, "C": {"item": "minecraft:copper_ingot"}, "R": {"item": "minecraft:redstone"}, "W": {"item": "simpleradio:copper_wire"}},
   "result": {"item": "simpleradio_repeaters:frequency_card", "count": 1}
 }

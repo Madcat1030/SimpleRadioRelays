@@ -3,7 +3,7 @@
   "pattern": [
     "ICI",
     "GRG",
-    "ICI"
+    "IWI"
   ],
   "key": {
     "I": {
@@ -11,6 +11,9 @@
     },
     "C": {
       "item": "minecraft:copper_ingot"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
     },
     "G": {
       "item": "minecraft:glass"

@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "ICI",
+    "IWI",
     "RTS",
     "ICI"
   ],
@@ -11,6 +11,9 @@
     },
     "C": {
       "item": "minecraft:copper_ingot"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
     },
     "R": {
       "item": "simpleradio:receiver"

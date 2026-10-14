@@ -1,0 +1,43 @@
+{
+  "version": "0.2.3",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "build": "passed",
+  "jar_sha256": "5f473414eed19149fa9839720f5afb9850caab53a54b24fbe48992d14b644571",
+  "unit_tests": {
+    "total": 16,
+    "failures": 0,
+    "errors": 0
+  },
+  "packaged_recipe_checks": "passed",
+  "recipes": [
+    {
+      "recipe": "relay",
+      "wire_row": 1,
+      "wire_column": 2,
+      "result_count": 1
+    },
+    {
+      "recipe": "channel_bank",
+      "wire_row": 3,
+      "wire_column": 2,
+      "result_count": 1
+    },
+    {
+      "recipe": "frequency_card",
+      "wire_row": 3,
+      "wire_column": 2,
+      "result_count": 1
+    }
+  ],
+  "changed_release_entries": [
+    "data/simpleradio_repeaters/recipes/channel_bank.json",
+    "data/simpleradio_repeaters/recipes/frequency_card.json",
+    "data/simpleradio_repeaters/recipes/relay.json",
+    "fabric.mod.json"
+  ],
+  "java_classes": "Every compiled class is byte-identical to the released 0.2.2 JAR",
+  "minecraft_tests": "Not rerun for recipe data changes; prior 0.2.2 results: 24 addon tests passed",
+  "previous_minecraft_test_reports": "validation/0.2.2/",
+  "compatibility": "Existing 0.2.x blocks, cards, inventories and saved network retained"
+}

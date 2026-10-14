@@ -1,44 +1,43 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
-  "java_bytecode": 17,
-  "jar_sha256": "faa4fe39530f1b16569cc13aad6be02c69014493e04017bf608b1d8704a69ef7",
   "build": "passed",
+  "jar_sha256": "5f473414eed19149fa9839720f5afb9850caab53a54b24fbe48992d14b644571",
   "unit_tests": {
     "total": 16,
-    "failures": 0
+    "failures": 0,
+    "errors": 0
   },
-  "addon_minecraft_tests": {
-    "total": 24,
-    "failures": 0
-  },
-  "native_baseline_failures": [
-    "SystemTest.closedSystem",
-    "SystemTest.garbageCollection",
-    "SystemTest.openSystem",
-    "SystemTest.shortCircuit"
+  "packaged_recipe_checks": "passed",
+  "recipes": [
+    {
+      "recipe": "relay",
+      "wire_row": 1,
+      "wire_column": 2,
+      "result_count": 1
+    },
+    {
+      "recipe": "channel_bank",
+      "wire_row": 3,
+      "wire_column": 2,
+      "result_count": 1
+    },
+    {
+      "recipe": "frequency_card",
+      "wire_row": 3,
+      "wire_column": 2,
+      "result_count": 1
+    }
   ],
-  "addon_disabled_control_version": "0.2.1",
-  "matches_previous_addon_disabled_control": true,
-  "game_test_server_exit": 4,
-  "gradle_build_and_game_test_command_exit": 1,
-  "baseline_failure_scope": "Headless test environment; root causes unresolved; not confirmed live-server bugs",
-  "changes": [
-    "Cards target the clicked front slot",
-    "Off-slot front card clicks use the first available slot",
-    "Card and empty-hand interactions are ignored on all non-front faces",
-    "Empty-hand clicks remove only the occupied front slot that was clicked"
+  "changed_release_entries": [
+    "data/simpleradio_repeaters/recipes/channel_bank.json",
+    "data/simpleradio_repeaters/recipes/frequency_card.json",
+    "data/simpleradio_repeaters/recipes/relay.json",
+    "fabric.mod.json"
   ],
-  "interaction_coverage": [
-    "All six slots inserted out of order in all four facings",
-    "Occupied targets preserve both cards even if another slot is free",
-    "First-available fallback and full-bank rejection",
-    "Survival consumes one card; creative preserves the held card",
-    "Front background, empty slot, and side/back/top/bottom no-ops"
-  ],
-  "compatibility": "0.2.0 and 0.2.1 block IDs, NBT, catalysts, cards and saved network retained",
-  "radio_network_and_antenna_code": "Unchanged byte-for-byte from 0.2.1 source",
-  "models_and_renderers": "Unchanged byte-for-byte from native-reviewed 0.2.0 assets/renderers",
-  "voice_audio_playback": "Not exercised by synthetic-packet GameTests"
+  "java_classes": "Every compiled class is byte-identical to the released 0.2.2 JAR",
+  "minecraft_tests": "Not rerun for recipe data changes; prior 0.2.2 results: 24 addon tests passed",
+  "previous_minecraft_test_reports": "validation/0.2.2/",
+  "compatibility": "Existing 0.2.x blocks, cards, inventories and saved network retained"
 }
