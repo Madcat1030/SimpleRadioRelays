@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-15T18:50:41.904Z" hostname="0a05a2682b88" time="0.011">
+  <properties/>
+  <testcase name="slightlyNoisierLocalRelayBeatsAnExhaustedDirectCarrier()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.004"/>
+  <testcase name="emptyCandidateListDoesNotInventADelivery()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001"/>
+  <testcase name="nearTiesCannotChainBeyondTheCleanestRouteAndOrderDoesNotChangeTheWinner()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001"/>
+  <testcase name="onePointIsInclusiveButStrongerRoutesBeyondItAreExcluded()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001"/>
+  <testcase name="EqualCarrierPowerPrefersCleanerAudioThenFewerHops()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

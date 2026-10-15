@@ -1,0 +1,60 @@
+{
+  "version": "0.2.5",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "java_bytecode": 17,
+  "build": "passed",
+  "jar_sha256": "92c2ebdc60a10196ac1bf9a5ae6566694c94913e0ad220a5663a20760f2d779d",
+  "unit_tests": {
+    "total": 21,
+    "failures": 0
+  },
+  "addon_minecraft_tests": {
+    "total": 26,
+    "failures": 0
+  },
+  "quality_tolerance": 1.0,
+  "quality_band_anchor": "Cleanest valid candidate for each receiver",
+  "candidate_priority": [
+    "Highest remaining arrival power within the quality band",
+    "Cleaner actual interference at equal power",
+    "Fewer hops at equal power and interference"
+  ],
+  "actual_interference": "Preserved from the chosen route; never flattened to the cleanest route",
+  "regression_reproduced_on": "0.2.3",
+  "before_fix_addon_failures": [
+    "relaydiagnosticsgametests.near_side_receiver_must_not_strand_the_bridge_when_the_relay_is_on_the_far_side"
+  ],
+  "native_baseline_failures": [
+    "SystemTest.closedSystem",
+    "SystemTest.garbageCollection",
+    "SystemTest.openSystem",
+    "SystemTest.shortCircuit"
+  ],
+  "matches_previous_addon_disabled_control": true,
+  "addon_disabled_control_version": "0.2.1",
+  "game_test_server_exit": 4,
+  "gradle_build_and_game_test_command_exit": 1,
+  "baseline_failure_scope": "Headless environment; root causes unresolved; not confirmed live-server bugs",
+  "compatibility": "Existing 0.2.0 through 0.2.4 hardware, inventories and saved network retained",
+  "recipes_models_and_rendering": "Recipes, models, text placement and routing unchanged; cached card labels and per-draw font-width reuse added",
+  "voice_audio_playback": "Synthetic packet routing verified; decoded multiplayer audio not exercised",
+  "build_exit": 0,
+  "current_change": "Lazy immutable card-display snapshot, invalidated independently of the Relay configuration snapshot",
+  "rendering_cache_regression": "card_display_cache_tracks_inventory_edits_and_client_update_tags",
+  "rendering_cache_cases": [
+    "six-slot labels",
+    "unchanged-frame reuse",
+    "no-op notifications",
+    "blank/invalid cards",
+    "in-place retuning",
+    "removal",
+    "no-update extraction/restoration",
+    "clear",
+    "initial chunk/update NBT",
+    "subsequent update NBT"
+  ],
+  "rendering_cache_storage": "Transient per-block-entity value data; not serialized or networked; allocated lazily by rendering",
+  "rendering_performance": "Repeated parsing/allocation removed; FPS gain and crowded-room performance not benchmarked",
+  "client_visual_review": "Models and placement unchanged from 0.2.0 native review; no new native-client visual run for 0.2.5"
+}

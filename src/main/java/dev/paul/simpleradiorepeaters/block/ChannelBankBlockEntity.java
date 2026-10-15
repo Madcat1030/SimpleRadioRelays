@@ -22,11 +22,27 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     private NonNullList<ItemStack> items = NonNullList.withSize(6, ItemStack.EMPTY);
     private UUID bankId = UUID.randomUUID();
     private List<CardState> lastCards = cardStates();
+    private List<CardState> displaySource = List.of();
+    @Nullable private List<CardDisplay> displayCards;
     @Nullable private BlockPos previousRelay;
     private boolean connectionDirty = true;
     public ChannelBankBlockEntity(BlockPos pos, BlockState state) { super(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, pos, state); }
     public UUID bankId() { return bankId; }
     public List<CardState> cardStates() { return items.stream().map(CardState::of).toList(); }
+    /** Lazily derived client display data; no ItemStack or tuning parsing on subsequent frames. */
+    public List<CardDisplay> displayCards() {
+        if (displayCards == null) {
+            displaySource = cardStates();
+            displayCards = displaySource.stream().map(CardDisplay::of).toList();
+        }
+        return displayCards;
+    }
+    public record CardDisplay(boolean present, String frequencyLabel, String modulationLabel) {
+        private static CardDisplay of(CardState card) {
+            boolean tuned = card.channel() != null;
+            return new CardDisplay(card.present(), tuned ? card.frequency() : "BLANK", tuned ? card.modulation() : "--");
+        }
+    }
     @Nullable public BlockPos primaryRelayPosition() {
         if (level == null) return null;
         if (previousRelay != null && BankConnection.state(level, previousRelay) == null) return previousRelay;
@@ -72,7 +88,11 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     @Override public ItemStack removeItem(int slot, int count) {
         ItemStack result = ContainerHelper.removeItem(items, slot, count); if (!result.isEmpty()) setChanged(); return result;
     }
-    @Override public ItemStack removeItemNoUpdate(int slot) { return ContainerHelper.takeItem(items, slot); }
+    @Override public ItemStack removeItemNoUpdate(int slot) {
+        ItemStack result = ContainerHelper.takeItem(items, slot);
+        if (!result.isEmpty()) displayCards = null;
+        return result;
+    }
     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); stack.setCount(Math.min(1, stack.getCount())); setChanged(); }
     @Override public int getMaxStackSize() { return 1; }
     @Override public boolean canPlaceItem(int slot, ItemStack stack) { return stack.is(SimpleRadioRepeaters.CARD); }
@@ -83,6 +103,7 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     @Override public void setChanged() {
         super.setChanged(); if (items == null) return;
         List<CardState> current = cardStates();
+        if (!current.equals(displaySource)) displayCards = null;
         if (current.equals(lastCards)) return;
         lastCards = current; savedAndSynced();
         if (level instanceof ServerLevel server) {
@@ -105,6 +126,6 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
         super.load(tag); items = NonNullList.withSize(6, ItemStack.EMPTY); ContainerHelper.loadAllItems(tag, items);
         if (tag.hasUUID("CardBankId")) bankId = tag.getUUID("CardBankId");
         previousRelay = tag.contains("RelayPosition") ? BlockPos.of(tag.getLong("RelayPosition")) : null;
-        lastCards = cardStates(); connectionDirty = true;
+        lastCards = cardStates(); displayCards = null; connectionDirty = true;
     }
 }

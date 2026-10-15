@@ -407,6 +407,58 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void card_display_cache_tracks_inventory_edits_and_client_update_tags(GameTestHelper helper) {
+        var state = SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState();
+        ChannelBankBlockEntity bank = new ChannelBankBlockEntity(BlockPos.ZERO, state);
+        var empty = bank.displayCards();
+        check(empty.size() == 6 && empty.stream().noneMatch(ChannelBankBlockEntity.CardDisplay::present),
+                "An empty Bank must have six hidden card displays");
+        for (int slot = 0; slot < 6; slot++) check(bank.insert(slot, tunedCard(140 + slot), false), "Fixture insertion must succeed");
+        var full = bank.displayCards();
+        check(full != empty && empty.stream().noneMatch(ChannelBankBlockEntity.CardDisplay::present),
+                "Insertion must replace the display snapshot without mutating the previous one");
+        for (int slot = 0; slot < 6; slot++) {
+            var card = full.get(slot); var tag = bank.getItem(slot).getTag();
+            check(card.present() && card.frequencyLabel().equals(tag.getString("frequency"))
+                            && card.modulationLabel().equals(tag.getString("modulation")),
+                    "Each visible slot must retain its own stored tuning labels");
+        }
+        for (int frame = 0; frame < 120; frame++) check(bank.displayCards() == full, "Unchanged frames must reuse the same snapshot");
+        bank.setChanged();
+        check(bank.displayCards() == full && !bank.insert(0, tunedCard(150), false) && bank.displayCards() == full,
+                "No-op notifications and refused insertions must preserve the cache");
+        bank.removeItem(3, 1);
+        check(!bank.displayCards().get(3).present() && full.get(3).present(), "Removing a card must hide only its current display");
+        bank.insert(3, new ItemStack(SimpleRadioRepeaters.CARD), false);
+        var blank = bank.displayCards().get(3);
+        check(blank.present() && blank.frequencyLabel().equals("BLANK") && blank.modulationLabel().equals("--"),
+                "An inserted untuned card must keep the existing blank labels");
+        bank.getItem(0).getOrCreateTag().putString("frequency", "000.77");
+        bank.getItem(0).getOrCreateTag().putString("modulation", "FM"); bank.setChanged();
+        var retuned = bank.displayCards();
+        check(retuned != full && retuned.get(0).frequencyLabel().equals("000.77") && retuned.get(0).modulationLabel().equals("FM"),
+                "An in-place tuning edit with setChanged must refresh both labels");
+        bank.getItem(2).getOrCreateTag().putString("modulation", "invalid"); bank.setChanged();
+        check(bank.displayCards().get(2).frequencyLabel().equals("BLANK"), "Invalid tuning must retain the existing blank-card appearance");
+        ChannelBankBlockEntity clientCopy = new ChannelBankBlockEntity(BlockPos.ZERO, state);
+        clientCopy.displayCards(); clientCopy.load(bank.getUpdateTag());
+        var received = clientCopy.displayCards();
+        check(received.equals(bank.displayCards()) && clientCopy.displayCards() == received,
+                "Initial chunk/update data must replace an existing display cache and then reuse it");
+        bank.removeItem(0, 1); clientCopy.load(bank.getUpdateTag());
+        check(!clientCopy.displayCards().get(0).present() && received.get(0).present(),
+                "A later update packet must remove stale labels without mutating an earlier snapshot");
+        ItemStack extracted = clientCopy.removeItemNoUpdate(1);
+        check(!clientCopy.displayCards().get(1).present(), "No-update extraction must invalidate local display data too");
+        clientCopy.setItem(1, extracted);
+        check(clientCopy.displayCards().get(1).present(),
+                "Restoring a no-update extraction must refresh the display even when the saved configuration is unchanged");
+        clientCopy.clearContent();
+        check(clientCopy.displayCards().stream().noneMatch(ChannelBankBlockEntity.CardDisplay::present), "Clearing the Bank must hide every card");
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void six_card_interactions_target_the_visible_card_in_every_direction(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
         var player = helper.makeMockPlayer(); player.getAbilities().instabuild = false;

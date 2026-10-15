@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.2.4
+# Simple Radio Repeaters 0.2.5
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-**0.2.4 retains existing 0.2.0 through 0.2.3 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+**0.2.5 retains existing 0.2.0 through 0.2.4 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
 ## Install
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.4.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.5.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -39,6 +39,8 @@ The Bank has two columns of three slots. Right-click a front slot with a card to
 Version 0.2.4 considers direct and repeated routes within one interference point of the cleanest available delivery, then chooses the strongest remaining arrival carrier. This prevents a slightly cleaner but nearly exhausted B-to-receiver carrier from beating a regenerated local C exit when the receiver is on the near side of the antenna core and the Relay is on the far side. The tolerance is measured against the cleanest candidate, so successive near-ties cannot widen it. Each selected packet keeps its actual worst interference; RF regeneration does not clean it up.
 
 The Relay uses one adjacent Bank, preferably above it. A Bank belongs to one Relay. Side and bottom adjacency work electrically, but the model's connector pins are designed for stacking. Duplicate cards select a channel once. AM and FM remain distinct.
+
+Version 0.2.5 caches the Bank's parsed card labels between inventory updates. Unchanged frames reuse the same immutable display data, and text layout measures each label once per draw. Appearance and radio behavior are unchanged. This reduces repeated client work; no FPS improvement has been measured.
 
 ## Radio behavior
 
@@ -75,8 +77,8 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 ./gradlew runBaseGameTest
 ```
 
-All 21 unit tests and 25 addon Minecraft tests passed. The exact results and XML reports are under `validation/0.2.4/` and `validation/build-verification.json`. The opposite-side receiver/Relay bridge was reproduced on 0.2.3 before the fix; the corrected run verifies packet return while retaining the actual noisier path. Selection tests also cover the inclusive one-point boundary, rejection beyond it, iteration-order independence and prevention of chained near-ties. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
+All 21 unit tests and 26 addon Minecraft tests passed. The 0.2.5 rendering regression verifies snapshot reuse across unchanged frames, all six slot labels, no-op notifications, blank and invalid tuning, in-place retuning, removal, extraction/restoration, clearing, and client chunk/update tags. The exact results and XML reports are under `validation/0.2.5/` and `validation/build-verification.json`. The opposite-side receiver/Relay bridge was reproduced on 0.2.3 before the fix; the corrected run verifies packet return while retaining the actual noisier path. Selection tests also cover the inclusive one-point boundary, rejection beyond it, iteration-order independence and prevention of chained near-ties. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
 
-Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.4 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
+Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.5 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 
-The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.4. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.
+The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.5. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.

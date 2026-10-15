@@ -23,10 +23,11 @@ final class DeviceRendering {
     }
     static void text(Font font, String label, double x, double y, double z, double width, float preferredScale,
                      int color, PoseStack pose, MultiBufferSource buffers) {
-        float scale = Math.min(preferredScale, (float) (width / 16 / Math.max(1, font.width(label))));
+        int labelWidth = font.width(label);
+        float scale = Math.min(preferredScale, (float) (width / 16 / Math.max(1, labelWidth)));
         pose.pushPose(); pose.translate(x / 16, y / 16, z / 16 - .001);
         pose.mulPose(Axis.YP.rotationDegrees(180)); pose.scale(scale, -scale, scale);
-        font.drawInBatch(label, -font.width(label) / 2f, 0, color, false, pose.last().pose(), buffers,
+        font.drawInBatch(label, -labelWidth / 2f, 0, color, false, pose.last().pose(), buffers,
                 Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
         pose.popPose();
     }
