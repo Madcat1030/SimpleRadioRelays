@@ -1,0 +1,79 @@
+{
+  "version": "0.3.0",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "verified_at_utc": "2026-10-16T17:15:33.035991+00:00",
+  "java_bytecode": 17,
+  "jar_sha256": "1e7ff6ca95380364f4ec36e51091e2dc81ac97550c1ee1d4a4515f901bfa5c35",
+  "build": "passed",
+  "build_command": "--offline build",
+  "minecraft_test_command": "--offline build runGameTest",
+  "combined_minecraft_task_exit": 1,
+  "unit_tests": {
+    "status": "passed",
+    "tests": 30,
+    "failures": 0
+  },
+  "addon_minecraft_tests": {
+    "status": "passed",
+    "tests": 34,
+    "failures": 0
+  },
+  "native_minecraft_tests": {
+    "tests": 7,
+    "failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ],
+    "note": "Same four headless native failures as the earlier addon-disabled control. Cause unresolved; not established live-server bugs."
+  },
+  "catalyst_rule": {
+    "formula": "current tower nominal power * current catalyst efficiency ^ total relay count",
+    "first_relay_count": 1,
+    "default_gilded_efficiency": 0.9,
+    "default_amethyst_block_efficiency": 0.6,
+    "mixed_catalysts": "Each current tower uses its own efficiency at the shared total count; no carried product of efficiencies.",
+    "wire_channel_bridge": "Preserves per-copy total relay count and worst audio degradation.",
+    "cutoff": "No artificial percentage floor; normal reception and total visit budget apply."
+  },
+  "persistence": {
+    "store": "data/simpleradio_repeaters_relays_v3.dat",
+    "schema": 3,
+    "migration": "None. Existing tower chunks must load once to register in the fresh network.",
+    "block_items": "Physical catalyst/card ItemStacks already use direct block data storage."
+  },
+  "coverage": [
+    "First-relay catalyst efficiency and exact gilded/amethyst sequences",
+    "Mixed catalysts and different tower nominal powers",
+    "Count-dependent link reach and competing shorter/noisier alternatives",
+    "Shared total relay-count budget across network re-entry",
+    "Actual native receiver output, including positive sub-1% output",
+    "Actual copper-wire channel bridge preserves and subsequently increments count",
+    "Per-copy branch count and shared frame deduplication",
+    "Amethyst insertion, ItemStack persistence, update tags and catalyst swaps",
+    "Optional empty catalyst serialization and native registry cache invalidation",
+    "Client accepted-item catalog filtering",
+    "Existing top Bank, copied Relay, reconciliation, antenna and card regressions"
+  ],
+  "fixture_changes": [
+    "Near-tie carrier fixtures use a neutral test-only catalyst to isolate ranking from new decay.",
+    "The counted gilded A/B/C copper-wire bridge has a larger A mast to meet the new return reception budget.",
+    "Copied Relay fixture clears a stale test Bank at its copy position before placement."
+  ],
+  "rendering": {
+    "status": "Native Minecraft client preview passed and visually reviewed.",
+    "image": "art/Relay-Catalysts-0.3.0.png",
+    "implementation": "Production RelayRenderer and ChannelBankRenderer with native models, fonts and textures.",
+    "obsolete_fixed_catalyst_assets_in_jar": false,
+    "qa_mod_in_jar": false,
+    "card_geometry": "Unchanged three-unit cards; click padding above only."
+  },
+  "limits": [
+    "Synthetic packet bytes; real multiplayer voice playback not exercised in this run.",
+    "Dedicated client join/reload catalog exchange not exercised end to end.",
+    "No Carry On/WorldEdit installation test; direct NBT movement/copy regressions pass.",
+    "Final GameTest console log ends during bootstrap in this environment; the newly written XML reports are the result evidence."
+  ]
+}

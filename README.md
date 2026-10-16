@@ -1,22 +1,70 @@
-# Simple Radio Repeaters 0.2.8
+# Simple Radio Repeaters 0.3.0
 
-A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
+A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A Radio Relay attaches to an antenna core, and a six-card Repeater Bank plugs into its top. Relays carry voice through a persistent network while retaining the worst audio degradation along the chosen path.
 
-**0.2.8 retains existing 0.2.x blocks, cards and catalysts. Banks must now be directly on top of their Relays. Move any side-mounted or bottom-mounted Banks to the top; their cards remain intact.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+Version 0.3.0 adds native catalyst support and relay-count power loss. Gilded blackstone is 90% efficient; an amethyst block is 60% efficient under Simple Radio's default data. The first relay applies its catalyst efficiency immediately.
 
-## Install
+## Install and existing worlds
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.8.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.3.0.jar`. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
 - Simple Voice Chat 1.20.1-2.6.0+.
 
-The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18. No additional chunk loader, voice-chat port or resource pack is required.
+The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18.
 
-## Crafting recipes
+**0.3.0 starts a fresh saved network. Load each existing tower's chunk once so it can register and verify in the new network.** Earlier network stores are not imported. The existing Relay and Bank blocks already store their catalyst and cards directly; no inventory migration is added. Banks must be directly above their Relays.
 
-Each shaped crafting recipe produces one item. Copper wire means Simple Radio's `simpleradio:copper_wire` item.
+The new store is the overworld's `data/simpleradio_repeaters_relays_v3.dat`. Once a tower is verified in 0.3.0, it can relay while unloaded under the normal persistence setting. No additional chunk loader or voice-chat port is required.
+
+## Build a tower
+
+1. Build a normal antenna on its core, including a native copper-wire extension if needed.
+2. Place a Radio Relay against a horizontal side of the core, facing outward.
+3. Place a Repeater Bank directly above the Relay. It copies the Relay's facing and plugs into the top sockets.
+4. Tune Frequency Cards in the native radiosmithing station and insert them into the Bank's front slots.
+5. Right-click the Relay with gilded blackstone or an amethyst block. Wait for a positive `ANT` score and `READY`.
+
+The server accepts items from Simple Radio's catalyst registry and uses their configured efficiency. A server-supplied catalog keeps client insertion prediction correct on join and after data-pack reload. The installed catalyst uses its actual block/item rendering, including amethyst's purple native texture.
+
+## Power and audio
+
+At each relay:
+
+`departure power = that tower's maximum transmitter power × its catalyst efficiency ^ total relay count`
+
+The first relay is count 1. Counts travel with each source copy through native wires, transmitters and channel changes; a receiver-to-transmitter bridge does not reset them. Both onward relays and local wireless receivers use the same reduced departure power.
+
+| Relay count | Gilded blackstone, 90% | Amethyst block, 60% |
+| ---: | ---: | ---: |
+| 1 | 90% | 60% |
+| 2 | 81% | 36% |
+| 3 | 72.9% | 21.6% |
+| 10 | 34.87% | 0.6047% |
+
+Each percentage is relative to the current tower's own nominal output. Mixed catalysts follow the same literal rule: gilded → amethyst → gilded produces 90% → 36% → 72.9% of each tower's maximum. Audio damage still cannot improve.
+
+Actual distance, reception power and native attenuation decide whether each leg succeeds. A network can therefore carry a packet partway and fail at a later leg. There is no 1% cutoff: any positive signal that passes normal reception checks can still serve nearby or wired receivers. The configured relay-count budget bounds traversal, including re-entry after a channel bridge.
+
+Audio keeps the worst interference on the selected path. Final delivery considers direct and repeated alternatives within one interference point of the cleanest viable candidate, then chooses the strongest arrival carrier. The selected packet retains its actual degradation. Hearing a tower does not guarantee that a handheld can transmit back to it.
+
+`ANT` remains the native antenna score. `LINK` counts outgoing tower neighbors for a fresh first-relay departure using the installed catalyst; packets arriving later in a route may reach fewer neighbors. It is not an end-to-end delivery guarantee.
+
+## Controls
+
+- Card on a front slot: insert into that slot if empty. Card elsewhere on the front: fill the first available slot. Other faces ignore cards.
+- Empty hand on an occupied front card: remove that card. Empty slots and background clicks do nothing.
+- Registered catalyst on the Relay: install one if the socket is empty.
+- Empty hand on the Relay: return the installed catalyst. Sneak + empty hand: toggle power.
+
+Cards are arranged top left to bottom right, row by row. The three-unit cards retain their centered, single-line labels and one model unit of click padding above only. A Bank uses only the Relay directly below it. Removing that Relay leaves the Bank and cards intact but disconnected. Hoppers retain ordinary card insertion/extraction support.
+
+Equivalent writes, wrong items and no-op card clicks do not restart antenna verification. Wired-core reloads retain verified antenna data while native wires restore. Missing/replaced components are reconciled when their chunks become available. Copied Relays cannot retain distant Bank bindings or overwrite the original tower's settings.
+
+## Crafting
+
+Each shaped recipe produces one item. Copper wire is Simple Radio's `simpleradio:copper_wire`.
 
 | Item | Ingredients |
 | --- | --- |
@@ -24,67 +72,27 @@ Each shaped crafting recipe produces one item. Copper wire means Simple Radio's 
 | Repeater Bank | 4 iron ingots, 1 copper ingot, 1 copper wire, 2 glass blocks, 1 redstone dust |
 | Frequency Card | 1 paper, 2 copper ingots, 1 copper wire, 1 redstone dust |
 
-In 0.2.3, wire replaces the Relay's top-center copper ingot, the Bank's bottom-center copper ingot and the Card's bottom-center paper. The [gameplay guide](docs/Simple-Radio-Repeaters-Documentation.md#crafting-recipes) shows the exact layouts. Recipe JSON files are under `src/main/resources/data/simpleradio_repeaters/recipes/`.
+The [full guide](docs/Simple-Radio-Repeaters-Documentation.md#crafting-recipes) shows the layouts. Recipes are under `src/main/resources/data/simpleradio_repeaters/recipes/`.
 
-## Build a tower
+## Commands and settings
 
-1. Build the normal antenna on its core, including a native copper-wire extension if needed.
-2. Place a Radio Relay against a horizontal side of the core, facing outward.
-3. Place a Repeater Bank directly above it. The Bank copies the Relay's facing and plugs into its top ports.
-4. Tune Frequency Cards in the native radiosmithing station and right-click the Bank's front slots to insert them.
-5. Right-click the Relay with gilded blackstone. Wait for a positive `ANT` score and `READY`.
+`/radiorepeaters status` shows tower and packet counts. Operator commands `/radiorepeaters list` and `/radiorepeaters refresh` show tower details and request loaded-component/antenna checks. The list includes catalyst identity and efficiency.
 
-The Bank has two columns of three slots. Right-click a front slot with a card to insert it into that slot; an occupied slot leaves the held card alone. A card click elsewhere on the front fills the first available slot, starting at the top left and proceeding row by row. Card clicks on the other faces do nothing. With an empty hand, only clicking an occupied card on the front removes it. Other empty-hand clicks do nothing. On the Relay, an empty-hand click removes the catalyst; sneak + empty-hand toggles power. Unsupported items and no-op clicks do not restart antenna verification.
+The server config is `config/simpleradio-repeaters.json`: `maxRelayHops: 64`, `persistentUnloadedTowers: true`, `requireCatalyst: true`. The hop setting limits total relay visits, starting at 1 and continuing through wired re-entry. When catalysts are optional, an empty socket uses a neutral factor of 1; an installed catalyst still supplies its native efficiency.
 
-Version 0.2.4 considers direct and repeated routes within one interference point of the cleanest available delivery, then chooses the strongest remaining arrival carrier. This prevents a slightly cleaner but nearly exhausted B-to-receiver carrier from beating a regenerated local C exit when the receiver is on the near side of the antenna core and the Relay is on the far side. The tolerance is measured against the cleanest candidate, so successive near-ties cannot widen it. Each selected packet keeps its actual worst interference; RF regeneration does not clean it up.
+Native power, reception and catalyst changes invalidate cached radio calculations. Successful data-pack reloads also refresh the client catalyst catalog. These updates do not force-load tower chunks or rescan unchanged antenna geometry.
 
-The Bank can be placed only directly above a Relay and uses only the Relay immediately below it. Side and bottom connections are not supported. Removing the Relay leaves the Bank and its cards intact, disconnected until a Relay is replaced underneath. Duplicate cards select a channel once. AM and FM remain distinct.
+## Source, models and validation
 
-Version 0.2.5 caches the Bank's parsed card labels between inventory updates. Unchanged frames reuse the same immutable display data, and text layout measures each label once per draw. Appearance and radio behavior are unchanged. This reduces repeated client work; no FPS improvement has been measured.
+- [Gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md).
+- [Model editing guide](art/Model-Editing-Guide.md), with editable projects under `art/blockbench/`.
+- Native catalyst preview: `art/Relay-Catalysts-0.3.0.png`.
+- Build and test evidence: `validation/0.3.0/` and `validation/build-verification.json`.
 
-Version 0.2.7 makes the Bank cards three units tall again. The dark strip and single frequency/modulation line are centered in the middle row. Labels still fit the strip and remain cached between updates. Insertion and removal accept one extra model unit above each card, with no padding below.
+Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. Run `./gradlew build` and `./gradlew runGameTest`.
 
-Version 0.2.8 rejects saved Bank bindings anywhere except the Relay's top position, clears their cached channels, and saves the corrected network records without loading tower chunks. Copied Relays receive a separate identity before publishing settings, so they cannot change the original tower. Receiver delivery deduplication now runs after the native acceptance and positive-power checks, allowing a later acceptable copy through when an earlier one was rejected.
+All 30 unit tests and 34 addon Minecraft tests pass. Tests cover exact catalyst power sequences, sub-1% reception, count-dependent reach, competing hop alternatives, actual native receiver output, catalyst identity/reload changes, copied Relay isolation, real copper-wire channel bridges, antenna restoration and card interactions. Near-tie bridge fixtures use an explicit neutral test catalyst to isolate carrier ranking; the counted-loss bridge uses gilded blackstone and a stronger A mast for its return budget.
 
-## Radio behavior
+The combined GameTest run also contains seven native Simple Radio tests. Four have the same failures as the earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. Reports separate addon and native results. Packet tests use synthetic encoded bytes; real multiplayer voice playback has not been exercised in this run.
 
-A handheld must reach an entry Relay using its own transmitter. Every Relay departure uses that tower's full RF power, while audio retains the worst interference along the selected path. The final wireless leg can degrade it further. Hearing a strong tower broadcast does not guarantee that a distant handheld can reply.
-
-Verified towers continue relaying from saved records while unloaded. Routing, attachment and reconciliation do not force missing chunks to load. Wired-core reloads retain their last verified antenna while native insulators and wires restore. Missing or replaced Relays and Banks are reconciled when their chunks become available, preventing persistent ghost connections.
-
-Loaded Relays also recheck antennas on the native 200-tick world-time boundary, about ten seconds at normal tick rate. Missed dirty notifications no longer leave the score stale. Bursts of build notifications share a settling window rather than restarting it every tick. Reload `CHECK` retains the verified network record.
-
-`ANT` is native antenna strength. `LINK` counts distinct outgoing tower neighbors across the selected channels, not players or all towers in a chain. The screen also shows pending verification, missing components and disabled status.
-
-## Documentation and editable models
-
-- [Gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md): setup, controls, RF behavior, persistence, configuration and code reference.
-- [Model editing guide](art/Model-Editing-Guide.md): Blockbench groups, exact coordinates, partial exports and Java text placement.
-- `art/blockbench/Relay.bbmodel` and `Repeater-Bank.bbmodel`: editable Java Block/Item projects with embedded 16×16 textures.
-- `art/Repeater-Bank-0.2.7-Native-Preview.png`: actual Minecraft model/font rendering, including empty and occupied states, all four facings, blank cards and long labels.
-
-The master models show inserted components in separate groups. Those components are excluded from the base runtime models and rendered only when present. `art/make_assets.py` reproduces the original supplied assets; do not rerun it over hand edits.
-
-## Commands and configuration
-
-`/radiorepeaters status` shows counts and packet counters. `/radiorepeaters list` and `/radiorepeaters refresh` require operator level 2. Refresh checks saved component positions in loaded chunks and rechecks loaded antennas.
-
-The server config is `config/simpleradio-repeaters.json`, with defaults `maxRelayHops: 64`, `persistentUnloadedTowers: true` and `requireCatalyst: true`. Restart after edits. The new saved network is `data/simpleradio_repeaters_relays.dat` in the overworld; the 0.1.x network store is ignored.
-
-## Build and verification
-
-Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
-
-```sh
-./gradlew build
-./gradlew runGameTest
-./gradlew runBaseGameTest
-```
-
-Version 0.2.8 builds successfully and passes all 21 unit tests and 31 addon Minecraft tests. Reports are recorded under `validation/0.2.8/` and `validation/build-verification.json`. New regression checks cover top-only placement and facing, rejected side/bottom bindings, copied Relay identities and isolation, invalid saved bindings with unloaded chunks, and receiver acceptance before delivery deduplication. The missing/replaced Bank fixtures now use a Bank directly above a Relay whose entity data is pending.
-
-For the previous 0.2.7 visual release, verification consisted of a successful build with tests skipped, focused geometry/bounds checks, and two native client render shots. No unit or server GameTest suite was rerun for this visual adjustment. The earlier 0.2.6 run passed 21 unit tests and 27 addon Minecraft tests. The 0.2.6 interaction regression checks insertion and removal on each card and one model unit above/below it, in every facing, with negative checks in the gaps outside those bands. The 0.2.5 rendering regression verifies snapshot reuse across unchanged frames, all six slot labels, no-op notifications, blank and invalid tuning, in-place retuning, removal, extraction/restoration, clearing, and client chunk/update tags. Prior full-suite XML reports remain under `validation/0.2.6/`; 0.2.7 build/render verification is under `validation/0.2.7/`. The opposite-side receiver/Relay bridge was reproduced on 0.2.3 before the fix; the corrected run verifies packet return while retaining the actual noisier path. Selection tests also cover the inclusive one-point boundary, rejection beyond it, iteration-order independence and prevention of chained near-ties. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The redesigned Bank was reviewed in the native client in all four facings, including its empty housing, filled slots, blank cards and a long frequency. The Relay artwork retains the 0.2.0 review. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
-
-Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.8 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
-
-The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.8. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.
+Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.

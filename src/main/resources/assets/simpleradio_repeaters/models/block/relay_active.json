@@ -5,7 +5,6 @@
     "side": "simpleradio_repeaters:block/relay_side",
     "top": "simpleradio_repeaters:block/relay_top",
     "screen": "simpleradio_repeaters:block/relay_screen",
-    "catalyst": "simpleradio_repeaters:block/catalyst",
     "particle": "simpleradio_repeaters:block/relay_side"
   },
   "elements": [

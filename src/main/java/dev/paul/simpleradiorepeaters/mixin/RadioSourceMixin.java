@@ -12,10 +12,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class RadioSourceMixin implements RelaySourceState {
     @Unique private RelayFrame repeaters$frame;
     @Unique private double repeaters$inheritedSeverity;
+    @Unique private int repeaters$relayCount;
     @Override public RelayFrame repeaters$getFrame() { return repeaters$frame; }
     @Override public void repeaters$setFrame(RelayFrame value) { repeaters$frame = value; }
     @Override public double repeaters$getInheritedSeverity() { return repeaters$inheritedSeverity; }
     @Override public void repeaters$setInheritedSeverity(double value) { repeaters$inheritedSeverity = value; }
+    @Override public int repeaters$getRelayCount() { return repeaters$relayCount; }
+    @Override public void repeaters$setRelayCount(int value) { repeaters$relayCount = Math.max(0, value); }
 
     @Inject(method = "copy()Lcom/codinglitch/simpleradio/radio/RadioSource;", at = @At("RETURN"))
     private void repeaters$copy(CallbackInfoReturnable<RadioSource> cir) {
@@ -23,6 +26,7 @@ public abstract class RadioSourceMixin implements RelaySourceState {
         if (repeaters$frame == null) repeaters$frame = new RelayFrame();
         copy.repeaters$setFrame(repeaters$frame);
         copy.repeaters$setInheritedSeverity(repeaters$inheritedSeverity);
+        copy.repeaters$setRelayCount(repeaters$relayCount);
         if (repeaters$frame.managed) cir.getReturnValue().activity = ((RadioSource) (Object) this).activity;
     }
 

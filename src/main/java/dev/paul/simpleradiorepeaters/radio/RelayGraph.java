@@ -2,50 +2,45 @@ package dev.paul.simpleradiorepeaters.radio;
 
 import java.util.*;
 
-/** Immutable directed topology with cached minimax paths, including hop/quality alternatives. */
+/** Bounded minimax propagation; directed link costs depend on the sender's total relay count. */
 public final class RelayGraph {
     public record Edge(int destination, double severity) {}
+    /** hops is the total number of relay visits, including those before a wired re-entry. */
     public record Reach(double severity, int hops) {}
-    private final List<List<Edge>> edges;
-    private final int maxHops;
-    private final Map<Integer, double[][]> paths = new HashMap<>();
+    @FunctionalInterface public interface Links { List<Edge> from(int tower, int relayCount); }
+    private final int nodeCount, maxHops;
+    private final Links links;
 
     public RelayGraph(List<List<Edge>> edges, int maxHops) {
-        this.edges = edges.stream().map(List::copyOf).toList();
-        this.maxHops = Math.max(1, maxHops);
+        List<List<Edge>> fixed = edges.stream().map(List::copyOf).toList();
+        nodeCount = fixed.size(); links = (tower, count) -> fixed.get(tower); this.maxHops = Math.max(1, maxHops);
     }
-
-    public Reach[] reachable(Map<Integer, Double> entrances) {
-        Reach[] result = new Reach[edges.size()];
-        for (var entrance : entrances.entrySet()) {
-            double[][] cached = paths.computeIfAbsent(entrance.getKey(), this::calculate);
-            for (int node = 0; node < result.length; node++) {
-                for (int hops = 1; hops <= maxHops; hops++) {
-                    if (!Double.isFinite(cached[node][hops])) continue;
-                    double severity = Math.max(entrance.getValue(), cached[node][hops]);
-                    Reach previous = result[node];
-                    if (previous == null || severity < previous.severity()
-                            || (severity == previous.severity() && hops < previous.hops()))
-                        result[node] = new Reach(severity, hops);
-                }
-            }
-        }
-        return result;
+    public RelayGraph(int nodeCount, Links links, int maxHops) {
+        this.nodeCount = nodeCount; this.links = links; this.maxHops = Math.max(1, maxHops);
     }
-
-    private double[][] calculate(int entrance) {
-        double[][] costs = new double[edges.size()][maxHops + 1];
+    /** Keep each count alternative: shorter routes can beat cleaner, weaker routes on the final leg. */
+    public List<List<Reach>> alternatives(Map<Integer, Double> entrances, int previousRelays) {
+        if (previousRelays >= maxHops) return Collections.nCopies(nodeCount, List.of());
+        int first = Math.max(0, previousRelays) + 1;
+        double[][] costs = new double[nodeCount][maxHops + 1];
         for (double[] row : costs) Arrays.fill(row, Double.POSITIVE_INFINITY);
-        costs[entrance][1] = 0;
-        for (int hops = 1; hops < maxHops; hops++) {
-            for (int from = 0; from < edges.size(); from++) {
-                if (!Double.isFinite(costs[from][hops])) continue;
-                for (Edge edge : edges.get(from)) {
-                    double next = Math.max(costs[from][hops], edge.severity());
-                    costs[edge.destination()][hops + 1] = Math.min(costs[edge.destination()][hops + 1], next);
+        for (var entry : entrances.entrySet()) costs[entry.getKey()][first] = entry.getValue();
+        for (int count = first; count < maxHops; count++) {
+            for (int from = 0; from < nodeCount; from++) {
+                if (!Double.isFinite(costs[from][count])) continue;
+                for (Edge edge : links.from(from, count)) {
+                    double severity = Math.max(costs[from][count], edge.severity());
+                    costs[edge.destination()][count + 1] = Math.min(costs[edge.destination()][count + 1], severity);
                 }
             }
         }
-        return costs;
+        List<List<Reach>> result = new ArrayList<>();
+        for (double[] row : costs) {
+            List<Reach> choices = new ArrayList<>();
+            for (int count = first; count <= maxHops; count++)
+                if (Double.isFinite(row[count])) choices.add(new Reach(row[count], count));
+            result.add(List.copyOf(choices));
+        }
+        return List.copyOf(result);
     }
 }

@@ -17,6 +17,9 @@ public final class NativeRadioAdapter {
         FrequencingType type = SimpleRadioFrequencing.TRANSMITTER;
         return type.getTransmissionPower(channel.mode()) + tower.antennaScore() * type.antennaAptitude;
     }
+    public static float departurePower(TowerRecord tower, ChannelKey channel, int relayCount) {
+        return RelayPower.departure(towerPower(tower, channel), tower.efficiency(), relayCount);
+    }
     public static RadioLinkMath.Result receiveAtTower(double distance, double power, double cap,
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
@@ -38,6 +41,9 @@ public final class NativeRadioAdapter {
         return Objects.hash(tx.transmissionPowerAM, tx.transmissionPowerFM, tx.antennaAptitude, tx.transmissionDiminishment,
                 tx.diminishmentMethod, tx.diminishThresholdAM, tx.diminishThresholdFM, rx.receptionPower, rx.receptionFloor,
                 rx.antennaAptitude, SimpleRadioLibrary.SERVER_CONFIG.frequency.baseAMInterference,
-                SimpleRadioLibrary.SERVER_CONFIG.frequency.baseFMInterference);
+                SimpleRadioLibrary.SERVER_CONFIG.frequency.baseFMInterference, RelayCatalysts.configurationStamp(),
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.requireCatalyst,
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers);
     }
 }

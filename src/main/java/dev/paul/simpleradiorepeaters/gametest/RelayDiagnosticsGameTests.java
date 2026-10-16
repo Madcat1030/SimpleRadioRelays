@@ -9,6 +9,7 @@ import com.codinglitch.simpleradio.radio.*;
 import dev.paul.simpleradiorepeaters.*;
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.network.*;
+import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import dev.paul.simpleradiorepeaters.radio.*;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.core.*;
@@ -53,9 +54,14 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         BlockPos coreA = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(coreA, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(coreA.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        // Counted loss makes the return path require more reception than the old one-piece A mast.
+        if (!edge) for (int height = 2; height <= 16; height++)
+            level.setBlock(coreA.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity a = relay(level, coreA, incoming, returning);
+        net.minecraft.resources.ResourceLocation relayCatalyst = edge ? TestCatalysts.neutral() : RelayCatalysts.GILDED;
+        if (edge) { a.removeCatalyst(); a.installCatalyst(new ItemStack(Items.NETHER_STAR), false); }
         BlockPos bPos = coreA.offset(4000, 0, 0); UUID bId = UUID.randomUUID();
-        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, true, true, 114, Set.of(bPos.asLong()));
+        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, relayCatalyst, true, 114, Set.of(bPos.asLong()));
         int dx = 4000, dz = 0;
         if (edge) {
             int smallScore = AntennaScanner.scan(level, a.getBlockPos(), coreA).score();
@@ -79,6 +85,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         level.setBlock(coreC, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(coreC.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity c = relay(level, coreC, incoming, returning, nearSide ? Direction.EAST : Direction.NORTH);
+        if (edge) { c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.NETHER_STAR), false); }
         Direction receiverFacing = nearSide ? Direction.WEST : Direction.EAST;
         Direction transmitterFacing = nearSide ? Direction.NORTH : Direction.WEST;
         BlockPos receiverPos = coreC.relative(receiverFacing), transmitterPos = coreC.relative(transmitterFacing);
@@ -121,10 +128,10 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                 receiverBlock.isDirty = false; transmitterBlock.isDirty = false;
                 Wire wire = Wire.connect(receiverBlock, transmitterBlock, level); check(wire != null, "Bridge must use an actual native copper wire");
                 check(rx.distributes, "Native Receiver must distribute its packet onto the wire");
-                double[] receiverPower = {-1}, receiverSeverity = {-1}; int[] transmitterFrames = {0};
+                double[] receiverPower = {-1}, receiverSeverity = {-1}; int[] transmitterFrames = {0}, counts = {-1, -1};
                 var originalReceiverAcceptor = rx.routerAcceptor; var originalTransmitterAcceptor = tx.routerAcceptor;
-                rx.routerAcceptor = source -> { receiverPower[0] = source.transmissionPower; receiverSeverity[0] = source.computeSeverity(); return originalReceiverAcceptor != null && originalReceiverAcceptor.apply(source); };
-                tx.routerAcceptor = source -> { transmitterFrames[0]++; return originalTransmitterAcceptor != null && originalTransmitterAcceptor.apply(source); };
+                rx.routerAcceptor = source -> { counts[0] = ((RelaySourceState) source).repeaters$getRelayCount(); receiverPower[0] = source.transmissionPower; receiverSeverity[0] = source.computeSeverity(); return originalReceiverAcceptor != null && originalReceiverAcceptor.apply(source); };
+                tx.routerAcceptor = source -> { counts[1] = ((RelaySourceState) source).repeaters$getRelayCount(); transmitterFrames[0]++; return originalTransmitterAcceptor != null && originalTransmitterAcceptor.apply(source); };
                 int delay = Math.max(0, (int) Math.ceil(wire.getLength() * SimpleRadioLibrary.SERVER_CONFIG.wire.transmissionTime)) + 3;
                 manager.updateSnapshot(b);
                 double requiredSeverity;
@@ -155,6 +162,9 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                                 + receiverPower[0] + ", TX frames=" + transmitterFrames[0] + ", listener active/valid=" + listener.active + "/" + listener.valid
                                 + ", C channels=" + c.channels() + ", wire delay=" + delay + ", counters=" + manager.forwardedFrames + "/" + manager.receiverDeliveries);
                         check(transmitterFrames[0] == 1 && terminal.last.frequencyMedium == returning, "Native bridge must emit exactly once on channel 2");
+                        check(counts[0] > 0 && counts[0] == counts[1]
+                                        && ((RelaySourceState) terminal.last).repeaters$getRelayCount() > counts[1],
+                                "The actual copper wire and channel change must preserve the count, then further relays must increase it");
                         check(terminal.last.activity == 42 && terminal.last.originalOwner.equals(player.getUUID()), "Bridge must preserve stream metadata");
                         if (edge) {
                             check(receiverPower[0] > 1000, "Exit selection must retain the local Relay's regenerated carrier");

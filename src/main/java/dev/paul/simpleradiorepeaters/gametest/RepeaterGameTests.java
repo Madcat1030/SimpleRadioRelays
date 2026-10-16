@@ -11,6 +11,7 @@ import dev.paul.simpleradiorepeaters.*;
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.item.FrequencyCardItem;
 import dev.paul.simpleradiorepeaters.network.*;
+import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import dev.paul.simpleradiorepeaters.radio.RelaySourceState;
 import dev.paul.simpleradiorepeaters.radio.RelayFrame;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
@@ -69,7 +70,7 @@ public class RepeaterGameTests implements FabricGameTest {
         helper.runAfterDelay(40, () -> {
             TowerManager manager = TowerManager.get(level.getServer()); TowerRecord current = manager.snapshot(bank.relayId());
             UUID oldId = UUID.randomUUID();
-            manager.updateSnapshot(new TowerRecord(oldId, current.dimension(), current.position(), current.channels(), true, true, true,
+            manager.updateSnapshot(new TowerRecord(oldId, current.dimension(), current.position(), current.channels(), true, RelayCatalysts.GILDED, true,
                     100, current.footprint()));
             ServerChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(level, level.getChunkAt(bank.getBlockPos()));
             helper.runAfterDelay(3, () -> {
@@ -116,7 +117,7 @@ public class RepeaterGameTests implements FabricGameTest {
             BlockPos remote = core.offset(20000, 0, 0); UUID remoteId = UUID.randomUUID();
             check(!level.hasChunkAt(remote), "Remote fixture must be unloaded");
             TowerRecord remoteRecord = new TowerRecord(remoteId, level.dimension().location().toString(), remote,
-                    bank.channels(), true, true, true, 32, Set.of(remote.asLong()));
+                    bank.channels(), true, RelayCatalysts.GILDED, true, 32, Set.of(remote.asLong()));
             manager.updateSnapshot(remoteRecord);
             var chunk = level.getChunkAt(bank.getBlockPos()); BlockPos pos = bank.getBlockPos();
             chunk.removeBlockEntity(pos);
@@ -300,7 +301,7 @@ public class RepeaterGameTests implements FabricGameTest {
             check(!level.hasChunkAt(unavailable), "The historical antenna dependency must be unloaded");
             Set<Long> footprint = new HashSet<>(verified.footprint()); footprint.add(unavailable.asLong());
             TowerRecord snapshot = new TowerRecord(verified.id(), verified.dimension(), verified.position(), verified.channels(),
-                    verified.enabled(), verified.catalyst(), verified.verified(), verified.antennaScore(), footprint, verified.cardBank());
+                    verified.enabled(), verified.catalystItem(), verified.verified(), verified.antennaScore(), footprint, verified.cardBank());
             manager.updateSnapshot(snapshot); bank.markDirty();
             level.setBlock(core.east(), Blocks.STONE.defaultBlockState(), 3);
             check(manager.isEligible(bank.relayId()), "An unrelated neighbouring block change must not invalidate the snapshot");
@@ -339,7 +340,7 @@ public class RepeaterGameTests implements FabricGameTest {
         UUID id = ((RelayBlockEntity) level.getBlockEntity(remote)).relayId();
         level.getChunkAt(remote).removeBlockEntity(remote);
         TowerRecord record = new TowerRecord(id, level.dimension().location().toString(), remote,
-                Set.of(bank.cardStates().get(0).channel()), true, true, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
+                Set.of(bank.cardStates().get(0).channel()), true, RelayCatalysts.GILDED, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
         manager.updateSnapshot(record);
         helper.runAfterDelay(3, () -> {
             check(manager.isEligible(id), "Matching Bank identity must preserve the saved Relay");
@@ -606,7 +607,7 @@ public class RepeaterGameTests implements FabricGameTest {
     public void saved_record_round_trip(GameTestHelper helper) {
         TowerRecord record = new TowerRecord(UUID.randomUUID(), helper.getLevel().dimension().location().toString(),
                 new BlockPos(9000, 80, 9000), Set.of(new ChannelKey("123.4", "AM"), new ChannelKey("123.4", "FM")),
-                true, true, true, 12, Set.of(new BlockPos(9000, 80, 9000).asLong()), new CardBankRef(new BlockPos(9000, 81, 9000), UUID.randomUUID()));
+                true, RelayCatalysts.GILDED, true, 12, Set.of(new BlockPos(9000, 80, 9000).asLong()), new CardBankRef(new BlockPos(9000, 81, 9000), UUID.randomUUID()));
         check(record.equals(TowerRecord.load(record.save())), "Saved tower metadata must round-trip without merging AM/FM");
         TowerSavedData data = new TowerSavedData(); data.towers.put(record.id(), record);
         TowerSavedData restored = TowerSavedData.load(data.save(new CompoundTag()));
@@ -624,7 +625,7 @@ public class RepeaterGameTests implements FabricGameTest {
         level.getChunkAt(remote).removeBlockEntity(remote);
         TowerManager manager = TowerManager.get(level.getServer());
         TowerRecord record = new TowerRecord(id, level.dimension().location().toString(), remote,
-                Set.of(bank.cardStates().get(0).channel()), true, true, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
+                Set.of(bank.cardStates().get(0).channel()), true, RelayCatalysts.GILDED, true, 32, Set.of(remote.asLong()), new CardBankRef(pos, bank.bankId()));
         manager.updateSnapshot(record);
         helper.runAfterDelay(3, () -> {
             check(manager.isEligible(id), "Matching Bank identity must remain eligible");
@@ -693,6 +694,7 @@ public class RepeaterGameTests implements FabricGameTest {
             check(saved != null && saved.eligible(), "Original tower must be verified before copying");
             // Use the original's loaded terrain chunk; this fixture tests copied NBT, not chunk activation.
             BlockPos copyCore = core.above(64), copyPos = copyCore.north();
+            level.setBlock(copyPos.above(), Blocks.AIR.defaultBlockState(), 3);
             level.setBlock(copyCore, Blocks.IRON_BLOCK.defaultBlockState(), 3);
             level.setBlock(copyCore.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
             level.setBlock(copyPos, original.getBlockState(), 3);
@@ -714,6 +716,7 @@ public class RepeaterGameTests implements FabricGameTest {
                                 && manager.snapshot(copy.relayId()).channels().equals(copy.channels()),
                         "Editing the original Bank must not change the copied tower");
                 level.setBlock(copyPos, Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(copyPos.above(), Blocks.AIR.defaultBlockState(), 3);
                 level.setBlock(original.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); helper.succeed();
             });
         });
@@ -725,7 +728,7 @@ public class RepeaterGameTests implements FabricGameTest {
         BlockPos relay = helper.absolutePos(new BlockPos(20000, 80, 20000)), oldBank = relay.offset(4000, 1, 0);
         UUID id = UUID.randomUUID(), bankId = UUID.randomUUID(); Set<ChannelKey> channels = Set.of(new ChannelKey("000.01", "AM"));
         check(!level.hasChunkAt(relay) && !level.hasChunkAt(oldBank), "Both copied-reference fixture chunks must be unloaded");
-        TowerRecord valid = new TowerRecord(id, level.dimension().location().toString(), relay, channels, true, true, true, 32,
+        TowerRecord valid = new TowerRecord(id, level.dimension().location().toString(), relay, channels, true, RelayCatalysts.GILDED, true, 32,
                 Set.of(relay.asLong()), new CardBankRef(relay.above(), bankId));
         CompoundTag raw = valid.save(); raw.putLong("CardBankPosition", oldBank.asLong());
         CompoundTag store = new CompoundTag(); var records = new net.minecraft.nbt.ListTag(); records.add(raw); store.put("Towers", records);
@@ -735,7 +738,7 @@ public class RepeaterGameTests implements FabricGameTest {
         check(cleared.antennaScore() == 32 && !level.hasChunkAt(relay) && !level.hasChunkAt(oldBank),
                 "Geometry validation must retain antenna metadata and read neither chunk");
         for (BlockPos misplaced : List.of(relay.north(), relay.below())) {
-            TowerRecord rejected = new TowerRecord(id, valid.dimension(), relay, channels, true, true, true, 32,
+            TowerRecord rejected = new TowerRecord(id, valid.dimension(), relay, channels, true, RelayCatalysts.GILDED, true, 32,
                     valid.footprint(), new CardBankRef(misplaced, bankId));
             check(rejected.cardBank() == null && rejected.channels().isEmpty(), "Side and bottom bindings must also be rejected");
         }
@@ -838,7 +841,7 @@ public class RepeaterGameTests implements FabricGameTest {
         for (BlockPos pos : towerPositions) {
             check(!level.hasChunkAt(pos), "Fixture tower chunk must start unloaded");
             UUID id = UUID.randomUUID(); ids.add(id);
-            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, true, true, 2, Set.of(pos.asLong())));
+            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, RelayCatalysts.GILDED, true, 2, Set.of(pos.asLong())));
         }
         BlockPos receiverPos = sourcePos.offset(9000, 0, 0);
         // Only the listener's chunk is explicitly loaded, representing a player at the far end.

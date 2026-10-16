@@ -16,6 +16,8 @@ public final class RelayRouter {
         if (!transmitter.active || !original.isValid() || transmitter.frequency == null || transmitter.frequencingType == null
                 || !(transmitter.getLocation().level instanceof ServerLevel level) || !level.getServer().isSameThread()) return false;
         TowerManager manager = TowerManager.get(level.getServer()); if (manager == null) return false;
+        int previousRelays = ((RelaySourceState) original).repeaters$getRelayCount();
+        if (previousRelays >= dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops) return false;
         ChannelKey channel = ChannelKey.from(transmitter.frequency);
         TowerManager.Network network = manager.network(level, channel);
         if (network.towers().isEmpty()) return false;
@@ -66,7 +68,7 @@ public final class RelayRouter {
                     prepared.transmissionPower, prepared.transmissionCap, sourceType, tower, channel);
             if (received != null) entrances.put(i, Math.max(inherited, received.severity()));
         }
-        RelayGraph.Reach[] reachable = network.graph().reachable(entrances);
+        List<List<RelayGraph.Reach>> reachable = network.graph().alternatives(entrances, previousRelays);
         for (var recipient : List.copyOf(transmitter.frequency.getReceivers())) {
             if (!(recipient instanceof RadioReceiver receiver) || !receiver.active || !receiver.valid || receiver.frequencingType == null
                     || receiver.getLocation() == null || original.willShort(receiver)) continue;
@@ -81,14 +83,13 @@ public final class RelayRouter {
                 direct = transmitter.prepareSource(direct, receiver);
                 if (direct.transmissionPower > 0 && noise(direct) < 100
                         && (transmitter.routeCriteria == null || transmitter.routeCriteria.test(direct, receiver)))
-                    candidates.add(new RelayDeliverySelection.Candidate<>(direct, noise(direct), direct.transmissionPower, 0));
+                    candidates.add(new RelayDeliverySelection.Candidate<>(direct, noise(direct), direct.transmissionPower, previousRelays));
             }
 
             if (receiver.getLocation().level == level) {
                 Vec3 destination = new Vec3(receiver.getLocation());
-                for (int i = 0; i < reachable.length; i++) {
-                    RelayGraph.Reach path = reachable[i]; if (path == null) continue;
-                    TowerRecord tower = network.towers().get(i); float power = NativeRadioAdapter.towerPower(tower, channel);
+                for (int i = 0; i < reachable.size(); i++) for (RelayGraph.Reach path : reachable.get(i)) {
+                    TowerRecord tower = network.towers().get(i); float power = NativeRadioAdapter.departurePower(tower, channel, path.hops());
                     RadioLinkMath.Result received = NativeRadioAdapter.receiveAtReceiver(tower.position().getCenter().distanceTo(destination) * scale,
                             power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel);
                     if (received == null) continue;
@@ -99,6 +100,7 @@ public final class RelayRouter {
                     repeated.transmissionCap = power; repeated.transmissionPower = remaining;
                     repeated.frequencyMedium = transmitter.frequency;
                     ((RelaySourceState) repeated).repeaters$setInheritedSeverity(severity);
+                    ((RelaySourceState) repeated).repeaters$setRelayCount(path.hops());
                     repeated.visit(receiver);
                     if (transmitter.routeCriteria != null && !transmitter.routeCriteria.test(repeated, receiver)) continue;
                     candidates.add(new RelayDeliverySelection.Candidate<>(repeated, severity, repeated.transmissionPower, path.hops()));

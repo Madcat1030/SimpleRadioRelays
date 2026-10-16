@@ -1,4 +1,4 @@
-# Relay and Repeater Bank models — 0.2.8
+# Relay and Repeater Bank models — 0.3.0
 
 Open `blockbench/Relay.bbmodel` and `blockbench/Repeater-Bank.bbmodel` as **Java Block/Item** projects. Each project embeds its textures, and every face has an explicit UV rectangle. All supplied block textures are 16×16. The master projects show the inserted components so you can edit them in place.
 
@@ -11,7 +11,7 @@ The housing uses the original placeholder's slate-green shell, dark recesses, br
 | Project group | Export destination | Displayed when |
 | --- | --- | --- |
 | Relay `base` | `models/block/relay.json` and `relay_active.json` | Always |
-| Relay `inserted_catalyst` | `models/block/relay_catalyst.json` | Gilded blackstone is installed |
+| Relay `inserted_catalyst` | Java transform in `RelayRenderer` | Installed native catalyst block/item |
 | Bank `base` | `models/block/channel_bank.json` and `channel_bank_connected.json` | Always |
 | Bank `inserted_card_1` … `inserted_card_6` | `models/block/bank_card_0.json` … `bank_card_5.json` | That card slot is occupied |
 
@@ -66,4 +66,8 @@ The runtime resource root is `src/main/resources/assets/simpleradio_repeaters/`.
 
 `RepeatersClient` explicitly registers all seven partial models with Fabric's model loader. If you rename a partial JSON, update the matching resource ID in `RelayRenderer` or `ChannelBankRenderer` and its registration. The six physical slots and their serialized inventory size are defined in `ChannelBankBlockEntity`; changing the slot count also requires changing the renderer and cached card list.
 
-The Bank must be directly above the Relay, with its pins aligned to the top sockets. Normal placement requires a Relay below and copies its facing. Side and bottom connections are not supported in 0.2.8.
+The Bank must be directly above the Relay, with its pins aligned to the top sockets. Normal placement requires a Relay below and copies its facing. Side and bottom connections are not supported.
+
+## Catalyst rendering in 0.3
+
+The Relay renders the actual installed block/item. Its Blockbench catalyst group remains a placement reference and is excluded from the base housing. The fixed `relay_catalyst.json` model and catalyst bitmap are removed. Block catalysts render inside X/Y=2–6, Z=−2–1 through the translation and scale in `RelayRenderer`; non-block catalysts use an item transform centered in that socket. Change these Java transforms if you move or resize the socket. Native gilded blackstone and amethyst textures follow the active resource pack.

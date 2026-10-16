@@ -4,6 +4,8 @@ import com.codinglitch.simpleradio.central.Frequencing;
 import dev.paul.simpleradiorepeaters.*;
 import dev.paul.simpleradiorepeaters.item.CardState;
 import dev.paul.simpleradiorepeaters.network.*;
+import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.*;
 import net.minecraft.nbt.*;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -26,7 +28,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     @Nullable private CardBankRef cardBank;
     private List<CardState> cachedCards = emptyCards();
     private final AntennaVerification verification = new AntennaVerification();
-    private record Settings(List<CardState> cards, boolean catalyst, boolean enabled, CardBankRef controller) {}
+    private record Settings(List<CardState> cards, ResourceLocation catalyst, boolean enabled, CardBankRef controller) {}
     private Settings lastSettings = settingsSnapshot();
     private record Display(int score, int status, int peers, int channels, boolean enabled) {}
     @Nullable private Display lastDisplay;
@@ -46,9 +48,10 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         if (dirty) return;
         dirty = true; nextRefresh = 0; verification.reset();
     }
-    public boolean hasCatalyst() { return catalyst.is(Items.GILDED_BLACKSTONE); }
+    public boolean hasCatalyst() { return RelayCatalysts.accepts(catalyst); }
+    @Nullable public ResourceLocation catalystItem() { return RelayCatalysts.item(catalyst); }
     public boolean installCatalyst(ItemStack held, boolean creative) {
-        if (hasCatalyst() || !held.is(Items.GILDED_BLACKSTONE)) return false;
+        if (!catalyst.isEmpty() || !RelayCatalysts.accepts(held)) return false;
         catalyst = held.copy(); catalyst.setCount(1);
         if (!creative) held.shrink(1); setChanged(); return true;
     }
@@ -116,14 +119,14 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         if (current.equals(lastSettings)) return;
         Settings previous = lastSettings; lastSettings = current;
         if (!current.cards().equals(previous.cards()) || !Objects.equals(current.controller(), previous.controller())
-                || (!previous.catalyst() && current.catalyst()) || (!previous.enabled() && current.enabled())) markDirty();
+                || (previous.catalyst() == null && current.catalyst() != null) || (!previous.enabled() && current.enabled())) markDirty();
         if (level instanceof ServerLevel server) {
             TowerManager manager = TowerManager.get(server.getServer());
             if (manager != null) { manager.settingsChanged(this); updateDisplayedState(manager); }
             syncClient();
         }
     }
-    private Settings settingsSnapshot() { return new Settings(cachedCards, hasCatalyst(), enabled, cardBank); }
+    private Settings settingsSnapshot() { return new Settings(cachedCards, catalystItem(), enabled, cardBank); }
     public static void tick(Level level, BlockPos pos, BlockState state, RelayBlockEntity relay) {
         TowerManager manager = TowerManager.get(((ServerLevel) level).getServer()); if (manager == null) return;
         // Resolve copied identities before adopting or publishing any controller settings.

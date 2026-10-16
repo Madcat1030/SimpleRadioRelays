@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "repeaters_bank_model_qa",
+  "version": "0.0.0",
+  "name": "Temporary Bank Model Preview",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.paul.simpleradiorepeaters.client.BankPreviewClient"
+    ]
+  },
+  "depends": {
+    "simpleradio_repeaters": "*"
+  }
+}

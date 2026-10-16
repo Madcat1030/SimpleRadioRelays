@@ -2,6 +2,7 @@ package dev.paul.simpleradiorepeaters.block;
 
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
+import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.*;
@@ -36,10 +37,10 @@ public final class RelayBlock extends BaseEntityBlock {
     }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
-        if (!held.isEmpty() && !held.is(Items.GILDED_BLACKSTONE)) return InteractionResult.PASS;
+        if (!held.isEmpty() && !(level.isClientSide ? RelayCatalysts.acceptsClient(held) : RelayCatalysts.accepts(held))) return InteractionResult.PASS;
         if (!(level.getBlockEntity(pos) instanceof RelayBlockEntity relay)) return InteractionResult.PASS;
-        if (held.is(Items.GILDED_BLACKSTONE)) {
-            if (relay.hasCatalyst()) return InteractionResult.FAIL;
+        if (!held.isEmpty()) {
+            if (!relay.catalyst().isEmpty()) return InteractionResult.FAIL;
             if (level.isClientSide) return InteractionResult.SUCCESS;
             return relay.installCatalyst(held, player.getAbilities().instabuild) ? InteractionResult.CONSUME : InteractionResult.FAIL;
         }
@@ -47,7 +48,7 @@ public final class RelayBlock extends BaseEntityBlock {
             if (level.isClientSide) return InteractionResult.SUCCESS;
             relay.setEnabled(!relay.enabled()); return InteractionResult.CONSUME;
         }
-        if (!relay.hasCatalyst()) return InteractionResult.PASS;
+        if (relay.catalyst().isEmpty()) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
         ItemStack removed = relay.removeCatalyst();
         if (removed.isEmpty()) return InteractionResult.PASS;
@@ -59,7 +60,7 @@ public final class RelayBlock extends BaseEntityBlock {
                 TowerManager manager = TowerManager.get(server.getServer());
                 if (manager != null) manager.removeAt(server.dimension().location().toString(), pos);
             }
-            if (level.getBlockEntity(pos) instanceof RelayBlockEntity relay && relay.hasCatalyst())
+            if (level.getBlockEntity(pos) instanceof RelayBlockEntity relay && !relay.catalyst().isEmpty())
                 Block.popResource(level, pos, relay.catalyst().copy());
         }
         super.onRemove(old, level, pos, next, moved);

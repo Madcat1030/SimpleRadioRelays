@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites>
+  <testsuite name="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-16T17:14:15.504Z" hostname="9b72c78014fd" time="0.074">
+    <properties />
+    <testcase name="newlyLoadedConnectionsGetTimeToRestore()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.028" />
+    <testcase name="oneEmptyScanCannotDiscardThePreviousAntenna()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.001" />
+    <testcase name="unavailableAntennaChunksRestartConfirmation()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.001" />
+    <testcase name="dirtyNotificationBeginsNewVerification()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.002" />
+    <testcase name="unresolvedWireEndpointsAreStillPending()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.001" />
+    <testcase name="confirmedRemovalEventuallyStopsRelaying()" classname="dev.paul.simpleradiorepeaters.network.AntennaVerificationTest" time="0.0" />
+    <system-out />
+    <system-err />
+  </testsuite>
+  <testsuite name="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-16T17:14:15.581Z" hostname="9b72c78014fd" time="0.012">
+    <properties />
+    <testcase name="slightlyNoisierLocalRelayBeatsAnExhaustedDirectCarrier()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.005" />
+    <testcase name="emptyCandidateListDoesNotInventADelivery()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001" />
+    <testcase name="nearTiesCannotChainBeyondTheCleanestRouteAndOrderDoesNotChangeTheWinner()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.0" />
+    <testcase name="onePointIsInclusiveButStrongerRoutesBeyondItAreExcluded()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001" />
+    <testcase name="EqualCarrierPowerPrefersCleanerAudioThenFewerHops()" classname="dev.paul.simpleradiorepeaters.radio.RelayDeliverySelectionTest" time="0.001" />
+    <system-out />
+    <system-err />
+  </testsuite>
+  <testsuite name="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-16T17:14:15.594Z" hostname="9b72c78014fd" time="0.045">
+    <properties />
+    <testcase name="identicalPayloadFramesRemainDistinct()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.008" />
+    <testcase name="separateEntrancesMergeWithoutDuplicatingRecipients()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.005" />
+    <testcase name="hopBudgetKeepsUsefulShorterAlternatives()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002" />
+    <testcase name="aDirectedLinkDoesNotInventAReturnPath()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002" />
+    <testcase name="cutoffAndReceptionFloorMatchNativeRules()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="aDiamondSelectsTheBestPathOnce()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002" />
+    <testcase name="ingressNoiseCannotBeRepairedAndPrefersFewerHops()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="ringsTerminateAndUseTheShortestEqualQualityRoute()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="finalLegMustKeepAShorterNoisierAlternative()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="eachLegUsesTheSenderCountAndCanStopAnOtherwiseConnectedChain()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002" />
+    <testcase name="aLiveSubOnePercentHopRemainsInTheGraph()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="aChainReachesBeyondAnyIndividualTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.004" />
+    <testcase name="oppositeSidesNeedTheTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001" />
+    <testcase name="wiredReentryStartsAtTheNextCountAndSharesTheBudget()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.003" />
+    <system-out />
+    <system-err />
+  </testsuite>
+  <testsuite name="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-16T17:14:15.640Z" hostname="9b72c78014fd" time="0.006">
+    <properties />
+    <testcase name="invalidInputsNeverCreateUsablePower()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.001" />
+    <testcase name="firstRelayAlreadyPaysItsCatalystEfficiency()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0" />
+    <testcase name="mixedCatalystsUseTheCurrentTowersEfficiencyAndMaximum()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.001" />
+    <testcase name="amethystDecaysAtEachRelayCount()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0" />
+    <testcase name="lessThanOnePercentCanStillReachANearbyReceiver()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0" />
+    <system-out />
+    <system-err />
+  </testsuite>
+</testsuites>

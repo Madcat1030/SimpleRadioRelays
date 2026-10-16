@@ -4,10 +4,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import dev.paul.simpleradiorepeaters.RepeatersConfig;
 import dev.paul.simpleradiorepeaters.block.BankConnection;
+import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
+import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public record TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
-                          boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint, CardBankRef cardBank) {
+                          boolean enabled, @Nullable ResourceLocation catalystItem, boolean verified, int antennaScore, Set<Long> footprint, CardBankRef cardBank) {
     public TowerRecord {
         position = position.immutable(); channels = Set.copyOf(channels); footprint = Set.copyOf(footprint);
         // Apply the same mounting rule to restored records and all later manager updates.
@@ -16,20 +19,20 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
         }
     }
     public TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
-                       boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint) {
-        this(id, dimension, position, channels, enabled, catalyst, verified, antennaScore, footprint, null);
+                       boolean enabled, @Nullable ResourceLocation catalystItem, boolean verified, int antennaScore, Set<Long> footprint) {
+        this(id, dimension, position, channels, enabled, catalystItem, verified, antennaScore, footprint, null);
     }
-    public boolean eligible() { return enabled && (!RepeatersConfig.INSTANCE.requireCatalyst || catalyst) && verified && antennaScore > 0 && !channels.isEmpty(); }
-    public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, boolean catalyst) {
-        return settings(selected, enabled, catalyst, cardBank);
-    }
-    public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, boolean catalyst, CardBankRef controller) {
+    public boolean catalyst() { return RelayCatalysts.registered(catalystItem); }
+    public double efficiency() { return catalystItem == null && !RepeatersConfig.INSTANCE.requireCatalyst ? 1 : RelayCatalysts.efficiency(catalystItem); }
+    public boolean eligible() { return enabled && (!RepeatersConfig.INSTANCE.requireCatalyst || catalyst()) && verified && antennaScore > 0 && !channels.isEmpty(); }
+    public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, ResourceLocation catalyst, CardBankRef controller) {
         return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint, controller);
     }
-    public TowerRecord invalidate() { return new TowerRecord(id, dimension, position, channels, enabled, catalyst, false, antennaScore, footprint, cardBank); }
+    public TowerRecord invalidate() { return new TowerRecord(id, dimension, position, channels, enabled, catalystItem, false, antennaScore, footprint, cardBank); }
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag(); tag.putUUID("Id", id); tag.putString("Dimension", dimension); tag.putLong("Position", position.asLong());
-        tag.putBoolean("Enabled", enabled); tag.putBoolean("Catalyst", catalyst); tag.putBoolean("Verified", verified); tag.putInt("Score", antennaScore);
+        tag.putBoolean("Enabled", enabled); if (catalystItem != null) tag.putString("CatalystItem", catalystItem.toString());
+        tag.putBoolean("Verified", verified); tag.putInt("Score", antennaScore);
         tag.putLongArray("Footprint", footprint.stream().mapToLong(Long::longValue).toArray());
         if (cardBank != null) { tag.putLong("CardBankPosition", cardBank.position().asLong()); tag.putUUID("CardBankId", cardBank.id()); }
         ListTag selected = new ListTag(); channels.stream().sorted().forEach(channel -> selected.add(channel.save())); tag.put("Channels", selected); return tag;
@@ -42,6 +45,7 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
         CardBankRef controller = tag.hasUUID("CardBankId") && tag.contains("CardBankPosition", Tag.TAG_LONG)
                 ? new CardBankRef(BlockPos.of(tag.getLong("CardBankPosition")), tag.getUUID("CardBankId")) : null;
         return new TowerRecord(tag.getUUID("Id"), tag.getString("Dimension"), BlockPos.of(tag.getLong("Position")), channels,
-                tag.getBoolean("Enabled"), tag.getBoolean("Catalyst"), tag.getBoolean("Verified"), Math.max(0, tag.getInt("Score")), footprint, controller);
+                tag.getBoolean("Enabled"), tag.getString("CatalystItem").isBlank() ? null : ResourceLocation.tryParse(tag.getString("CatalystItem")),
+                tag.getBoolean("Verified"), Math.max(0, tag.getInt("Score")), footprint, controller);
     }
 }

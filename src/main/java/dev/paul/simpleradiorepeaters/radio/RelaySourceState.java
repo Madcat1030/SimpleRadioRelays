@@ -5,4 +5,6 @@ public interface RelaySourceState {
     void repeaters$setFrame(RelayFrame frame);
     double repeaters$getInheritedSeverity();
     void repeaters$setInheritedSeverity(double severity);
+    int repeaters$getRelayCount();
+    void repeaters$setRelayCount(int count);
 }
