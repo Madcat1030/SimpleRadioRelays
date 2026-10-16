@@ -105,14 +105,16 @@ public final class TowerManager {
                         SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: relay block is absent", id, key.dimension(), record.position());
                         continue;
                     }
-                    if (!level.areEntitiesLoaded(key.position())) { retry = true; continue; }
-                    // CHECK resolves saved data without manufacturing a new identity.
-                    var entity = chunk.getBlockEntity(record.position(), LevelChunk.EntityCreationType.CHECK);
-                    if (!(entity instanceof RelayBlockEntity relay)) { retry = true; continue; }
-                    if (!relay.relayId().equals(id)) {
-                        removeRecord(id);
-                        SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: relay identity changed", id, key.dimension(), record.position());
-                        continue;
+                    if (!level.areEntitiesLoaded(key.position())) retry = true;
+                    else {
+                        // A pending Relay entity must not postpone checking its Bank in this same chunk.
+                        var entity = chunk.getBlockEntity(record.position(), LevelChunk.EntityCreationType.CHECK);
+                        if (!(entity instanceof RelayBlockEntity relay)) retry = true;
+                        else if (!relay.relayId().equals(id)) {
+                            removeRecord(id);
+                            SimpleRadioRepeaters.LOGGER.info("Removed stale repeater {} at {} {}: relay identity changed", id, key.dimension(), record.position());
+                            continue;
+                        }
                     }
                 }
                 CardBankRef controller = record.cardBank();
@@ -158,15 +160,14 @@ public final class TowerManager {
         }
     }
     public boolean loaded(RelayBlockEntity relay) {
-        RelayBlockEntity previous = loaded.put(relay.relayId(), relay);
-        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
         TowerRecord saved = data.towers.get(relay.relayId());
         if (saved != null && (!saved.position().equals(relay.getBlockPos())
                 || !saved.dimension().equals(relay.getLevel().dimension().location().toString()))) {
-            loaded.remove(relay.relayId()); relay.regenerateId(); loaded.put(relay.relayId(), relay);
+            relay.regenerateId();
         }
+        RelayBlockEntity previous = loaded.put(relay.relayId(), relay);
+        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
         if (previous != relay) {
-            settingsChanged(relay);
             pendingChunks.add(new ChunkKey(relay.getLevel().dimension().location().toString(), new ChunkPos(relay.getBlockPos()).toLong()));
         }
         return previous != relay;
@@ -177,7 +178,10 @@ public final class TowerManager {
     }
     public void settingsChanged(RelayBlockEntity relay) {
         TowerRecord saved = data.towers.get(relay.relayId());
-        if (saved != null) put(saved.settings(relay.channels(), relay.enabled(), relay.hasCatalyst(), relay.cardBank()));
+        // A placement notification can precede the copy's first tick and UUID reassignment.
+        if (saved != null && saved.position().equals(relay.getBlockPos())
+                && saved.dimension().equals(relay.getLevel().dimension().location().toString()))
+            put(saved.settings(relay.channels(), relay.enabled(), relay.hasCatalyst(), relay.cardBank()));
     }
     public void publish(RelayBlockEntity relay, AntennaScanner.Result antenna) {
         updateSnapshot(new TowerRecord(relay.relayId(), relay.getLevel().dimension().location().toString(), relay.getBlockPos(), relay.channels(),

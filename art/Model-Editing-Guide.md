@@ -1,4 +1,4 @@
-# Relay and Repeater Bank models — 0.2.7
+# Relay and Repeater Bank models — 0.2.8
 
 Open `blockbench/Relay.bbmodel` and `blockbench/Repeater-Bank.bbmodel` as **Java Block/Item** projects. Each project embeds its textures, and every face has an explicit UV rectangle. All supplied block textures are 16×16. The master projects show the inserted components so you can edit them in place.
 
@@ -66,4 +66,4 @@ The runtime resource root is `src/main/resources/assets/simpleradio_repeaters/`.
 
 `RepeatersClient` explicitly registers all seven partial models with Fabric's model loader. If you rename a partial JSON, update the matching resource ID in `RelayRenderer` or `ChannelBankRenderer` and its registration. The six physical slots and their serialized inventory size are defined in `ChannelBankBlockEntity`; changing the slot count also requires changing the renderer and cached card list.
 
-The recommended placement is Bank directly above Relay with the same facing. Other adjacent placements connect electrically, but the connector pins are designed for the stacked arrangement.
+The Bank must be directly above the Relay, with its pins aligned to the top sockets. Normal placement requires a Relay below and copies its facing. Side and bottom connections are not supported in 0.2.8.

@@ -11,7 +11,10 @@ public final class TowerSavedData extends SavedData {
     public final Map<UUID, TowerRecord> towers = new HashMap<>();
     public static TowerSavedData load(CompoundTag tag) {
         TowerSavedData data = new TowerSavedData(); ListTag nodes = tag.getList("Towers", Tag.TAG_COMPOUND);
-        for (int i = 0; i < nodes.size(); i++) try { TowerRecord record = TowerRecord.load(nodes.getCompound(i)); data.towers.put(record.id(), record); }
+        for (int i = 0; i < nodes.size(); i++) try {
+            CompoundTag node = nodes.getCompound(i); TowerRecord record = TowerRecord.load(node); data.towers.put(record.id(), record);
+            if (node.contains("CardBankPosition") && record.cardBank() == null) data.setDirty();
+        }
         catch (RuntimeException e) { SimpleRadioRepeaters.LOGGER.warn("Skipping damaged repeater record", e); }
         return data;
     }

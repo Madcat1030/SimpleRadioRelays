@@ -3,11 +3,18 @@ package dev.paul.simpleradiorepeaters.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import dev.paul.simpleradiorepeaters.RepeatersConfig;
+import dev.paul.simpleradiorepeaters.block.BankConnection;
 import java.util.*;
 
 public record TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
                           boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint, CardBankRef cardBank) {
-    public TowerRecord { position = position.immutable(); channels = Set.copyOf(channels); footprint = Set.copyOf(footprint); }
+    public TowerRecord {
+        position = position.immutable(); channels = Set.copyOf(channels); footprint = Set.copyOf(footprint);
+        // Apply the same mounting rule to restored records and all later manager updates.
+        if (cardBank != null && !BankConnection.isMounted(position, cardBank.position())) {
+            cardBank = null; channels = Set.of();
+        }
+    }
     public TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
                        boolean enabled, boolean catalyst, boolean verified, int antennaScore, Set<Long> footprint) {
         this(id, dimension, position, channels, enabled, catalyst, verified, antennaScore, footprint, null);

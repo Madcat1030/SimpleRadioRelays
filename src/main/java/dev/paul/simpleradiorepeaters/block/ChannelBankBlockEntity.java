@@ -24,7 +24,6 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     private List<CardState> lastCards = cardStates();
     private List<CardState> displaySource = List.of();
     @Nullable private List<CardDisplay> displayCards;
-    @Nullable private BlockPos previousRelay;
     private boolean connectionDirty = true;
     public ChannelBankBlockEntity(BlockPos pos, BlockState state) { super(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, pos, state); }
     public UUID bankId() { return bankId; }
@@ -46,13 +45,9 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     }
     @Nullable public BlockPos primaryRelayPosition() {
         if (level == null) return null;
-        if (previousRelay != null && BankConnection.state(level, previousRelay) == null) return previousRelay;
-        for (Direction direction : BankConnection.RELAY_PRIORITY) {
-            BlockPos pos = worldPosition.relative(direction);
-            BlockState state = BankConnection.state(level, pos);
-            if (state != null && state.is(SimpleRadioRepeaters.RELAY)) return pos;
-        }
-        return null;
+        BlockPos pos = worldPosition.below();
+        BlockState state = BankConnection.state(level, pos);
+        return state != null && state.is(SimpleRadioRepeaters.RELAY) ? pos : null;
     }
     @Nullable public RelayBlockEntity relay() {
         BlockPos pos = primaryRelayPosition();
@@ -64,12 +59,6 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     public static void tick(Level level, BlockPos pos, BlockState state, ChannelBankBlockEntity bank) {
         if (!bank.connectionDirty && level.getGameTime() % 10 != 0) return;
         bank.connectionDirty = false; RelayBlockEntity relay = bank.relay();
-        BlockPos owner = relay == null ? bank.previousRelay : relay.getBlockPos();
-        if (relay == null && owner != null) {
-            BlockState ownerState = BankConnection.state(level, owner);
-            if (ownerState != null && !ownerState.is(SimpleRadioRepeaters.RELAY)) owner = null;
-        }
-        if (!Objects.equals(owner, bank.previousRelay)) { bank.previousRelay = owner; bank.savedAndSynced(); }
         boolean connected = relay != null;
         if (state.getValue(ChannelBankBlock.CONNECTED) != connected)
             level.setBlock(pos, state.setValue(ChannelBankBlock.CONNECTED, connected), Block.UPDATE_CLIENTS);
@@ -121,12 +110,10 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag); ContainerHelper.saveAllItems(tag, items); tag.putUUID("CardBankId", bankId);
-        if (previousRelay != null) tag.putLong("RelayPosition", previousRelay.asLong());
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag); items = NonNullList.withSize(6, ItemStack.EMPTY); ContainerHelper.loadAllItems(tag, items);
         if (tag.hasUUID("CardBankId")) bankId = tag.getUUID("CardBankId");
-        previousRelay = tag.contains("RelayPosition") ? BlockPos.of(tag.getLong("RelayPosition")) : null;
         lastCards = cardStates(); displayCards = null; connectionDirty = true;
     }
 }

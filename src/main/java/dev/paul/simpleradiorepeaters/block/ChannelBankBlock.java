@@ -2,11 +2,13 @@ package dev.paul.simpleradiorepeaters.block;
 
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.*;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.*;
 import org.jetbrains.annotations.Nullable;
+import java.util.List;
 
 public final class ChannelBankBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -24,15 +27,15 @@ public final class ChannelBankBlock extends BaseEntityBlock {
         super(properties); registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(CONNECTED, false));
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, CONNECTED); }
-    @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction facing = context.getHorizontalDirection().getOpposite();
-        for (Direction direction : BankConnection.RELAY_PRIORITY) {
-            BlockPos pos = context.getClickedPos().relative(direction);
-            if (!context.getLevel().hasChunkAt(pos)) continue;
-            BlockState state = context.getLevel().getBlockState(pos);
-            if (state.is(SimpleRadioRepeaters.RELAY)) { facing = state.getValue(RelayBlock.FACING); break; }
-        }
-        return defaultBlockState().setValue(FACING, facing);
+    @Override @Nullable public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockPos relay = context.getClickedPos().below();
+        if (!context.getLevel().hasChunkAt(relay)) return null;
+        BlockState state = context.getLevel().getBlockState(relay);
+        return state.is(SimpleRadioRepeaters.RELAY) ? defaultBlockState().setValue(FACING, state.getValue(RelayBlock.FACING)) : null;
+    }
+    @Override public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> lines, TooltipFlag flag) {
+        super.appendHoverText(stack, level, lines, flag);
+        lines.add(Component.translatable("tooltip.simpleradio_repeaters.bank").withStyle(ChatFormatting.GRAY));
     }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(FACING)) {

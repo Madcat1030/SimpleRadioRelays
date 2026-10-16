@@ -12,9 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /** Loaded-chunk-only component lookup. Attachment never loads neighbouring terrain. */
 public final class BankConnection {
-    public static final Direction[] RELAY_PRIORITY = {Direction.DOWN, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.UP};
-    public static final Direction[] BANK_PRIORITY = {Direction.UP, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.DOWN};
     private BankConnection() {}
+    public static boolean isMounted(BlockPos relay, BlockPos bank) { return relay.above().equals(bank); }
     @Nullable public static LevelChunk chunk(Level level, BlockPos pos) {
         return level instanceof ServerLevel server ? server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4) : null;
     }

@@ -1,48 +1,50 @@
 {
-  "version": "0.2.7",
+  "version": "0.2.8",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
   "java_bytecode": 17,
-  "jar_sha256": "53b1613ea8c26a3c65bf195f09f5f30d1539d55410a42381c5d12370cdef807f",
+  "jar_sha256": "c9ddabf29b3fcfd8322a7419e7e9342a4556ae4851976fcb34a06b2f923b6308",
   "build": "passed",
-  "build_exit": 0,
-  "build_command": "build -x test",
+  "build_command": "build",
+  "final_verification_command": "--offline build runGameTest",
+  "combined_task_exit": 1,
   "unit_tests": {
-    "status": "not run"
+    "status": "passed",
+    "tests": 21,
+    "failures": 0
   },
   "addon_minecraft_tests": {
-    "status": "not run"
+    "status": "passed",
+    "tests": 31,
+    "failures": 0
   },
-  "verification_scope": "User-requested light verification: compilation, six model geometry/bounds checks, native overview and closeup captures.",
-  "previous_full_suite": {
-    "version": "0.2.6",
-    "unit_tests": 21,
-    "addon_minecraft_tests": 27,
-    "addon_failures": 0,
-    "native_baseline_failures": [
-      "SystemTest.closedSystem",
+  "native_minecraft_tests": {
+    "tests": 7,
+    "failures": [
+      "SystemTest.shortCircuit",
       "SystemTest.garbageCollection",
-      "SystemTest.openSystem",
-      "SystemTest.shortCircuit"
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
     ],
-    "reports": "validation/0.2.6"
+    "note": "Same four headless native test failures as the earlier addon-disabled control. Underlying cause unresolved; not established live-server bugs."
   },
-  "change": "Three-unit cards with centered dark strips and one-line labels; one model unit of hit padding above only.",
-  "native_client_preview_exit": 0,
-  "render_shots": [
-    "Repeater-Bank-0.2.7-Native-Preview.png",
-    "Repeater-Bank-0.2.7-Card-Detail.png"
+  "regressions": [
+    "top-only placement and facing inheritance",
+    "side/bottom bindings rejected",
+    "copied Relay NBT clears distant binding and channels",
+    "pre-tick copy changes preserve original record",
+    "copy gets new identity and uses its own Bank",
+    "original Bank edits do not affect copy",
+    "invalid saved binding corrected while both chunks remain unloaded",
+    "old Bank edits and obsolete owner hints cannot revive a distant binding",
+    "missing/replaced Bank reconciles while Relay entity data is pending",
+    "receiver rejection does not mark or count delivery",
+    "later accepted copy delivers once; predicate runs once per attempt; duplicates suppressed"
   ],
-  "render_scope": [
-    "four facings",
-    "Relay + Bank assembly",
-    "empty Bank",
-    "six tuned cards",
-    "blank card",
-    "long label",
-    "live inventory update cache checks",
-    "front closeup"
-  ],
-  "qa_mod": "Separate temporary client mod; removed after capture and absent from released JAR.",
-  "compatibility": "Existing 0.2.0 through 0.2.6 blocks, inventories and saved network retained."
+  "compatibility": "Existing 0.2.x inventories retained. Banks must be directly above Relays; side/bottom Banks must be relocated. Catalyst behavior unchanged.",
+  "rendering": "0.2.7 geometry, labels and click bands unchanged; no new client render capture.",
+  "limits": [
+    "Synthetic packet tests; no real multiplayer voice playback in this run.",
+    "No Carry On/WorldEdit installation test; NBT movement/copy behavior exercised directly."
+  ]
 }

@@ -64,15 +64,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     }
     @Nullable public ChannelBankBlockEntity findAssignedBank() {
         if (level == null) return null;
-        if (cardBank != null) {
-            BlockState state = BankConnection.state(level, cardBank.position());
-            if (state == null || (state.is(SimpleRadioRepeaters.CHANNEL_BANK)
-                    && !(BankConnection.entity(level, cardBank.position()) instanceof ChannelBankBlockEntity bank && !bank.isRemoved()))) return null;
-        }
-        for (Direction direction : BankConnection.BANK_PRIORITY) {
-            if (BankConnection.entity(level, worldPosition.relative(direction)) instanceof ChannelBankBlockEntity bank
-                    && !bank.isRemoved() && worldPosition.equals(bank.primaryRelayPosition())) return bank;
-        }
+        if (BankConnection.entity(level, worldPosition.above()) instanceof ChannelBankBlockEntity bank
+                && !bank.isRemoved() && worldPosition.equals(bank.primaryRelayPosition())) return bank;
         return null;
     }
     public void bankChanged() { if (!updatingBank) refreshBank(); }
@@ -80,6 +73,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         if (level == null || level.isClientSide || updatingBank) return;
         updatingBank = true;
         try {
+            if (cardBank != null && !BankConnection.isMounted(worldPosition, cardBank.position()))
+                controllerRemoved(cardBank.position());
             if (cardBank != null) {
                 BlockState state = BankConnection.state(level, cardBank.position());
                 if (state == null || (state.is(SimpleRadioRepeaters.CHANNEL_BANK)
@@ -131,9 +126,12 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     private Settings settingsSnapshot() { return new Settings(cachedCards, hasCatalyst(), enabled, cardBank); }
     public static void tick(Level level, BlockPos pos, BlockState state, RelayBlockEntity relay) {
         TowerManager manager = TowerManager.get(((ServerLevel) level).getServer()); if (manager == null) return;
+        // Resolve copied identities before adopting or publishing any controller settings.
+        boolean newlyLoaded = manager.loaded(relay);
         if (relay.firstTick) { relay.adoptSavedController(manager.snapshot(relay.relayId)); relay.firstTick = false; }
         relay.refreshBank();
-        if (manager.loaded(relay)) {
+        if (newlyLoaded) {
+            manager.settingsChanged(relay);
             TowerRecord saved = manager.snapshot(relay.relayId);
             if (saved != null && saved.verified() && saved.antennaScore() > 0) relay.antennaPower = saved.antennaScore();
             relay.markDirty();
@@ -189,6 +187,9 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         List<CardState> cards = new ArrayList<>(); ListTag selected = tag.getList("CachedCards", Tag.TAG_COMPOUND);
         for (int i = 0; i < selected.size(); i++) cards.add(CardState.load(selected.getCompound(i)));
         cachedCards = cards.isEmpty() ? emptyCards() : List.copyOf(cards);
+        if (cardBank == null || !BankConnection.isMounted(worldPosition, cardBank.position())) {
+            cardBank = null; cachedCards = emptyCards();
+        }
         status = tag.contains("DisplayStatus") ? tag.getInt("DisplayStatus") : 2; displayPeers = tag.getInt("DisplayPeers");
         lastSettings = settingsSnapshot(); firstTick = true; lastDisplay = null;
         dirty = false; markDirty();

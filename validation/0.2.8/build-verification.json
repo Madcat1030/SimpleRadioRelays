@@ -1,0 +1,50 @@
+{
+  "version": "0.2.8",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "java_bytecode": 17,
+  "jar_sha256": "c9ddabf29b3fcfd8322a7419e7e9342a4556ae4851976fcb34a06b2f923b6308",
+  "build": "passed",
+  "build_command": "build",
+  "final_verification_command": "--offline build runGameTest",
+  "combined_task_exit": 1,
+  "unit_tests": {
+    "status": "passed",
+    "tests": 21,
+    "failures": 0
+  },
+  "addon_minecraft_tests": {
+    "status": "passed",
+    "tests": 31,
+    "failures": 0
+  },
+  "native_minecraft_tests": {
+    "tests": 7,
+    "failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ],
+    "note": "Same four headless native test failures as the earlier addon-disabled control. Underlying cause unresolved; not established live-server bugs."
+  },
+  "regressions": [
+    "top-only placement and facing inheritance",
+    "side/bottom bindings rejected",
+    "copied Relay NBT clears distant binding and channels",
+    "pre-tick copy changes preserve original record",
+    "copy gets new identity and uses its own Bank",
+    "original Bank edits do not affect copy",
+    "invalid saved binding corrected while both chunks remain unloaded",
+    "old Bank edits and obsolete owner hints cannot revive a distant binding",
+    "missing/replaced Bank reconciles while Relay entity data is pending",
+    "receiver rejection does not mark or count delivery",
+    "later accepted copy delivers once; predicate runs once per attempt; duplicates suppressed"
+  ],
+  "compatibility": "Existing 0.2.x inventories retained. Banks must be directly above Relays; side/bottom Banks must be relocated. Catalyst behavior unchanged.",
+  "rendering": "0.2.7 geometry, labels and click bands unchanged; no new client render capture.",
+  "limits": [
+    "Synthetic packet tests; no real multiplayer voice playback in this run.",
+    "No Carry On/WorldEdit installation test; NBT movement/copy behavior exercised directly."
+  ]
+}

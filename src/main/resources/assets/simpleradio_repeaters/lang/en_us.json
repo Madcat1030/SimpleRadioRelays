@@ -4,5 +4,6 @@
   "block.simpleradio_repeaters.channel_bank": "Repeater Bank",
   "item.simpleradio_repeaters.frequency_card": "Frequency Card",
   "tooltip.simpleradio_repeaters.untuned": "Untuned",
+  "tooltip.simpleradio_repeaters.bank": "Plug into the top of a Relay attached to an antenna to allow inserted channels to be repeated.",
   "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then right-click a Repeater Bank to insert."
 }
