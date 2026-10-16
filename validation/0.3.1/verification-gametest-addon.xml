@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="Simple Radio Repeaters 0.3.1" tests="36" failures="0" errors="0">
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.blank_card_and_native_tuning" time="0.233" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.card_display_cache_tracks_inventory_edits_and_client_update_tags" time="0.584" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.card_hit_bands_accept_the_card_and_one_row_above_in_every_facing" time="0.614" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.six_card_interactions_target_the_visible_card_in_every_direction" time="0.615" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.card_bank_front_background_and_other_faces_leave_inventory_unchanged" time="0.615" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.saved_record_round_trip" time="0.614" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.bank_connection_requires_the_relay_directly_below" time="0.605" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.bank_placement_requires_a_relay_below_and_copies_its_facing" time="0.6" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.invalid_saved_bank_bindings_are_cleared_without_loading_either_chunk" time="0.893" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.rejected_receiver_copy_does_not_reserve_delivery" time="0.892" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.relay_direct_catalyst_clicks_have_no_inventory" time="0.89" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.saved_chain_routes_without_loading_tower_chunks" time="1.094" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="catalystgametests.native_receiver_gets_exact_counted_power_even_below_one_percent" time="2.095" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="catalystgametests.native_efficiency_change_invalidates_unloaded_tower_routes" time="2.094" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="catalystgametests.mixed_native_catalyst_chains_use_the_shared_decay_curve" time="2.094" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="catalystgametests.custom_routing_predicate_can_select_a_weaker_higher_count_copy" time="2.096" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.missing_card_bank_invalidates_saved_relay_while_entity_is_pending" time="2.544" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.changed_card_bank_identity_retires_the_saved_binding" time="2.499" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.split_hardware_scans_antenna_and_saves_components" time="3.405" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="catalystgametests.amethyst_socket_insertion_persistence_and_catalyst_swap" time="3.342" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.chunk_load_removes_relay_deleted_without_callbacks" time="3.674" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.chunk_load_rejects_old_identity_and_preserves_current_relay" time="3.669" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.startup_refresh_checks_loaded_records_without_loading_remote_chunks" time="3.657" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.stale_relay_nbt_cannot_restore_a_removed_bank" time="3.598" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="relaydiagnosticsgametests.near_side_receiver_must_not_strand_the_bridge_when_the_relay_is_on_the_far_side" time="3.605" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.bank_edits_while_relay_unloaded_override_old_relay_nbt" time="4.145" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="relaydiagnosticsgametests.equal_audio_quality_must_not_strand_the_wired_bridge_with_a_weak_carrier" time="4.164" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.chunk_load_waits_for_relay_entity_data" time="4.687" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.card_bank_entity_loading_preserves_configuration" time="4.622" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.cached_antenna_waits_for_dependencies_without_loading_them" time="4.71" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.copied_relay_uses_only_its_own_top_bank_and_preserves_the_original" time="4.644" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="relaydiagnosticsgametests.repeated_build_notifications_do_not_keep_postponing_the_scan" time="4.618" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="relaydiagnosticsgametests.native_channel_bridge_uses_local_relay_and_keeps_working_during_reload" time="4.624" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.in_world_noops_do_not_restart_antenna_verification" time="5.22" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="relaydiagnosticsgametests.missed_mast_notification_is_recovered_on_the_native_antenna_cycle" time="5.381" />
+  <testcase classname="fabric-gametest-api-v1:empty" name="repeatergametests.wired_core_reload_preserves_cache_and_recovers_without_toggle" time="5.621" />
+</testsuite>

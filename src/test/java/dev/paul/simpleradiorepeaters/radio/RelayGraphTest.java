@@ -43,12 +43,13 @@ public class RelayGraphTest {
         assertTrue(paths.get(2).isEmpty()); assertTrue(graph.alternatives(Map.of(0, 0d), 6).stream().allMatch(List::isEmpty));
     }
     @Test void aLiveSubOnePercentHopRemainsInTheGraph() {
-        RelayGraph graph = new RelayGraph(11, (from, count) -> {
+        RelayGraph graph = new RelayGraph(45, (from, count) -> {
             float power = RelayPower.departure(1000, .6, count);
             var link = RadioLinkMath.receive(1, power, power, 0, 0, 1, ADDITIVE, 500, 15);
-            return from == 10 || link == null ? List.of() : List.of(edge(from + 1, link.severity()));
-        }, 16);
-        assertEquals(11, graph.alternatives(Map.of(0, 0d), 0).get(10).get(0).hops());
+            return from == 44 || link == null ? List.of() : List.of(edge(from + 1, link.severity()));
+        }, 64);
+        assertTrue(RelayPower.departure(1000, .6, 45) < 10);
+        assertEquals(45, graph.alternatives(Map.of(0, 0d), 0).get(44).get(0).hops());
     }
     @Test void oppositeSidesNeedTheTower() {
         assertNull(RadioLinkMath.receive(3600, 1800, 1800, 200, 10, 1, ADDITIVE, 300, 15));

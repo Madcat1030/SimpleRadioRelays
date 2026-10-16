@@ -1,4 +1,4 @@
-# Relay and Repeater Bank models — 0.3.0
+# Relay and Repeater Bank models — 0.3.1
 
 Open `blockbench/Relay.bbmodel` and `blockbench/Repeater-Bank.bbmodel` as **Java Block/Item** projects. Each project embeds its textures, and every face has an explicit UV rectangle. All supplied block textures are 16×16. The master projects show the inserted components so you can edit them in place.
 

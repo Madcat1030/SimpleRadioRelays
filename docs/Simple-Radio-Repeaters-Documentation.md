@@ -1,10 +1,10 @@
-# Simple Radio Repeaters 0.3.0
+# Simple Radio Repeaters 0.3.1
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A separate six-card Repeater Bank selects the channels, and both blocks expose their controls and status in the world.
 
-Version 0.3.0 uses native catalysts and count-dependent RF regeneration. Gilded blackstone defaults to 90% and amethyst blocks to 60%. The first relay applies its efficiency immediately. Each subsequent relay uses its own efficiency raised to the total number of relay visits. Audio retains its worst degradation, and wires/channel changes retain the relay count.
+Version 0.3.1 applies each tower's native catalyst strength once and a shared 10% loss for every relay visit after the first. Gilded blackstone defaults to 90% and amethyst blocks to 60%. Custom strengths of 100% and above also decay. Audio retains its worst degradation, and wires/channel changes retain the relay count. Numeric route caching and exact dominance pruning reduce repeated search and source-copy work.
 
-This release starts a new catalyst-aware network store without importing earlier saved networks. Load each existing tower's chunk once to register and verify it in 0.3.0. Relay and Bank blocks continue reading their directly stored catalyst/card items through the existing block data format. Banks must be directly above Relays.
+The 0.3 series uses a catalyst-aware network store without importing earlier stores. When upgrading from 0.2, load each existing tower's chunk once to register and verify it. Version 0.3.1 uses the same store as 0.3.0, with no reset or migration layer. Relay and Bank blocks directly store their catalyst/card items. Banks must be directly above Relays.
 
 ## Installation and first tower
 
@@ -98,20 +98,20 @@ The green Relay LED represents routing eligibility. It can remain green during `
 
 The addon uses Simple Radio's configured transmission power, reception power, reception floor and attenuation. A handheld must reach an entry tower using its own transmitter strength. Hearing a tower's stronger broadcast does not guarantee that the handheld can transmit back to it.
 
-Departure power is `nominal tower power × current catalyst efficiency ^ relay count`. Count 1 is the first relay, so a 90% catalyst begins at 90%, then 81%, 72.9%, and so on; amethyst begins at 60%, then 36%, 21.6%. Nominal tower power is native transmitter base power plus antenna score times transmitter aptitude.
+Departure power is `nominal tower power × current catalyst strength × 0.9 ^ (relay count − 1)`. Count 1 is the first relay. A 90% catalyst begins at 90%, then 81%, 72.9%; amethyst begins at 60%, then 54%, 48.6%. Nominal tower power is native transmitter base power plus antenna score times transmitter aptitude. The native registry still names the catalyst value `efficiency`; it serves as the first-relay strength ceiling here.
 
-| Total relay count | 90% catalyst | 60% catalyst |
-| ---: | ---: | ---: |
-| 1 | 90% | 60% |
-| 2 | 81% | 36% |
-| 3 | 72.9% | 21.6% |
-| 10 | 34.87% | 0.6047% |
+| Total relay count | 90% catalyst | 60% catalyst | Custom 200% catalyst |
+| ---: | ---: | ---: | ---: |
+| 1 | 90% | 60% | 200% |
+| 2 | 81% | 54% | 180% |
+| 3 | 72.9% | 48.6% | 162% |
+| 10 | 34.87% | 23.25% | 77.48% |
 
-The exponent is shared along that signal branch, but each tower uses its own efficiency and maximum. A gilded → amethyst → gilded path emits at 90% → 36% → 72.9% of the respective towers' maxima. This is not multiplication of a carried catalyst-efficiency product.
+The common decay uses the total visit count, while each current tower supplies its own strength and maximum. A gilded → amethyst → gilded path emits at 90% → 54% → 72.9% of the respective maxima. The better catalyst can raise the current tower's RF ceiling, while the visit count and worst audio remain. Native catalyst values are not multiplied along the path. Amethyst always retains two-thirds of blackstone's output at equal nominal power and count. A 200% strength starts at twice nominal power, then 180%, 162% and so on; no special case permits a growing cycle.
 
 The router checks actual reach and native attenuation at every reduced-power leg. Some paths stop before reaching their destination. There is no 1% cutoff: a very weak departure can still serve a nearby receiver. The same reduced departure is used for other relays and local receivers. A native receiver/wire/transmitter bridge preserves the count even when its frequency changes; entering another relay consumes the next visit. Fresh microphone/handheld sources begin with zero previous visits. The configured count budget applies across re-entries.
 
-The audio retains the worst interference encountered on its chosen path. Regeneration increases RF reach relative to the received carrier without repairing audio. Final delivery evaluates all viable node/count alternatives, finds the lowest worst interference, admits candidates at most one point above that minimum, and chooses the strongest remaining carrier. Equal power prefers cleaner audio, then fewer visits. The selected source retains its actual interference.
+The audio retains the worst interference encountered on its chosen path. Regeneration increases RF reach relative to the received carrier without repairing audio. At a fixed tower, a higher count survives only if it is strictly cleaner than every lower-count arrival. Final delivery evaluates those useful alternatives, finds the lowest worst interference, admits candidates at most one point above that minimum, and chooses the strongest remaining carrier. Equal power prefers cleaner audio, then fewer visits. The selected source retains its actual interference.
 For additive attenuation, the native calculation first rejects a leg if transmission power plus reception power cannot cover distance times the loss factor. It then subtracts the effective distance from transmission power, accounting for the receiver's reception power and floor. Remaining power is compared with the sender's degradation threshold to calculate interference. A leg with no remaining power or complete interference is unavailable.
 
 The towers use native transmitter/receiver RF settings. Catalyst efficiency affects departure power through the formula above; it does not multiply receiver reception gain or directly change audio volume. Server acceptance and efficiency come from Simple Radio's catalyst registry, including data-pack values.
@@ -231,11 +231,11 @@ The antenna scanner and settling policy retain their existing behavior. Version 
 | `AntennaScanner` | Run native antenna/extension geometry through a guarded accessor, track dependency positions and detect pending wire/router data |
 | `AntennaVerification` | Enforce settling time, retry intervals and confirmation before replacing a verified antenna with zero |
 | `NativeRadioAdapter` | Read native power/reception settings, calculate counted departure power and evaluate each physical leg |
-| `RelayPower` | Compute nominal output times efficiency raised to total relay count, with no percentage cutoff |
+| `RelayPower` | Apply native catalyst strength once, then universal 90% retention for each visit after the first, with no percentage cutoff |
 | `RelayCatalysts` | Resolve native registered catalysts, efficiencies, configuration fingerprints and the server-supplied client catalog |
 | `RadioLinkMath` | Compute wireless eligibility, remaining power and interference using the target native rules |
-| `RelayGraph` | Propagate the lowest worst interference for each tower/count state, using count-dependent links; retain all count alternatives for final delivery |
-| `RelayRouter` | Gather eligible direct and repeated deliveries, preserve wired fan-out/custom criteria, and pass one selected source to each receiver |
+| `RelayGraph` | Cache numeric entry routes and links; prune redundant count states before expansion while preserving strictly cleaner alternatives |
+| `RelayRouter` | Rank numeric delivery candidates, create the winning source, and preserve wired fan-out and custom routing callbacks |
 | `RelayDeliverySelection` | Anchor the one-point quality band to the cleanest candidate and select the strongest carrier without altering the signal |
 | `RelayFrame` | Share emitter/receiver deduplication sets across copies of one radio frame |
 | `RelaySourceState` | Expose frame identity, inherited worst interference and the per-copy relay count |
@@ -249,11 +249,15 @@ Encoded voice bytes, source ownership, original ownership and activity survive f
 
 `RelayCatalysts` resolves an installed item through the native `CatalystRegistry`. It rejects unregistered, negative or non-finite efficiency data. The default registry entries are `minecraft:gilded_blackstone` at .9 and `minecraft:amethyst_block` at .6. The server sends accepted item identifiers at join and after data-pack reload; clients use that list for right-click prediction. Disconnect clears the client list. Numeric efficiencies remain server-owned.
 
-`RelayPower.departure(maximum, efficiency, count)` is pure numeric code. It uses count 1 immediately, retains positive results below 1%, and returns no usable power for invalid numeric inputs. The formula uses the current tower's efficiency at the total count. No extra call to native catalyst power adjustment is inserted into this regeneration step.
+`RelayPower.departure(maximum, efficiency, count)` is pure numeric code. It applies `maximum × efficiency × 0.9^(count−1)` with count 1 immediately. Positive results below 1% remain usable; invalid numeric inputs produce no power. Finite values above the native float range saturate to that range. The current tower's catalyst is applied once, including when its strength is 1 or greater. No cumulative catalyst product or extra native catalyst adjustment is inserted.
 
-`RelayGraph.alternatives(entrances, previousRelays)` starts all viable entrances at `previousRelays + 1`. A dynamic-programming table stores the lowest worst interference for each tower/count pair. Expanding a state uses the sender's counted departure power to obtain its directed link row. It updates a destination at the next count only if native reach/attenuation succeeds. Counts are bounded by `maxRelayHops`, so cycles terminate. The table is O(V × H); propagation is O(H × (V + E)) after cached numeric link rows are available. It merges entrances in one pass instead of caching a separate path history for each entry.
+`RelayGraph.alternatives(entrances, previousRelays)` begins at `previousRelays + 1`. A cold per-entry search stores the lowest worst interference for each tower/count pair. With ordinary routing, a state whose noise is no lower than an earlier count at that tower is discarded before expansion. The earlier state has at least as much departure power and remaining visit budget, because all catalysts share the same decay curve. This remains true above 100% strength. A strictly cleaner longer detour survives, even when its improvement is less than one interference point. The final-delivery tolerance is not used for pruning.
 
-The graph returns all viable count alternatives for each exit. Collapsing them to one cleanest path would discard shorter routes that retain enough power for a distant final receiver. `RelayRouter` evaluates each alternative's final leg with the same reduced output used for internal links. The existing global-minimum quality band then selects one candidate within that transmitter dispatch.
+Numeric routes are cached by entry index, previous total count and pruning mode. Direct entrance states are seeded first. An entrance starts no search if existing arrivals already dominate the best noise/count its descendants could possibly achieve. This prevents many equally clean nearby entrances from triggering separate cold searches. Otherwise, internal path noise is computed from a neutral ingress value; each live packet reapplies its current entrance noise with `max`, merges entrances and prunes newly redundant alternatives. Moving players therefore cannot inherit stale ingress noise. Final-leg distance and receiver reception remain live calculations. A graph replacement on antenna, channel, catalyst, configuration or eligibility changes discards its caches. Successful data-pack reloads also invalidate networks.
+
+Both caches are bounded by entry and element counts: up to 128 route entries with 32,768 stored route/row elements, and 512 numeric link rows with 65,536 edges. Eviction changes reuse only; it never removes a route from a computed result. A cold search retains the O(V × H) table and O(H × (V + E)) worst-case propagation bound per entry, but redundant cycles stop early. Warm lookups merge cached numeric alternatives instead of rerunning that search. Unusual networks can still have several useful cleaner detours; there is no arbitrary cap on live alternatives or percentage cutoff.
+
+`RelayRouter.Delivery` holds the numeric departure cap, remaining carrier, noise and count until selection. Ordinary repeated candidates do not allocate a mutable native source. The winning repeated delivery makes one source copy per receiver. The direct candidate still uses native preparation. If a transmitter has custom routing criteria, the graph keeps the original tower/count alternatives and the router materializes independent copies for that callback. Candidate carrier ranking includes any power adjustment made by the callback. Packets, frames, players and block entities are never cached.
 
 A chosen repeated source gets its total count before entering the native receiver. `RadioSourceMixin.copy` carries the primitive count alongside shared frame identity and inherited quality. Wires and frequency changes keep it. Branch copies can diverge in count without changing one another. Shared frame deduplication remains responsible for loop/replay suppression; the count is not stored in that shared object.
 
@@ -266,12 +270,16 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gra
 ./gradlew runGameTest
 ```
 
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.3.0 passes 30 unit tests and 34 addon Minecraft tests. Reports are under `validation/0.3.0/`, with a current summary at `validation/build-verification.json`.
+The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.3.1 passes 38 unit tests and 36 addon Minecraft tests. Reports are under `validation/0.3.1/`, with a current summary at `validation/build-verification.json`.
 
-New coverage checks first-relay efficiency, gilded/amethyst sequences, mixed catalysts, live sub-1% reception, a connected-looking chain that becomes unreachable at a later count, shorter/noisier final-leg alternatives, a shared count budget after re-entry, actual native receiver output, branch count isolation, amethyst socket/save/client tags, valid catalyst swaps, optional-catalyst serialization, registry changes with unloaded towers, and client catalog filtering. Existing regressions cover top mounting, copy isolation, missing/replaced components, card controls, antenna restoration and native wire bridges.
+New power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
 
-The near-tie carrier fixtures use an explicit neutral test catalyst so the comparison remains independent of RF decay. The counted-loss real copper-wire bridge uses gilded blackstone and a larger A mast: its old one-piece A mast no longer had enough return reception under the new budget. The bridge asserts that the actual wire and channel change preserve count and subsequent relays increase it.
+The search is compared with an uncached, unpruned tower/count reference on 2,000 randomized directed networks, with changed ingress noise on a second packet. Separate checks cover cache reuse, bounded-entry eviction, immutable cached numeric values, count-aware re-entry, equal-noise cycle collapse and fractional-quality improvements. Synthetic dense graphs retain 5/25/100 ordinary options where the old search retained 315/1,575/6,300. The benchmark source, CSV and scope notes accompany the reports; timings are local graph-only measurements, not server TPS or voice-playback guarantees.
+
+Existing regressions cover top mounting, copy isolation, missing/replaced components, card controls, antenna restoration, catalyst identity/reload changes and client catalog filtering. The real copper-wire channel bridge verifies that neither the wire nor its frequency change resets the carried visit count.
+
+The near-tie carrier fixtures use a registered 100% test strength at A/B and 200% at C, with matched A/C masts. Their B-to-C distance is derived from B's actual count-2 departure. This preserves the deliberately exhausted direct carrier while supplying a viable return budget under universal decay. These fixtures still verify the complete native wire and return route. The ordinary A/B/C bridge uses gilded blackstone throughout.
 
 The combined run also contains seven native Simple Radio tests. The same four failures seen in the earlier addon-disabled headless control remain: `shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`. Their cause is unresolved and they are not established live-server bugs. Addon/native XML reports are separated. Game tests use synthetic encoded bytes, not captured microphones.
 
-The native client review renders both catalysts and mounted Banks with Minecraft's actual models, textures, fonts and production renderers. Its temporary QA mod is separate from the released addon. The previous card geometry remains three units tall with one extra model unit of click padding above only. Real multiplayer voice playback and a dedicated-client join/reload session have not been exercised in this run.
+The 0.3.0 native client review remains the appearance check: this release changes server power/routing code and retains the same catalyst rendering, three-unit cards and click padding above only. Historical preview captions describe their original version's power rule. Real multiplayer voice playback and a dedicated-client join/reload session have not been exercised in this run.

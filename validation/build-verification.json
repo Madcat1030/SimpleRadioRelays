@@ -1,22 +1,22 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
-  "verified_at_utc": "2026-10-16T17:15:33.035991+00:00",
+  "verified_at_utc": "2026-10-16T18:21:44.747430+00:00",
   "java_bytecode": 17,
-  "jar_sha256": "1e7ff6ca95380364f4ec36e51091e2dc81ac97550c1ee1d4a4515f901bfa5c35",
+  "jar_sha256": "fbe65516dcfc7b29f8e224ade1bfc842c7fabe807d03a2df247a229f5c1b6c11",
   "build": "passed",
   "build_command": "--offline build",
   "minecraft_test_command": "--offline build runGameTest",
   "combined_minecraft_task_exit": 1,
   "unit_tests": {
     "status": "passed",
-    "tests": 30,
+    "tests": 38,
     "failures": 0
   },
   "addon_minecraft_tests": {
     "status": "passed",
-    "tests": 34,
+    "tests": 36,
     "failures": 0
   },
   "native_minecraft_tests": {
@@ -27,53 +27,135 @@
       "SystemTest.closedSystem",
       "SystemTest.openSystem"
     ],
-    "note": "Same four headless native failures as the earlier addon-disabled control. Cause unresolved; not established live-server bugs."
+    "note": "Same four headless native test failures as the earlier addon-disabled baseline. Cause unresolved; not established live-server bugs."
   },
-  "catalyst_rule": {
-    "formula": "current tower nominal power * current catalyst efficiency ^ total relay count",
+  "power": {
+    "formula": "current tower nominal power * current catalyst strength * 0.9 ^ (total relay count - 1)",
     "first_relay_count": 1,
-    "default_gilded_efficiency": 0.9,
-    "default_amethyst_block_efficiency": 0.6,
-    "mixed_catalysts": "Each current tower uses its own efficiency at the shared total count; no carried product of efficiencies.",
-    "wire_channel_bridge": "Preserves per-copy total relay count and worst audio degradation.",
-    "cutoff": "No artificial percentage floor; normal reception and total visit budget apply."
+    "hop_retention": 0.9,
+    "amethyst_sequence": [
+      0.6,
+      0.54,
+      0.486
+    ],
+    "gilded_sequence": [
+      0.9,
+      0.81,
+      0.729
+    ],
+    "custom_double_strength_sequence": [
+      2,
+      1.8,
+      1.62
+    ],
+    "mixed_chain": "Each tower applies its own catalyst once; universal decay and worst noise continue across changes.",
+    "wire_channel_bridge": "Preserves the total relay count; further relay visits continue universal loss.",
+    "cutoff": "No artificial percentage floor; native reach and total visit budget apply."
+  },
+  "routing": {
+    "dominance": "At a fixed tower, discard an arrival if a lower count has equal or cleaner noise. Prune before expanding.",
+    "cold_entrances": "Seed all direct entrances; skip an entrance search when its descendants are already dominated.",
+    "cache_key": "entry tower, previous total relay count, pruning mode; scoped to an immutable network snapshot",
+    "route_cache_limits": {
+      "entries": 128,
+      "numeric_route_and_row_elements": 32768
+    },
+    "link_cache_limits": {
+      "rows": 512,
+      "edges": 65536
+    },
+    "invalidation": "Network discarded after antenna/channel/catalyst/config/eligibility changes and successful data-pack reload.",
+    "live_inputs": "Reapply entrance noise and evaluate moving receivers every packet. No frame/source/player/entity cache.",
+    "source_copies": "Ordinary repeated delivery materializes only its selected source per receiver.",
+    "custom_predicates": "Keep original count alternatives; independent callback copies and resulting carrier power participate in selection."
+  },
+  "regressions": {
+    "randomized_directed_networks": 2000,
+    "changed_ingress_packets_each": 2,
+    "reference_comparison": "Optimized frontier and custom-predicate fallback match the uncached full tower/count reference.",
+    "native_mixed_chains": [
+      "gilded/gilded/amethyst",
+      "amethyst/amethyst/gilded"
+    ],
+    "native_custom_strengths": [
+      1,
+      2
+    ],
+    "native_sub_one_percent_delivery": true,
+    "real_copper_wire_count_and_channel_bridge": true,
+    "fixture_note": "Near-tie wire fixtures use 100% A/B and 200% C, matched masts and actual count-2 B range. Fixtures clear out-of-template masts; final run used a clean generated test world."
+  },
+  "benchmark": {
+    "scope": "Synthetic graph only; no receivers, world access, audio or networking.",
+    "rows": [
+      {
+        "towers": "5",
+        "entrances": "1",
+        "old_options": "315",
+        "new_options": "5",
+        "old_warm_ms": "0.057022",
+        "new_cold_ms": "0.044156",
+        "new_warm_ms": "0.007019"
+      },
+      {
+        "towers": "5",
+        "entrances": "5",
+        "old_options": "320",
+        "new_options": "5",
+        "old_warm_ms": "0.058320",
+        "new_cold_ms": "0.011434",
+        "new_warm_ms": "0.006840"
+      },
+      {
+        "towers": "25",
+        "entrances": "1",
+        "old_options": "1575",
+        "new_options": "25",
+        "old_warm_ms": "0.214597",
+        "new_cold_ms": "0.051260",
+        "new_warm_ms": "0.012019"
+      },
+      {
+        "towers": "25",
+        "entrances": "25",
+        "old_options": "1600",
+        "new_options": "25",
+        "old_warm_ms": "0.223824",
+        "new_cold_ms": "0.008949",
+        "new_warm_ms": "0.008675"
+      },
+      {
+        "towers": "100",
+        "entrances": "1",
+        "old_options": "6300",
+        "new_options": "100",
+        "old_warm_ms": "2.687101",
+        "new_cold_ms": "0.321277",
+        "new_warm_ms": "0.006099"
+      },
+      {
+        "towers": "100",
+        "entrances": "100",
+        "old_options": "6400",
+        "new_options": "100",
+        "old_warm_ms": "2.840396",
+        "new_cold_ms": "0.091590",
+        "new_warm_ms": "0.032304"
+      }
+    ]
   },
   "persistence": {
     "store": "data/simpleradio_repeaters_relays_v3.dat",
     "schema": 3,
-    "migration": "None. Existing tower chunks must load once to register in the fresh network.",
-    "block_items": "Physical catalyst/card ItemStacks already use direct block data storage."
+    "note": "Unchanged from 0.3.0. No migration code or network reset added. Upgrades from 0.2 still require loading each tower once."
   },
-  "coverage": [
-    "First-relay catalyst efficiency and exact gilded/amethyst sequences",
-    "Mixed catalysts and different tower nominal powers",
-    "Count-dependent link reach and competing shorter/noisier alternatives",
-    "Shared total relay-count budget across network re-entry",
-    "Actual native receiver output, including positive sub-1% output",
-    "Actual copper-wire channel bridge preserves and subsequently increments count",
-    "Per-copy branch count and shared frame deduplication",
-    "Amethyst insertion, ItemStack persistence, update tags and catalyst swaps",
-    "Optional empty catalyst serialization and native registry cache invalidation",
-    "Client accepted-item catalog filtering",
-    "Existing top Bank, copied Relay, reconciliation, antenna and card regressions"
-  ],
-  "fixture_changes": [
-    "Near-tie carrier fixtures use a neutral test-only catalyst to isolate ranking from new decay.",
-    "The counted gilded A/B/C copper-wire bridge has a larger A mast to meet the new return reception budget.",
-    "Copied Relay fixture clears a stale test Bank at its copy position before placement."
-  ],
-  "rendering": {
-    "status": "Native Minecraft client preview passed and visually reviewed.",
-    "image": "art/Relay-Catalysts-0.3.0.png",
-    "implementation": "Production RelayRenderer and ChannelBankRenderer with native models, fonts and textures.",
-    "obsolete_fixed_catalyst_assets_in_jar": false,
-    "qa_mod_in_jar": false,
-    "card_geometry": "Unchanged three-unit cards; click padding above only."
+  "appearance": {
+    "client_code_and_assets_identical_to_0_3_0": true,
+    "new_render_capture": false
   },
   "limits": [
-    "Synthetic packet bytes; real multiplayer voice playback not exercised in this run.",
-    "Dedicated client join/reload catalog exchange not exercised end to end.",
-    "No Carry On/WorldEdit installation test; direct NBT movement/copy regressions pass.",
-    "Final GameTest console log ends during bootstrap in this environment; the newly written XML reports are the result evidence."
+    "Synthetic packet bytes; real multiplayer voice playback not exercised.",
+    "Dedicated-client join/reload catalog exchange not exercised end to end.",
+    "Local benchmark timings are not server TPS or voice throughput guarantees."
   ]
 }

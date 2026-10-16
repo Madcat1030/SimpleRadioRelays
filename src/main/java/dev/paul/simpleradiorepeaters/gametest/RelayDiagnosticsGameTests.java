@@ -52,10 +52,12 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         Frequency returning = frequencies.getOrCreate(frequencies.incrementFrequency(frequencies.defaultFrequency(), offset + 1), Frequency.Modulation.AMPLITUDE);
         Set<ChannelKey> channels = Set.of(ChannelKey.from(incoming), ChannelKey.from(returning));
         BlockPos coreA = helper.absolutePos(new BlockPos(2, 2, 2));
+        // These tall fixtures extend outside the one-block template and can survive a previous test run.
+        for (int height = 1; height <= 32; height++) level.setBlock(coreA.above(height), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(coreA, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(coreA.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        // Counted loss makes the return path require more reception than the old one-piece A mast.
-        if (!edge) for (int height = 2; height <= 16; height++)
+        // Shared decay across both channel legs requires return reception at A.
+        for (int height = 2; height <= 16; height++)
             level.setBlock(coreA.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity a = relay(level, coreA, incoming, returning);
         net.minecraft.resources.ResourceLocation relayCatalyst = edge ? TestCatalysts.neutral() : RelayCatalysts.GILDED;
@@ -65,7 +67,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         int dx = 4000, dz = 0;
         if (edge) {
             int smallScore = AntennaScanner.scan(level, a.getBlockPos(), coreA).score();
-            double limit = NativeRadioAdapter.towerPower(b, ChannelKey.from(incoming))
+            double limit = NativeRadioAdapter.departurePower(b, ChannelKey.from(incoming), 2)
                     + SimpleRadioFrequencing.RECEIVER.receptionPower + smallScore * SimpleRadioFrequencing.RECEIVER.antennaAptitude;
             // Keep this far-side fixture's forced chunks separate from the other bridge tests.
             int firstZ = nearSide ? 1024 : 1;
@@ -83,9 +85,12 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                 ChunkPos chunk = new ChunkPos(x, z); tickets.add(chunk); level.setChunkForced(x, z, true); level.getChunk(x, z);
             }
         level.setBlock(coreC, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        for (int height = 1; height <= 32; height++) level.setBlock(coreC.above(height), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(coreC.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        if (edge) for (int height = 2; height <= 16; height++)
+            level.setBlock(coreC.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity c = relay(level, coreC, incoming, returning, nearSide ? Direction.EAST : Direction.NORTH);
-        if (edge) { c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.NETHER_STAR), false); }
+        if (edge) { TestCatalysts.boosted(); c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.ENDER_PEARL), false); }
         Direction receiverFacing = nearSide ? Direction.WEST : Direction.EAST;
         Direction transmitterFacing = nearSide ? Direction.NORTH : Direction.WEST;
         BlockPos receiverPos = coreC.relative(receiverFacing), transmitterPos = coreC.relative(transmitterFacing);
@@ -111,6 +116,11 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
             level.setBlock(a.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
             level.setBlock(c.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
             level.setBlock(receiverPos, Blocks.AIR.defaultBlockState(), 3); level.setBlock(transmitterPos, Blocks.AIR.defaultBlockState(), 3);
+            for (BlockPos core : List.of(coreA, coreC)) {
+                level.setBlock(core.north().above(), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(core.east().above(), Blocks.AIR.defaultBlockState(), 3);
+                for (int height = 0; height <= 32; height++) level.setBlock(core.above(height), Blocks.AIR.defaultBlockState(), 3);
+            }
             for (RadioRouter router : List.of(sender, listener, terminal)) if (api.getRouter(router.reference) != null) api.removeRouter(router);
             returning.getReceivers().remove(listener);
             for (ChunkPos chunk : tickets) level.setChunkForced(chunk.x, chunk.z, false);
@@ -137,7 +147,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                 double requiredSeverity;
                 if (nearSide) {
                     TowerRecord cRecord = manager.snapshot(c.relayId()); ChannelKey channel = ChannelKey.from(incoming);
-                    float power = NativeRadioAdapter.towerPower(b, channel);
+                    float power = NativeRadioAdapter.departurePower(b, channel, 2);
                     var directArrival = NativeRadioAdapter.receiveAtReceiver(b.position().getCenter().distanceTo(receiverPos.getCenter()),
                             power, power, SimpleRadioFrequencing.TRANSMITTER, rx, channel);
                     var relayArrival = NativeRadioAdapter.receiveAtTower(b.position().getCenter().distanceTo(cRecord.position().getCenter()),
@@ -145,7 +155,9 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                     check(directArrival != null && relayArrival != null, "Both B exits must be viable at the receiving tower");
                     check(directArrival.severity() < relayArrival.severity() && relayArrival.severity() - directArrival.severity() < 1,
                             "Near-side RX must have strictly cleaner audio than the far-side Relay, within one interference point");
-                    check(directArrival.power() > 2.15 && directArrival.power() < 2.5, "Direct carrier must nearly exhaust on wire and local re-entry");
+                    check(directArrival.power() > 2.15 && directArrival.power() < 2.5,
+                            "Direct carrier must nearly exhaust on wire and local re-entry; actual=" + directArrival.power()
+                                    + ", A score=" + a.getAntennaPower() + ", C score=" + c.getAntennaPower() + ", B power=" + power);
                     requiredSeverity = relayArrival.severity();
                 } else requiredSeverity = 99.999;
                 Runnable send = () -> {

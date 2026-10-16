@@ -12,6 +12,20 @@ import java.util.function.Predicate;
 /** Selects one direct or repeated wireless delivery, then uses the original receiving pipeline. */
 public final class RelayRouter {
     private RelayRouter() {}
+    /** A numeric candidate needs a mutable native source only after it wins or a custom predicate inspects it. */
+    private record Delivery(RadioSource source, float cap, float power, double severity, int hops) {
+        RadioSource materialize(RadioSource prepared, RadioTransmitter transmitter, RadioReceiver receiver) {
+            if (source != null) return source;
+            RadioSource repeated = copy(prepared);
+            repeated.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id;
+            repeated.transmissionCap = cap; repeated.transmissionPower = power;
+            repeated.frequencyMedium = transmitter.frequency;
+            ((RelaySourceState) repeated).repeaters$setInheritedSeverity(severity);
+            ((RelaySourceState) repeated).repeaters$setRelayCount(hops);
+            repeated.visit(receiver);
+            return repeated;
+        }
+    }
     public static boolean tryRoute(RadioTransmitter transmitter, RadioSource original, Predicate<RadioRouter> criteria) {
         if (!transmitter.active || !original.isValid() || transmitter.frequency == null || transmitter.frequencingType == null
                 || !(transmitter.getLocation().level instanceof ServerLevel level) || !level.getServer().isSameThread()) return false;
@@ -68,7 +82,8 @@ public final class RelayRouter {
                     prepared.transmissionPower, prepared.transmissionCap, sourceType, tower, channel);
             if (received != null) entrances.put(i, Math.max(inherited, received.severity()));
         }
-        List<List<RelayGraph.Reach>> reachable = network.graph().alternatives(entrances, previousRelays);
+        // Custom predicates may deliberately prefer a weaker/higher-count copy.
+        List<List<RelayGraph.Reach>> reachable = network.graph().alternatives(entrances, previousRelays, transmitter.routeCriteria == null);
         for (var recipient : List.copyOf(transmitter.frequency.getReceivers())) {
             if (!(recipient instanceof RadioReceiver receiver) || !receiver.active || !receiver.valid || receiver.frequencingType == null
                     || receiver.getLocation() == null || original.willShort(receiver)) continue;
@@ -77,13 +92,14 @@ public final class RelayRouter {
             if (receiver.owner == null && receiver.position != null && receiver.position.level instanceof ServerLevel receiverLevel
                     && !receiverLevel.hasChunkAt(receiver.position.realLocation())) continue;
 
-            List<RelayDeliverySelection.Candidate<RadioSource>> candidates = new ArrayList<>();
+            List<RelayDeliverySelection.Candidate<Delivery>> candidates = new ArrayList<>();
             RadioSource direct = copy(prepared);
             if (transmitter.shouldRouteTo(direct, receiver)) {
                 direct = transmitter.prepareSource(direct, receiver);
                 if (direct.transmissionPower > 0 && noise(direct) < 100
                         && (transmitter.routeCriteria == null || transmitter.routeCriteria.test(direct, receiver)))
-                    candidates.add(new RelayDeliverySelection.Candidate<>(direct, noise(direct), direct.transmissionPower, previousRelays));
+                    candidates.add(new RelayDeliverySelection.Candidate<>(new Delivery(direct, direct.transmissionCap,
+                            direct.transmissionPower, noise(direct), previousRelays), noise(direct), direct.transmissionPower, previousRelays));
             }
 
             if (receiver.getLocation().level == level) {
@@ -95,19 +111,18 @@ public final class RelayRouter {
                     if (received == null) continue;
                     double severity = Math.max(path.severity(), received.severity());
                     float remaining = (float) received.power();
-                    RadioSource repeated = copy(prepared);
-                    repeated.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id;
-                    repeated.transmissionCap = power; repeated.transmissionPower = remaining;
-                    repeated.frequencyMedium = transmitter.frequency;
-                    ((RelaySourceState) repeated).repeaters$setInheritedSeverity(severity);
-                    ((RelaySourceState) repeated).repeaters$setRelayCount(path.hops());
-                    repeated.visit(receiver);
-                    if (transmitter.routeCriteria != null && !transmitter.routeCriteria.test(repeated, receiver)) continue;
-                    candidates.add(new RelayDeliverySelection.Candidate<>(repeated, severity, repeated.transmissionPower, path.hops()));
+                    Delivery delivery = new Delivery(null, power, remaining, severity, path.hops());
+                    if (transmitter.routeCriteria != null) {
+                        RadioSource repeated = delivery.materialize(prepared, transmitter, receiver);
+                        if (!transmitter.routeCriteria.test(repeated, receiver)) continue;
+                        remaining = repeated.transmissionPower;
+                        delivery = new Delivery(repeated, power, remaining, severity, path.hops());
+                    }
+                    candidates.add(new RelayDeliverySelection.Candidate<>(delivery, severity, remaining, path.hops()));
                 }
             }
             var best = RelayDeliverySelection.select(candidates);
-            if (best != null) receiver.accept(best.source());
+            if (best != null) receiver.accept(best.source().materialize(prepared, transmitter, receiver));
         }
         return true;
     }

@@ -219,9 +219,7 @@ public final class TowerManager {
                 for (int to = 0; to < nodes.size(); to++)
                     distances[from][to] = nodes.get(from).position().getCenter().distanceTo(nodes.get(to).position().getCenter()) * level.dimensionType().coordinateScale();
             }
-            // Cache only numeric link rows, not per-packet path histories or world/chunk references.
-            Map<Long, List<RelayGraph.Edge>> rows = new HashMap<>();
-            RelayGraph.Links links = (from, count) -> rows.computeIfAbsent(((long) count << 32) | from, ignored -> {
+            RelayGraph.Links links = (from, count) -> {
                 List<RelayGraph.Edge> row = new ArrayList<>();
                 float power = RelayPower.departure(nominal[from], efficiency[from], count);
                 if (power > 0) for (int to = 0; to < nodes.size(); to++) if (to != from) {
@@ -230,10 +228,11 @@ public final class TowerManager {
                     if (link != null) row.add(new RelayGraph.Edge(to, link.severity()));
                 }
                 return List.copyOf(row);
-            });
+            };
+            RelayGraph graph = new RelayGraph(nodes.size(), links, RepeatersConfig.INSTANCE.maxRelayHops);
             List<List<RelayGraph.Edge>> edges = new ArrayList<>();
-            for (int from = 0; from < nodes.size(); from++) edges.add(links.from(from, 1));
-            return new Network(nodes, List.copyOf(edges), new RelayGraph(nodes.size(), links, RepeatersConfig.INSTANCE.maxRelayHops));
+            for (int from = 0; from < nodes.size(); from++) edges.add(graph.outgoing(from, 1));
+            return new Network(nodes, List.copyOf(edges), graph);
         });
     }
     public int peers(UUID id) {
