@@ -59,3 +59,6 @@ tasks.withType(JavaCompile).configureEach { options.release = 17; options.encodi
 java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; withSourcesJar() }
 test { useJUnitPlatform() }
 jar { from('LICENSE') { rename { "${it}_${project.base.archivesName.get()}" } } }
+
+// Optional distribution copy: ./gradlew prototypeJar
+apply from: 'tools/prototype.gradle'

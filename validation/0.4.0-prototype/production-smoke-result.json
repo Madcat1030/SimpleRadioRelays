@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "environment": "Production Fabric server, development=false, JVM -Xverify:all",
+  "checks": [
+    "Exact prototype JAR loaded from mods folder",
+    "Relay/Bank verified a supported antenna and native catalyst",
+    "Transponder duplex pair, amplifier and End focus loaded and published",
+    "No missing methods/classes or mixin/verification errors",
+    "Clean shutdown"
+  ],
+  "scope": "No client join or microphone playback; retained bytecode checked separately."
+}
