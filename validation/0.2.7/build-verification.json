@@ -1,0 +1,48 @@
+{
+  "version": "0.2.7",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "java_bytecode": 17,
+  "jar_sha256": "53b1613ea8c26a3c65bf195f09f5f30d1539d55410a42381c5d12370cdef807f",
+  "build": "passed",
+  "build_exit": 0,
+  "build_command": "build -x test",
+  "unit_tests": {
+    "status": "not run"
+  },
+  "addon_minecraft_tests": {
+    "status": "not run"
+  },
+  "verification_scope": "User-requested light verification: compilation, six model geometry/bounds checks, native overview and closeup captures.",
+  "previous_full_suite": {
+    "version": "0.2.6",
+    "unit_tests": 21,
+    "addon_minecraft_tests": 27,
+    "addon_failures": 0,
+    "native_baseline_failures": [
+      "SystemTest.closedSystem",
+      "SystemTest.garbageCollection",
+      "SystemTest.openSystem",
+      "SystemTest.shortCircuit"
+    ],
+    "reports": "validation/0.2.6"
+  },
+  "change": "Three-unit cards with centered dark strips and one-line labels; one model unit of hit padding above only.",
+  "native_client_preview_exit": 0,
+  "render_shots": [
+    "Repeater-Bank-0.2.7-Native-Preview.png",
+    "Repeater-Bank-0.2.7-Card-Detail.png"
+  ],
+  "render_scope": [
+    "four facings",
+    "Relay + Bank assembly",
+    "empty Bank",
+    "six tuned cards",
+    "blank card",
+    "long label",
+    "live inventory update cache checks",
+    "front closeup"
+  ],
+  "qa_mod": "Separate temporary client mod; removed after capture and absent from released JAR.",
+  "compatibility": "Existing 0.2.0 through 0.2.6 blocks, inventories and saved network retained."
+}

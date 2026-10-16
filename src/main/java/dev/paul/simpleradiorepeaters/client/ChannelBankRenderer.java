@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 public final class ChannelBankRenderer implements BlockEntityRenderer<ChannelBankBlockEntity> {
     public static final ResourceLocation[] CARDS = IntStream.range(0, 6)
             .mapToObj(slot -> SimpleRadioRepeaters.id("block/bank_card_" + slot)).toArray(ResourceLocation[]::new);
-    // Model pixels: the four-pixel strip is centered in the upper half of each two-pixel card.
+    // Model pixels: the four-pixel strip is centered in the middle row of each three-pixel card.
     private static final double LABEL_WIDTH = 3.75, LABEL_HEIGHT = .8;
     private static final float LABEL_SCALE = .0065f;
     private static final int LABEL_COLOR = 0xffe0d8b8;

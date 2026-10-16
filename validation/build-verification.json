@@ -1,64 +1,48 @@
 {
-  "version": "0.2.6",
+  "version": "0.2.7",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
   "java_bytecode": 17,
+  "jar_sha256": "53b1613ea8c26a3c65bf195f09f5f30d1539d55410a42381c5d12370cdef807f",
   "build": "passed",
-  "jar_sha256": "0c261c2adf030651b81cfd364c86a2a41a11fbc2e04adcd23a188f2d42cdaf8f",
+  "build_exit": 0,
+  "build_command": "build -x test",
   "unit_tests": {
-    "total": 21,
-    "failures": 0
+    "status": "not run"
   },
   "addon_minecraft_tests": {
-    "total": 27,
-    "failures": 0
+    "status": "not run"
   },
-  "quality_tolerance": 1.0,
-  "quality_band_anchor": "Cleanest valid candidate for each receiver",
-  "candidate_priority": [
-    "Highest remaining arrival power within the quality band",
-    "Cleaner actual interference at equal power",
-    "Fewer hops at equal power and interference"
-  ],
-  "actual_interference": "Preserved from the chosen route; never flattened to the cleanest route",
-  "regression_reproduced_on": "0.2.3",
-  "before_fix_addon_failures": [
-    "relaydiagnosticsgametests.near_side_receiver_must_not_strand_the_bridge_when_the_relay_is_on_the_far_side"
-  ],
-  "native_baseline_failures": [
-    "SystemTest.closedSystem",
-    "SystemTest.garbageCollection",
-    "SystemTest.openSystem",
-    "SystemTest.shortCircuit"
-  ],
-  "matches_previous_addon_disabled_control": true,
-  "addon_disabled_control_version": "0.2.1",
-  "game_test_server_exit": 4,
-  "gradle_build_and_game_test_command_exit": 1,
-  "baseline_failure_scope": "Headless environment; root causes unresolved; not confirmed live-server bugs",
-  "compatibility": "Existing 0.2.0 through 0.2.5 hardware, inventories and saved network retained",
-  "recipes_models_and_rendering": "Imported Bank geometry; separate conditional two-unit cards and dark label strips; one centered line per card. Recipes and Relay artwork unchanged.",
-  "voice_audio_playback": "Synthetic packet routing verified; decoded multiplayer audio not exercised",
-  "build_exit": 0,
-  "current_change": "Redesigned Bank and one-line cached labels, with one model unit of hit padding above and below each card for insertion/removal",
-  "rendering_cache_regression": "card_display_cache_tracks_inventory_edits_and_client_update_tags",
-  "rendering_cache_cases": [
-    "six-slot labels",
-    "unchanged-frame reuse",
-    "no-op notifications",
-    "blank/invalid cards",
-    "in-place retuning",
-    "removal",
-    "no-update extraction/restoration",
-    "clear",
-    "initial chunk/update NBT",
-    "subsequent update NBT"
-  ],
-  "rendering_cache_storage": "Transient immutable card display data, including prejoined frequency/modulation; invalidated on actual inventory changes and incoming NBT",
-  "rendering_performance": "Six text lines instead of twelve per full Bank; no FPS benchmark",
-  "client_visual_review": "0.2.6 Minecraft model/font pipeline, all four facings, empty/full Banks, blank/long labels and live client update-tag cache changes; software OpenGL",
+  "verification_scope": "User-requested light verification: compilation, six model geometry/bounds checks, native overview and closeup captures.",
+  "previous_full_suite": {
+    "version": "0.2.6",
+    "unit_tests": 21,
+    "addon_minecraft_tests": 27,
+    "addon_failures": 0,
+    "native_baseline_failures": [
+      "SystemTest.closedSystem",
+      "SystemTest.garbageCollection",
+      "SystemTest.openSystem",
+      "SystemTest.shortCircuit"
+    ],
+    "reports": "validation/0.2.6"
+  },
+  "change": "Three-unit cards with centered dark strips and one-line labels; one model unit of hit padding above only.",
   "native_client_preview_exit": 0,
-  "interaction_regression": "card_hit_bands_accept_one_row_above_and_below_in_every_facing",
-  "model_validation": "validation/0.2.6/model-verification.json",
-  "qa_mod": "Separate temporary client mod, removed after preview; not present in release JAR"
+  "render_shots": [
+    "Repeater-Bank-0.2.7-Native-Preview.png",
+    "Repeater-Bank-0.2.7-Card-Detail.png"
+  ],
+  "render_scope": [
+    "four facings",
+    "Relay + Bank assembly",
+    "empty Bank",
+    "six tuned cards",
+    "blank card",
+    "long label",
+    "live inventory update cache checks",
+    "front closeup"
+  ],
+  "qa_mod": "Separate temporary client mod; removed after capture and absent from released JAR.",
+  "compatibility": "Existing 0.2.0 through 0.2.6 blocks, inventories and saved network retained."
 }

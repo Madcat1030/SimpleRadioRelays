@@ -1,0 +1,143 @@
+{
+  "card_height": 3,
+  "label_width": 3.75,
+  "label_height": 0.8,
+  "strip_row": "middle",
+  "click_padding_above": 1,
+  "click_padding_below": 0,
+  "slots": [
+    {
+      "slot": 0,
+      "from": [
+        9,
+        11,
+        0
+      ],
+      "to": [
+        15,
+        14,
+        1
+      ],
+      "label_center": [
+        12,
+        12.5,
+        0
+      ],
+      "click_band_y": [
+        11,
+        15
+      ]
+    },
+    {
+      "slot": 1,
+      "from": [
+        1,
+        11,
+        0
+      ],
+      "to": [
+        7,
+        14,
+        1
+      ],
+      "label_center": [
+        4,
+        12.5,
+        0
+      ],
+      "click_band_y": [
+        11,
+        15
+      ]
+    },
+    {
+      "slot": 2,
+      "from": [
+        9,
+        6,
+        0
+      ],
+      "to": [
+        15,
+        9,
+        1
+      ],
+      "label_center": [
+        12,
+        7.5,
+        0
+      ],
+      "click_band_y": [
+        6,
+        10
+      ]
+    },
+    {
+      "slot": 3,
+      "from": [
+        1,
+        6,
+        0
+      ],
+      "to": [
+        7,
+        9,
+        1
+      ],
+      "label_center": [
+        4,
+        7.5,
+        0
+      ],
+      "click_band_y": [
+        6,
+        10
+      ]
+    },
+    {
+      "slot": 4,
+      "from": [
+        9,
+        1,
+        0
+      ],
+      "to": [
+        15,
+        4,
+        1
+      ],
+      "label_center": [
+        12,
+        2.5,
+        0
+      ],
+      "click_band_y": [
+        1,
+        5
+      ]
+    },
+    {
+      "slot": 5,
+      "from": [
+        1,
+        1,
+        0
+      ],
+      "to": [
+        7,
+        4,
+        1
+      ],
+      "label_center": [
+        4,
+        2.5,
+        0
+      ],
+      "click_band_y": [
+        1,
+        5
+      ]
+    }
+  ],
+  "note": "World-space hit rectangles are unchanged from 0.2.6; the former lower padding row is now part of the taller card."
+}

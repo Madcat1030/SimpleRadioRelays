@@ -461,39 +461,39 @@ public class RepeaterGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
-    public void card_hit_bands_accept_one_row_above_and_below_in_every_facing(GameTestHelper helper) {
+    public void card_hit_bands_accept_the_card_and_one_row_above_in_every_facing(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
         var player = helper.makeMockPlayer(); player.getAbilities().instabuild = false;
         int[] order = {5, 3, 1, 4, 2, 0};
         for (Direction facing : Direction.Plane.HORIZONTAL) {
             level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
             ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos);
-            for (double offset : new double[]{-.5, 1, 2.5}) {
+            for (double offset : new double[]{.25, 1.5, 3.5}) {
                 bank.clearContent();
                 for (int slot : order) {
-                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 11 - (slot / 2) * 5;
                     ItemStack held = tunedCard(160 + slot), expected = held.copy();
                     player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
                     var hit = bankFrontHit(pos, facing, x, (bottom + offset) / 16);
                     SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
                             net.minecraft.world.InteractionHand.MAIN_HAND, hit);
                     check(held.isEmpty() && ItemStack.isSameItemSameTags(bank.getItem(slot), expected),
-                            "Clicks on, above or below a card must insert into that exact slot in every facing");
+                            "Clicks on or above a card must insert into that exact slot in every facing");
                 }
                 player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 CompoundTag before = bank.saveWithoutMetadata();
-                for (int slot : order) for (double outside : new double[]{-1.25, 3.25}) {
-                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                for (int slot : order) for (double outside : new double[]{-.25, 4.25}) {
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 11 - (slot / 2) * 5;
                     SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
                             net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, x, (bottom + outside) / 16));
                     check(before.equals(bank.saveWithoutMetadata()), "Clicks beyond the expanded band must not eject a neighbouring row");
                 }
                 for (int slot : order) {
-                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 11 - (slot / 2) * 5;
                     player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                     SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
                             net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, x, (bottom + offset) / 16));
-                    check(bank.getItem(slot).isEmpty(), "Clicks on, above or below a card must remove that exact slot in every facing");
+                    check(bank.getItem(slot).isEmpty(), "Clicks on or above a card must remove that exact slot in every facing");
                 }
             }
         }
