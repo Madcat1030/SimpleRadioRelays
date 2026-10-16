@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "version": "0.4.1",
+  "bytes": 193328,
+  "sha256": "226fabc2dfbaad4f33c7b3c0eff680b199ff59a1411865ba3ee2ea8a5dfe0da5",
+  "test_classes_removed": 13,
+  "test_only_methods_removed": 13,
+  "classes_checked": 72,
+  "retained_methods_byte_identical_including_debug": 607,
+  "constant_pools_fields_and_class_attributes_unchanged": true,
+  "resources_and_mixin_configuration_unchanged": true,
+  "metadata_change": "Removed fabric-gametest entrypoints only",
+  "added_renaming_or_obfuscation": false,
+  "required_fabric_intermediary_mapping_retained": true
+}

@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.4.0
+# Simple Radio Repeaters 0.4.1
 
-A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Relay Amplifier. Controls and status remain visible in the world.
+A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Amplification Focus. Controls and status remain visible in the world.
 
-Version 0.4.0 adds directional channel conversion, native or focus-assisted cross-dimension routes, and carrier-decay resets. Relays still require a usable native catalyst and a verified antenna on a supported core. They retain worst audio degradation, per-copy traversal state, frame deduplication and bounded numeric routing caches.
+Version 0.4.1 revises Nether range and interference for native radios and relays, adds local Nether Focus benefits and reverse End projection, and gives the Amplification Focus a 50% antenna bonus alongside its carrier-decay reset. Relays still require a usable native catalyst and a verified antenna on a supported core. They retain worst audio degradation, per-copy traversal state, frame deduplication and bounded numeric routing caches.
 
 The network store remains `data/simpleradio_repeaters_relays_v3.dat`, shared with 0.3. Existing records read naturally with no attachment or transponder policy; no migration/reset layer is added. Earlier stores are not imported. When upgrading from 0.2, load each existing tower's chunk once to register it. Banks and Transponders must be directly above their Relays.
 
@@ -17,7 +17,7 @@ Install the addon on the server and every client. Replace the previous addon JAR
 5. Right-click a front slot on the Bank with the card to insert it into that slot. A click elsewhere on the front fills the first available slot.
 6. Right-click anywhere on the Relay with **gilded blackstone or an amethyst block** to install its catalyst. The catalyst is retained during use.
 7. Wait for the screen to show a positive antenna score and `READY`. A Transponder needs a tuned left card and at least one tuned right card.
-8. Optionally right-click the Relay with a Nether Focus, End Focus or Relay Amplifier. Only one attachment fits at a time; the catalyst stays in its separate socket.
+8. Optionally right-click the Relay with a Nether Focus, End Focus or Amplification Focus. Only one attachment fits at a time; the catalyst stays in its separate socket.
 
 The Relay has no container, menu or inventory slots. Its catalyst and optional attachment are directly installed components. The Bank holds six physical cards and has no inventory screen. Blank cards can be inserted, but they do not activate a channel until tuned. Matching numeric frequencies on AM and FM are separate channels. Duplicate matching cards select the channel once; they do not increase range or duplicate audio.
 
@@ -79,7 +79,7 @@ File: `recipes/nether_focus.json`.
 
 File: `recipes/end_focus.json`.
 
-### Relay Amplifier
+### Amplification Focus
 
 | Left | Center | Right |
 | --- | --- | --- |
@@ -122,7 +122,7 @@ In 0.2.7, each card is three model units tall. Its front-face click band include
 
 One Bank belongs to the Relay immediately below it, and a Relay uses only the Bank immediately above it. Normal placement rejects other positions and copies that Relay's facing. Side and bottom connections are not supported. Removing a Relay leaves the Bank and cards intact but disconnected. A valid saved top binding is retained while entity data is pending; a saved reference to any other position is rejected before world lookup. The Bank and its Relay share the same terrain chunk because their X/Z coordinates are identical.
 
-The screen shows `ANT`, a status code and `LINK`. `ANT` is the native antenna structure score, not a range in blocks. `LINK` counts distinct outgoing links to other eligible towers across the selected channels at relay count 1, using the installed catalyst. Later arrivals may reach fewer neighbors as departure power falls. It does not count players, handhelds or every tower reachable through a chain. Links are directed; one outgoing link does not establish a working return path.
+The screen shows `ANT`, a status code and `LINK`. `ANT` is the effective antenna structure score, not a range in blocks. With an Amplification Focus it includes the 50% bonus, rounded for display; routing uses the exact value and saving retains the raw verified score. `LINK` counts distinct outgoing links to other eligible towers across the selected channels at relay count 1, using the installed catalyst. Later arrivals may reach fewer neighbors as departure power falls. It does not count players, handhelds or every tower reachable through a chain. Links are directed; one outgoing link does not establish a working return path.
 
 | Status | Meaning |
 | --- | --- |
@@ -155,28 +155,47 @@ Simplex describes the direction of channel conversion. It does not stop an ordin
 
 ## Dimensions and focus pockets
 
-The addon follows Simple Radio's `frequency.crossDimensional` switch automatically. When enabled, no focus is required. The network uses physical tower positions and the native coordinate scaling and dimensional attenuation for foreign relays and receivers. Foci are ignored, so they do not add a second roof/bottom antenna in native mode. The amplifier remains active.
+The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections are disabled in this mode, while a Nether Focus installed on a Nether Relay still improves that Relay's local propagation. The amplifier also remains active.
 
-When the switch is disabled, ordinary links remain within their dimension. A focus gives its Relay one additional transmit/receive site in its named target world:
+With native cross-dimensional radio disabled, a focus provides the following behavior:
 
-| Focus | Projected X/Z | Projected Y in the default world |
+| Installed component and home world | Result |
+| --- | --- |
+| Nether Focus, Overworld | A bidirectional transmit/receive pocket at Overworld X/Z divided by eight, at the Nether roof: default Y=128 |
+| Nether Focus, Nether | Improved local transmission and reception; no Overworld projection |
+| End Focus, Overworld | A bidirectional pocket at matching End X/Z, at the End bottom: default Y=0 |
+| End Focus, End | A bidirectional pocket at matching Overworld X/Z, at the End Relay's own Y clamped to the Overworld's build range |
+| Either focus in another world | No projection |
+
+The End focus has no 500-block cap and does not target the center island. Nether users can reply through an existing Overworld tower's projected pocket; putting a Nether Focus into their own Nether tower does not create another route to the Overworld. Both Focus types retain the original tower's physical local antenna.
+
+A projected site connects only to a physical receiver or relay in its target dimension. Projected-to-projected links are excluded. Two Overworld towers carrying End foci can use a physical End relay as a hub if both focus legs reach it. Installing a focus cannot replace the mandatory catalyst, core or supported antenna.
+
+### Nether propagation
+
+These rules apply to ordinary native wireless endpoints as well as relay routing:
+
+| Link | Distance used for radio range | Additional interference |
 | --- | --- | --- |
-| Nether | Home X/Z × home coordinate scale ÷ Nether coordinate scale | Roof, 128 |
-| End | Home X/Z × home coordinate scale ÷ End coordinate scale | Bottom, 0 |
+| Overworld local or End local | Native distance | Native baseline |
+| Nether local | Physical distance × 4: one-quarter equivalent Overworld range | Noise floor is native AM/FM baseline plus 10 percentage points |
+| Nether local, with a Nether Focus on either Relay endpoint | Physical distance × 2: one-half equivalent Overworld range | Native AM/FM baseline, with no extra Nether floor |
+| Cross-dimension leg involving the Nether, including a projection | Native coordinate-scaled distance, including Nether Y × 8 | Twice the native dimensional modifier |
+| Overworld–End leg, including a projection | Native coordinate-scaled distance | Native dimensional modifier |
 
-For an Overworld tower, Nether X/Z are divided by eight and End X/Z are unchanged. The projection ignores home Y. The End focus does not target the center island and has **no fixed distance cap**. Native dimensional attenuation decides its reach, together with departure power and the target's reception gain. The same rules apply to incoming handheld traffic; return range can differ from broadcast range.
+With default additive loss 1 and dimensional modifier 4, a Nether crossing loses 9 per effective distance unit on FM or 5 on AM. An Overworld–End crossing loses 5 on FM or 3 on AM. Ordinary local Nether links use loss 1 against their adjusted distance; their minimum interference is 12% FM or 25% AM. A local Nether Focus removes only the added floor, giving the ordinary native 2% FM or 15% AM baseline. It cannot repair noise already inherited earlier in a transmission.
 
-A projected site connects only to a physical receiver or relay in that target dimension. Projected-to-projected links are excluded. Two towers carrying End foci can therefore use a physical End relay as a hub, provided each focus can reach it. Their normal home-world links still work independently. Installing a focus in its own named dimension adds no duplicate same-world site.
+All three axes use the selected distance factor. A Focus projection is a dimensional link even though its projected antenna and receiving device share the target world, so it does not receive the cheaper local-Nether policy. Nether roof injection remains intentionally weak, especially at lower elevations. Actual range depends on reception gain, catalyst, antenna and prior decay; the ratios compare otherwise equivalent links.
 
-Native mode scales all three position axes by each dimension's coordinate scale, matching `WorldlyPosition.dimensionScaled()`. Focus mode first fixes the target Y and then evaluates native scaled distance around that site. Dimensional interference is added to travel loss on a focus leg, even while the base mod's global cross-dimensional switch is off. With the native default modifier 4, this adds 2 for AM or 4 for FM to the sender's usual loss. The native reach gate still uses base loss; the extra modifier applies during travel. There is no separate 500-block End radius or percentage cutoff.
+Native reach gates use the sender's base loss; dimensional modifiers apply during travel. Wires retain their existing native calculations. No focus adds a percentage cutoff or fixed End radius.
 
-A focus emits a locally regenerated carrier in its target world. The addon localizes the repeated source's carrier origin so the native speaker's independent same-dimension gate accepts it with the global switch disabled. Voice bytes, owner, original owner, activity, inherited interference and both traversal counters remain intact. Native cross-dimension mode retains the original source origin.
+A focus emits a locally regenerated carrier in its target world. The addon localizes carrier origin for the native speaker's same-dimension gate when global cross-dimensional radio is disabled. Voice bytes, owner, original owner, activity, worst interference and traversal counts remain intact. Native cross-dimension mode retains the original carrier origin.
 
 ## Range and audio quality
 
 The addon uses Simple Radio's configured transmission power, reception power, reception floor and attenuation. A handheld must reach an entry tower using its own transmitter strength. Hearing a tower's stronger broadcast does not guarantee that the handheld can transmit back to it.
 
-Departure power is `nominal tower power × current catalyst strength × 0.9 ^ (decay count − 1)`. Decay count 1 is the first relay, or a Relay equipped with an amplifier. A 90% catalyst begins at 90%, then 81%, 72.9%; amethyst begins at 60%, then 54%, 48.6%. Nominal tower power is native transmitter base power plus antenna score times transmitter aptitude. The native registry still names the catalyst value `efficiency`; it serves as the first-relay strength ceiling here.
+Departure power is `nominal tower power × current catalyst strength × 0.9 ^ (decay count − 1)`. Decay count 1 is the first relay, or a Relay equipped with an amplifier. A 90% catalyst begins at 90%, then 81%, 72.9%; amethyst begins at 60%, then 54%, 48.6%. Nominal tower power is native transmitter base power plus effective antenna score times transmitter aptitude. An Amplification Focus gives 1.5 times the antenna score for both transmit and receive gain; it does not multiply the built-in transmitter/receiver base. The native registry still names the catalyst value `efficiency`; it serves as the first-relay strength ceiling here.
 
 | Decay count | 90% catalyst | 60% catalyst | Custom 200% catalyst |
 | ---: | ---: | ---: | ---: |
@@ -189,7 +208,7 @@ Without an amplifier, decay count equals total visits. Each current tower suppli
 
 The router checks actual reach and native attenuation at every reduced-power leg. Some paths stop before reaching their destination. There is no 1% cutoff: a very weak departure can still serve a nearby receiver. The same reduced departure is used for other relays and local receivers. A native receiver/wire/transmitter bridge preserves the count even when its frequency changes; entering another relay consumes the next visit. Fresh microphone/handheld sources begin with zero previous visits. The configured total-visit budget applies across re-entries.
 
-A Relay Amplifier resets decay count to 1, allowing its tower to depart at its own catalyst-scaled maximum. It does not reset total visits or clear inherited audio interference. For example, a gilded tower reached after 20 visits normally emits at about 12.16% of nominal output. With an amplifier it emits at 90%, the next ordinary gilded tower at 81%, then 72.9%. A 60% catalyst on the amplified tower still limits that departure to 60%. The next tower always uses its own catalyst and nominal strength. Amplifiers can restore useful RF reach halfway through a chain, but a cycle still consumes the finite total budget.
+A Amplification Focus resets decay count to 1, allowing its tower to depart at its own catalyst-scaled maximum. It does not reset total visits or clear inherited audio interference. For example, a gilded tower reached after 20 visits normally emits at about 12.16% of nominal output. With an amplifier it emits at 90%, the next ordinary gilded tower at 81%, then 72.9%. A 60% catalyst on the amplified tower still limits that departure to 60%. The next tower always uses its own catalyst and nominal strength. Amplifiers can restore useful RF reach halfway through a chain, but a cycle still consumes the finite total budget.
 
 The audio retains the worst interference encountered on its chosen path. Regeneration increases RF reach relative to the received carrier without repairing audio. At a fixed directed channel port, an arrival is dominated only when another uses no more total visits, no more decay and no worse interference. A longer amplifier detour can therefore remain useful even with equal audio quality. Final delivery evaluates those useful alternatives, finds the lowest worst interference, admits candidates at most one point above that minimum, and chooses the strongest remaining carrier. Equal power prefers cleaner audio, then fewer visits. The selected source retains its actual interference.
 
@@ -324,7 +343,9 @@ The guarded antenna scanner also requires a sturdy upper face on the local core 
 | `AntennaVerification` | Enforce settling time, retry intervals and confirmation before replacing a verified antenna with zero |
 | `NativeRadioAdapter` | Read native power/reception settings, calculate counted departure power and evaluate each physical leg |
 | `RelayPower` | Apply catalyst strength and universal 90% retention using decay count, with no percentage cutoff |
-| `RadioSpace` | Build physical/projected sites and native-scaled dimensional legs without terrain lookups |
+| `RadioSpace` | Build permitted physical/projected sites and propagation profiles without terrain lookups |
+| `RadioPropagation` | Select local Nether, focused Nether and dimensional distance/noise rules |
+| `NativeTransmissionMixin`, `NativeTravelMixin` | Apply the same Nether policy to ordinary native wireless endpoints |
 | `RelayPort` | Hold one tower's directed input/output channels and immutable antenna-site list |
 | `RelayCatalysts` | Resolve usable native catalysts, efficiencies, configuration fingerprints and the server-supplied client catalog |
 | `ClientSessionCatalog` | Keep an immutable, connection-scoped catalog with explicit readiness and stale-callback rejection |
@@ -360,11 +381,15 @@ Cache limits remain 128 route entries with 32,768 route/row elements and 512 lin
 
 The repeated source changes its native frequency medium to the selected output and preserves bytes, owner/original owner, activity and inherited severity. Focus-mode foreign exits localize carrier origin for native speakers; native-dimensional mode does not. `RadioSourceMixin.copy` copies total and decay as primitive per-branch state alongside the shared frame identity. Wires and frequency changes retain both. The decay getter defaults to total visits until explicitly set, allowing an unamplified source to use the ordinary count. Frame deduplication prevents replay; counts do not live in that shared frame.
 
-### RadioSpace and native dimensional math
+### RadioSpace and propagation policy
 
-`RadioSpace.sites` resolves an existing ServerLevel for a saved record and returns its physical site. Native mode stops there. Otherwise a Nether/End focus adds the mapped target site, except when already in that target world. It derives roof height from minimum build height plus logical height, and End bottom from minimum build height. No block state, chunk acquisition or receiver entity is needed to construct these values.
+`RadioSpace.sites` resolves existing ServerLevels without loading terrain. It returns each tower's physical site, marks a Nether-Focused Nether site for local propagation, and optionally adds the permitted Overworld→Nether or Overworld↔End projection. Native cross-dimension mode suppresses projections. Nether projection Y is minimum build height plus logical height; End projection Y is minimum build height. Reverse End projection retains clamped source Y.
 
-`between` rejects projected/projected pairs and disallowed foreign-world legs, then computes Euclidean distance from each position multiplied by its dimension's coordinate scale. A leg records whether native dimensional loss is needed. `NativeRadioAdapter` supplies that modifier to `RadioLinkMath` separately from the native reach factor. This matches the native transmitter's base-loss reach check followed by the source's dimensional travel loss, including AM's halved modifier. All usable legs require positive remaining carrier and severity below complete interference.
+`RadioPropagation` defines immutable numeric profiles shared by the native and virtual paths. Local Nether profiles adjust native eightfold distance to fourfold, or twofold when either physical Relay endpoint has a Nether Focus. Dimensional Nether profiles keep native distance and double the native modifier. Projected sites never qualify for the local bonus. This lookup performs no block/entity/chunk scan and introduces no per-packet configuration fingerprint.
+
+`RadioSpace.between` rejects projected/projected and disallowed foreign-world legs, computes native coordinate-scaled distance, and attaches the selected propagation profile. `NativeRadioAdapter` uses the same profile for travel loss and the baseline noise floor. Amplification multiplies only antenna-derived transmission and reception gain by 1.5; raw verified scores remain unchanged in saved records.
+
+`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance, Nether dimensional modifier and inherited baseline noise floor. Its hooks leave wire calculations alone. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
 
 ## Build and validation
 
@@ -375,7 +400,7 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gra
 ./gradlew runGameTest
 ```
 
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.0 passes 48 unit tests and 50 addon Minecraft tests. Reports are under `validation/0.4.0/`, with a current summary at `validation/build-verification.json`.
+The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.1 passes 51 unit tests and 54 addon Minecraft tests. Current results are recorded under `validation/0.4.1/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
 
 Power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
 
@@ -387,6 +412,7 @@ The near-tie carrier fixtures use a registered 100% test strength at A/B and 200
 
 The combined run also contains seven native Simple Radio tests. The same four failures seen in the earlier addon-disabled headless control remain: `shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`. Their cause is unresolved and they are not established live-server bugs. Addon/native XML reports are separated. Game tests use synthetic encoded bytes, not captured microphones.
 
-New native regressions exercise both dimension policies, native Y scaling and travel attenuation, foreign handheld returns, End reception beyond 500 blocks, no terrain loading, and a real hub between focus pockets. They pass a focus-localized source through the actual native speaker gate without decoding test bytes. Amplifier tests check catalyst ceilings, retained audio and independent source copies. Transponder tests cover simplex/duplex, AM/FM conversion, a main-frequency branch, multi-tower conversions, cycles, all-facing card/socket controls, complete-pair eligibility, recipes and restoring edited policies while a Relay/module entity is unavailable.
+The 0.4.0 native regressions exercise both dimension policies, native Y scaling and travel attenuation, foreign handheld returns, End reception beyond 500 blocks, no terrain loading, and a real hub between focus pockets. They pass a focus-localized source through the actual native speaker gate without decoding test bytes. Amplifier tests check catalyst ceilings, retained audio and independent source copies. Transponder tests cover simplex/duplex, AM/FM conversion, a main-frequency branch, multi-tower conversions, cycles, all-facing card/socket controls, complete-pair eligibility, recipes and restoring edited policies while a Relay/module entity is unavailable.
 
 The 0.4 native client preview uses actual Minecraft meshes, textures, fonts and production renderers. It shows all three attachments, both Transponder modes and the unchanged six-card Bank. The temporary QA mod, source and log accompany validation and are absent from the release JAR. The existing 0.3.2 dedicated-server/client join, data-pack reload and reconnect evidence remains under its original version; it was not rerun as a 0.4 lifecycle claim. Real multiplayer microphone playback has not been exercised in this run.
+The 0.4.1 regressions additionally compare ordinary native Nether reach/travel with virtual legs, verify the moderate noise floor, exercise focused local reception and transmission without an Overworld projection, check the higher Nether dimensional penalty, test reverse End projection and return traffic, and verify the amplifier's additional receive/transmit antenna gain. Test packets are synthetic; live multiplayer microphone playback is still a separate check.

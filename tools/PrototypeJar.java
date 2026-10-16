@@ -88,7 +88,8 @@ public final class PrototypeJar {
                     || (m.name().equals("alternatives") && (count == 2 || count == 3));
             case "radio/RelayGraph$Reach" -> m.name().equals("<init>") && count == 2;
             case "network/TowerRecord" -> m.name().equals("<init>") && (count == 9 || count == 10);
-            case "radio/NativeRadioAdapter" -> (m.name().equals("receiveAtTower") || m.name().equals("receiveAtReceiver")) && count == 6;
+            case "radio/NativeRadioAdapter" -> (m.name().equals("receiveAtTower") || m.name().equals("receiveAtReceiver"))
+                    && count == 6 && Type.getArgumentTypes(m.descriptor())[0].getSort() == Type.DOUBLE;
             case "radio/RadioLinkMath" -> m.name().equals("receive") && count == 9;
             case "network/TowerManager" -> m.name().equals("records") && count == 0;
             default -> false;

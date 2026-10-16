@@ -95,8 +95,8 @@ public final class RelayRouter {
                             if (leg == null) continue;
                             for (RelayGraph.Reach path : reachable.get(i)) {
                                 float power = NativeRadioAdapter.departurePower(port.tower(), output, path.decay());
-                                var received = NativeRadioAdapter.receiveAtReceiver(leg.distance(), power, power,
-                                        SimpleRadioFrequencing.TRANSMITTER, receiver, output, leg.dimensional());
+                                var received = NativeRadioAdapter.receiveAtReceiver(leg, power, power,
+                                        SimpleRadioFrequencing.TRANSMITTER, receiver, output);
                                 if (received == null) continue;
                                 double noise = Math.max(path.severity(), received.severity()); float remaining = (float) received.power();
                                 Delivery delivery = new Delivery(null, power, remaining, noise, path.hops(), path.decay(), frequency, site);
@@ -127,8 +127,8 @@ public final class RelayRouter {
             for (RadioSpace.Site site : port.sites()) {
                 RadioSpace.Leg leg = RadioSpace.between(emission, site, network.nativeCrossDimensional());
                 if (leg == null) continue;
-                var received = NativeRadioAdapter.receiveAtTower(leg.distance(), source.transmissionPower, source.transmissionCap,
-                        type, port.tower(), channel, leg.dimensional());
+                var received = NativeRadioAdapter.receiveAtTower(leg, source.transmissionPower, source.transmissionCap,
+                        type, port.tower(), channel);
                 if (received != null) best = Math.min(best, received.severity());
             }
             if (Double.isFinite(best)) result.put(i, Math.max(inherited, best));

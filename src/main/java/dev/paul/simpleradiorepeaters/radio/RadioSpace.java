@@ -1,5 +1,6 @@
 package dev.paul.simpleradiorepeaters.radio;
 
+import com.codinglitch.simpleradio.central.WorldlyPosition;
 import dev.paul.simpleradiorepeaters.network.TowerRecord;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.*;
@@ -12,24 +13,34 @@ import java.util.*;
 
 /** Numeric antenna sites, never block entities or chunk lookups. Focus pockets need a physical radio at the other end. */
 public final class RadioSpace {
-    public record Site(ServerLevel level, Vec3 position, boolean projected) {}
-    public record Leg(Site from, Site to, double distance, boolean dimensional) {}
+    public record Site(ServerLevel level, Vec3 position, boolean projected, boolean focusedNether) {}
+    public record Leg(Site from, Site to, double distance, boolean dimensional, RadioPropagation.Profile propagation) {}
     private RadioSpace() {}
-    public static Site physical(ServerLevel level, Vec3 position) { return new Site(level, position, false); }
+    public static Site physical(ServerLevel level, Vec3 position) { return new Site(level, position, false, false); }
+    public static RadioPropagation.Profile nativePropagation(WorldlyPosition from, WorldlyPosition to) {
+        return RadioPropagation.profile(from.level.dimension().equals(Level.NETHER), to.level.dimension().equals(Level.NETHER),
+                from.level.dimensionType() != to.level.dimensionType(), false);
+    }
     public static List<Site> sites(MinecraftServer server, TowerRecord tower, boolean nativeCrossDimensional) {
         ResourceLocation id = ResourceLocation.tryParse(tower.dimension());
         ServerLevel home = id == null ? null : server.getLevel(ResourceKey.create(Registries.DIMENSION, id));
         if (home == null) return List.of();
-        Site physical = physical(home, tower.position().getCenter());
+        Site physical = new Site(home, tower.position().getCenter(), false,
+                home.dimension().equals(Level.NETHER) && tower.attachment() == RelayAttachment.NETHER_FOCUS);
         if (nativeCrossDimensional) return List.of(physical);
-        ServerLevel target = tower.attachment() == RelayAttachment.NETHER_FOCUS ? server.getLevel(Level.NETHER)
-                : tower.attachment() == RelayAttachment.END_FOCUS ? server.getLevel(Level.END) : null;
+        ServerLevel target = null;
+        if (home.dimension().equals(Level.OVERWORLD)) {
+            if (tower.attachment() == RelayAttachment.NETHER_FOCUS) target = server.getLevel(Level.NETHER);
+            if (tower.attachment() == RelayAttachment.END_FOCUS) target = server.getLevel(Level.END);
+        } else if (home.dimension().equals(Level.END) && tower.attachment() == RelayAttachment.END_FOCUS)
+            target = server.getLevel(Level.OVERWORLD);
         if (target == null || target == home) return List.of(physical);
         double scale = home.dimensionType().coordinateScale() / target.dimensionType().coordinateScale();
-        double y = target.getMinBuildHeight() + (tower.attachment() == RelayAttachment.NETHER_FOCUS
-                ? target.dimensionType().logicalHeight() : 0);
+        double y = target.dimension().equals(Level.NETHER) ? target.getMinBuildHeight() + target.dimensionType().logicalHeight()
+                : target.dimension().equals(Level.END) ? target.getMinBuildHeight()
+                : Math.max(target.getMinBuildHeight() + 1, Math.min(target.getMaxBuildHeight() - 1, physical.position().y));
         Vec3 anchor = new Vec3(physical.position().x * scale, y, physical.position().z * scale);
-        return List.of(physical, new Site(target, anchor, true));
+        return List.of(physical, new Site(target, anchor, true, false));
     }
     @Nullable public static Leg between(Site from, Site to, boolean nativeCrossDimensional) {
         // Two virtual pockets cannot act as a free interdimensional backbone. A physical hub must receive and repeat.
@@ -38,7 +49,9 @@ public final class RadioSpace {
         double distance = from.position().scale(from.level().dimensionType().coordinateScale())
                 .distanceTo(to.position().scale(to.level().dimensionType().coordinateScale()));
         boolean dimensional = from.projected() || to.projected() || from.level().dimensionType() != to.level().dimensionType();
-        return new Leg(from, to, distance, dimensional);
+        var propagation = RadioPropagation.profile(from.level().dimension().equals(Level.NETHER),
+                to.level().dimension().equals(Level.NETHER), dimensional, from.focusedNether() || to.focusedNether());
+        return new Leg(from, to, distance * propagation.distanceMultiplier(), dimensional, propagation);
     }
     public static List<Leg> between(List<Site> from, List<Site> to, boolean nativeCrossDimensional) {
         List<Leg> result = new ArrayList<>();

@@ -259,8 +259,8 @@ public final class TowerManager {
             if (power > 0) for (var target : geometry.get(from).entrySet()) {
                 double best = Double.POSITIVE_INFINITY;
                 for (RadioSpace.Leg leg : target.getValue()) {
-                    var link = NativeRadioAdapter.receiveAtTower(leg.distance(), power, power,
-                            SimpleRadioFrequencing.TRANSMITTER, nodes.get(target.getKey()), sender.output(), leg.dimensional());
+                    var link = NativeRadioAdapter.receiveAtTower(leg, power, power,
+                            SimpleRadioFrequencing.TRANSMITTER, nodes.get(target.getKey()), sender.output());
                     if (link != null) best = Math.min(best, link.severity());
                 }
                 if (Double.isFinite(best)) row.add(new RelayGraph.Edge(target.getKey(), best));
@@ -300,7 +300,8 @@ public final class TowerManager {
         List<String> result = new ArrayList<>(); result.add(summary());
         data.towers.values().stream().sorted(Comparator.comparing(n -> n.id().toString())).forEach(n -> result.add(n.dimension() + " "
                 + n.position().toShortString() + " | " + (n.eligible() ? loaded.containsKey(n.id()) ? "loaded" : "saved" : "inactive")
-                + " | antenna " + n.antennaScore() + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%)"
+                + " | antenna " + RelayPower.antennaScore(n.antennaScore(), n.attachment() == RelayAttachment.AMPLIFIER)
+                + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%)"
                 + " | " + n.attachment() + " | " + (n.transponder() == null ? "bank" : n.transponder().duplex() ? "duplex" : "simplex")
                 + " | " + n.channels().stream().sorted().toList()));
         return result;

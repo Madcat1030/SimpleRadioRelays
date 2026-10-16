@@ -1,0 +1,89 @@
+{
+  "version": "0.4.1",
+  "minecraft": "1.20.1",
+  "loader": "Fabric",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "standalone_build": "passed",
+  "unit_tests": {
+    "tests": 51,
+    "failures": 0
+  },
+  "addon_gametests": {
+    "tests": 54,
+    "failures": 0
+  },
+  "native_gametests": {
+    "tests": 7,
+    "failures": 4,
+    "names": [
+      "shortCircuit",
+      "garbageCollection",
+      "openSystem",
+      "closedSystem"
+    ],
+    "status": "Same recorded addon-disabled headless failures; cause unresolved, not established live-server bugs."
+  },
+  "propagation": {
+    "nether_local_distance_scale": 4,
+    "nether_local_noise_floor_addition": 10,
+    "nether_focused_distance_scale": 2,
+    "nether_focused_noise_floor_addition": 0,
+    "nether_dimensional_modifier_multiplier": 2,
+    "nether_dimensional_coordinate_scale": "native, including Y",
+    "ordinary_native_endpoints": true,
+    "native_wire_and_receiver_internal_fanout_untouched": true
+  },
+  "foci": {
+    "nether_from_overworld": "mapped X/Z, roof Y=128, two-way pocket",
+    "nether_from_nether": "local propagation improvement only; no Overworld projection",
+    "end_from_overworld": "mapped X/Z, bottom Y=0",
+    "end_from_end": "mapped Overworld X/Z, own clamped Y",
+    "end_from_nether": "no projection",
+    "end_radius_cap": null,
+    "projected_to_projected_links": false,
+    "native_cross_dimensional_mode": "physical links need no focus; projections suppressed; local Nether Focus still active"
+  },
+  "amplifier": {
+    "display_name": "Amplification Focus",
+    "antenna_multiplier": 1.5,
+    "affects_transmit_and_receive": true,
+    "native_radio_base_multiplied": false,
+    "saved_score_multiplied": false,
+    "decay_reset": 1,
+    "total_visit_limit_preserved": true,
+    "audio_repaired": false
+  },
+  "prototype": {
+    "passed": true,
+    "version": "0.4.1",
+    "bytes": 193328,
+    "sha256": "226fabc2dfbaad4f33c7b3c0eff680b199ff59a1411865ba3ee2ea8a5dfe0da5",
+    "test_classes_removed": 13,
+    "test_only_methods_removed": 13,
+    "classes_checked": 72,
+    "retained_methods_byte_identical_including_debug": 607,
+    "constant_pools_fields_and_class_attributes_unchanged": true,
+    "resources_and_mixin_configuration_unchanged": true,
+    "metadata_change": "Removed fabric-gametest entrypoints only",
+    "added_renaming_or_obfuscation": false,
+    "required_fabric_intermediary_mapping_retained": true
+  },
+  "production_smoke": {
+    "passed": true,
+    "exit_code": 0,
+    "environment": "Production Fabric server, development=false, JVM -Xverify:all",
+    "checks": [
+      "Exact prototype JAR loaded from mods folder",
+      "Relay/Bank verified a supported antenna and native catalyst",
+      "Transponder duplex pair, amplifier and End focus loaded and published",
+      "No missing methods/classes or mixin/verification errors",
+      "Clean shutdown"
+    ],
+    "scope": "No client join or microphone playback; retained bytecode checked separately."
+  },
+  "limits": [
+    "Synthetic encoded packets; no live multiplayer microphone playback.",
+    "No new client render capture; geometry unchanged, effective ANT label updated.",
+    "Four native headless test failures remain unresolved."
+  ]
+}

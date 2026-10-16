@@ -191,15 +191,15 @@ public class ExpansionGameTests implements FabricGameTest {
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void two_focus_pockets_need_a_physical_hub_in_the_target_dimension(GameTestHelper helper) {
         try (Fixture f = new Fixture(helper)) {
-            ChannelKey key = channel(416); BlockPos aPos = new BlockPos(80000, 64, 80000), bPos = new BlockPos(10000, 80, 10000);
+            ChannelKey key = channel(416); BlockPos aPos = new BlockPos(80000, 64, 80000), bPos = aPos.offset(5000, 0, 0);
             TowerRecord a = f.tower(f.overworld, aPos, 32, RelayAttachment.END_FOCUS, null, key);
-            TowerRecord b = f.tower(f.nether, bPos, 32, RelayAttachment.END_FOCUS, null, key);
+            TowerRecord b = f.tower(f.overworld, bPos, 32, RelayAttachment.END_FOCUS, null, key);
             var aSite = RadioSpace.sites(f.overworld.getServer(), a, false).get(1);
             var bSite = RadioSpace.sites(f.overworld.getServer(), b, false).get(1);
             check(RadioSpace.between(aSite, bSite, false) == null, "Two virtual pockets must not directly link");
-            Tap target = f.tap(f.nether, bPos.getCenter().add(1, 0, 0), key);
-            f.send(f.overworld, aPos.getCenter(), key); check(target.count == 0, "Two focused towers in different home dimensions need a real target-dimension hub");
-            TowerRecord hub = f.tower(f.end, new BlockPos(80002, 0, 80002), 32, RelayAttachment.NONE, null, key);
+            Tap target = f.tap(f.overworld, bPos.getCenter().add(1, 0, 0), key);
+            f.send(f.overworld, aPos.getCenter(), key); check(target.count == 0, "Distant Overworld pockets need a real End hub");
+            TowerRecord hub = f.tower(f.end, aPos.offset(2500, -64, 0), 300, RelayAttachment.NONE, null, key);
             f.send(f.overworld, aPos.getCenter(), key);
             check(target.count == 1 && ((RelaySourceState) target.last).repeaters$getRelayCount() == 3,
                     "A real unloaded End relay must connect both pockets and consume its own relay visit");
@@ -219,6 +219,11 @@ public class ExpansionGameTests implements FabricGameTest {
             for (Item catalyst : List.of(Items.AMETHYST_BLOCK, Items.GILDED_BLACKSTONE)) {
                 TowerRecord amplified = tower.settings(tower.channels(), true, net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(catalyst),
                         null, RelayAttachment.AMPLIFIER, null); f.manager.updateSnapshot(amplified);
+                check(NativeRadioAdapter.towerPower(amplified, key) - NativeRadioAdapter.towerPower(tower, key) == 160,
+                        "A 32-point antenna must gain 16 points, without multiplying the native transmitter base");
+                check(NativeRadioAdapter.receiveAtTower(1000, 300, 300, SimpleRadioFrequencing.TRANSMITTER, tower, key) == null
+                                && NativeRadioAdapter.receiveAtTower(1000, 300, 300, SimpleRadioFrequencing.TRANSMITTER, amplified, key) != null,
+                        "Amplification must also increase reception, while retaining the raw saved antenna score");
                 RadioSource source = f.send(f.overworld, pos.getCenter(), key, 30, 30);
                 check(((RelaySourceState) tap.last).repeaters$getRelayCount() == 31
                                 && ((RelaySourceState) tap.last).repeaters$getDecayCount() == 1
@@ -292,6 +297,99 @@ public class ExpansionGameTests implements FabricGameTest {
             f.send(f.overworld, pos.getCenter(), left);
             check(a.count == 1 && b.count == 1 && ((RelaySourceState) a.last).repeaters$getRelayCount() <= RepeatersConfig.INSTANCE.maxRelayHops,
                     "Duplex loops must retain frame deduplication and a finite total visit budget"); f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void native_Nether_radios_use_quarter_range_and_a_moderate_noise_floor(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey key = channel(432, Frequency.Modulation.FREQUENCY);
+            Vec3 origin = new Vec3(480000, 64, 480000);
+            Tap near = f.tap(f.nether, origin.add(400, 0, 0), key);
+            Tap far = f.tap(f.nether, origin.add(551, 0, 0), key);
+            RadioTransmitter sender = new RadioTransmitter(frequency(key), at(f.nether, origin)).frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+            RadioSource source = new RadioSource(UUID.randomUUID(), at(f.nether, origin), new byte[]{1}, 1);
+            source.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id; source.transmissionCap = 2000; source.transmissionPower = 2000;
+            check(sender.shouldRouteTo(source, near.receiver) && !sender.shouldRouteTo(source, far.receiver),
+                    "Native reach checks must use 4x physical distance, not the old 8x or unscaled distance");
+            RadioSource arrival = sender.prepareSource(source, near.receiver);
+            check(Math.abs(arrival.transmissionPower - 600) < .01 && arrival.computeSeverity() == 12,
+                    "Native travel must match the reach check and apply a non-cumulative +10-point baseline noise floor");
+            var leg = RadioSpace.between(RadioSpace.physical(f.nether, origin), RadioSpace.physical(f.nether, new Vec3(near.position)), false);
+            var expected = NativeRadioAdapter.receiveAtReceiver(leg, 2000, 2000, SimpleRadioFrequencing.TRANSMITTER, near.receiver, key);
+            check(expected != null && Math.abs(expected.power() - arrival.transmissionPower) < .01
+                            && expected.severity() == arrival.computeSeverity(), "Native and virtual Nether propagation must agree");
+            f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void Nether_focus_improves_local_reach_in_both_directions_without_an_Overworld_pocket(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey key = channel(434); BlockPos pos = new BlockPos(500000, 64, 500000);
+            TowerRecord ordinary = f.tower(f.nether, pos, 32, RelayAttachment.NONE, null, key);
+            Tap remote = f.tap(f.nether, pos.getCenter().add(1200, 0, 0), key);
+            Tap local = f.tap(f.nether, pos.getCenter().add(1, 0, 0), key);
+            f.send(f.nether, pos.getCenter(), key, 0, 0, 1800);
+            check(remote.count == 0, "An ordinary 32-score Nether relay must not reach this distant handheld");
+            TowerRecord focused = ordinary.settings(ordinary.channels(), true, ordinary.catalystItem(), null, RelayAttachment.NETHER_FOCUS, null);
+            f.manager.updateSnapshot(focused);
+            for (boolean nativeMode : new boolean[]{false, true}) {
+                var sites = RadioSpace.sites(f.overworld.getServer(), focused, nativeMode);
+                check(sites.size() == 1 && sites.get(0).level() == f.nether && sites.get(0).focusedNether(),
+                        "A Nether focus in the Nether improves only the physical site, including when native mode is enabled");
+            }
+            var site = RadioSpace.sites(f.overworld.getServer(), focused, false).get(0);
+            var incoming = RadioSpace.between(RadioSpace.physical(f.nether, pos.getCenter()), site, false);
+            var outgoing = RadioSpace.between(site, RadioSpace.physical(f.nether, new Vec3(remote.position)), false);
+            var receivedIn = NativeRadioAdapter.receiveAtTower(incoming, 1800, 1800, SimpleRadioFrequencing.TRANSCEIVER, focused, key);
+            var receivedOut = NativeRadioAdapter.receiveAtReceiver(outgoing, 4248, 4248, SimpleRadioFrequencing.TRANSMITTER, remote.receiver, key);
+            RadioSource sent = f.send(f.nether, pos.getCenter(), key, 0, 0, 1800);
+            check(remote.count == 1 && Math.abs(remote.last.computeSeverity() - 15) < .00001,
+                    "A local focus must double reach and remove the extra Nether noise floor: deliveries=" + remote.count
+                            + ", severity=" + (remote.last == null ? "none" : remote.last.computeSeverity())
+                            + ", initial=" + sent.computeSeverity() + ", in=" + receivedIn + ", out=" + receivedOut
+                            + ", inherited=" + (remote.last == null ? "none" : ((RelaySourceState) remote.last).repeaters$getInheritedSeverity()));
+            int previous = local.count;
+            f.send(f.nether, new Vec3(remote.position), key, 0, 0, 1800);
+            check(local.count == previous + 1, "The local focus must improve incoming handheld reach as well as outgoing reach");
+            f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void Nether_crossings_have_twice_the_native_dimensional_loss(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey key = channel(436); Vec3 origin = new Vec3(160000, 512, 160000);
+            Tap tap = f.tap(f.nether, new Vec3(20100, 64, 20000), key);
+            check(Math.abs(nativeArrival(origin, f.overworld, tap, key, 4000) - 1000) < .01,
+                    "An 800-unit AM crossing must lose 5 per effective unit instead of the native 3");
+            var leg = RadioSpace.between(RadioSpace.physical(f.overworld, origin), RadioSpace.physical(f.nether, new Vec3(tap.position)), true);
+            var received = NativeRadioAdapter.receiveAtReceiver(leg, 4000, 4000, SimpleRadioFrequencing.TRANSMITTER, tap.receiver, key);
+            check(received != null && Math.abs(received.power() - 1000) < .01, "Virtual crossings must use the same high penalty");
+            f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void End_focus_on_an_End_relay_projects_back_into_the_Overworld(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey key = channel(438); BlockPos pos = new BlockPos(520000, 70, 520000);
+            TowerRecord tower = f.tower(f.end, pos, 32, RelayAttachment.END_FOCUS, null, key);
+            var pocket = RadioSpace.sites(f.overworld.getServer(), tower, false).get(1);
+            check(pocket.level() == f.overworld && pocket.projected() && pocket.position().equals(pos.getCenter()),
+                    "An End relay must project to mapped Overworld X/Z at its own clamped height");
+            Tap target = f.tap(f.overworld, pocket.position().add(500, 0, 0), key);
+            Tap local = f.tap(f.end, pos.getCenter().add(1, 0, 0), key);
+            f.send(f.end, pos.getCenter(), key, 0, 0, 1800);
+            check(target.count == 1 && target.last.origin.level == f.overworld, "The reverse End focus must pass the native speaker origin gate");
+            int previous = local.count;
+            f.send(f.overworld, new Vec3(target.position), key, 0, 0, 1800);
+            check(local.count == previous + 1, "The reverse projection must accept replies too");
+            TowerRecord misplaced = f.tower(f.nether, pos.offset(2000, 0, 0), 32, RelayAttachment.END_FOCUS, null, key);
+            check(RadioSpace.sites(f.overworld.getServer(), misplaced, false).size() == 1,
+                    "The End focus connects only Overworld and End, not an unintended Nether bridge");
+            f.noChunkLoads();
         }
         helper.succeed();
     }

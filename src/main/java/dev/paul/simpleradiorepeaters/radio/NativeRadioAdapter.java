@@ -15,7 +15,10 @@ public final class NativeRadioAdapter {
     }
     public static float towerPower(TowerRecord tower, ChannelKey channel) {
         FrequencingType type = SimpleRadioFrequencing.TRANSMITTER;
-        return type.getTransmissionPower(channel.mode()) + tower.antennaScore() * type.antennaAptitude;
+        return (float) (type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude);
+    }
+    private static double antennaScore(TowerRecord tower) {
+        return RelayPower.antennaScore(tower.antennaScore(), tower.attachment() == RelayAttachment.AMPLIFIER);
     }
     public static float departurePower(TowerRecord tower, ChannelKey channel, int relayCount) {
         return RelayPower.departure(towerPower(tower, channel), tower.efficiency(),
@@ -23,30 +26,36 @@ public final class NativeRadioAdapter {
     }
     public static RadioLinkMath.Result receiveAtTower(double distance, double power, double cap,
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
-        return receiveAtTower(distance, power, cap, sender, receiver, channel, false);
+        return receive(distance, power, cap, sender, SimpleRadioFrequencing.RECEIVER.receptionPower
+                + antennaScore(receiver) * SimpleRadioFrequencing.RECEIVER.antennaAptitude,
+                SimpleRadioFrequencing.RECEIVER.receptionFloor, channel, false, RadioPropagation.NORMAL);
     }
-    public static RadioLinkMath.Result receiveAtTower(double distance, double power, double cap,
-                                                      FrequencingType sender, TowerRecord receiver, ChannelKey channel, boolean dimensional) {
+    public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
+                                                      FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
-        return receive(distance, power, cap, sender, type.receptionPower + receiver.antennaScore() * type.antennaAptitude,
-                type.receptionFloor, channel, dimensional);
+        return receive(leg.distance(), power, cap, sender, type.receptionPower + antennaScore(receiver) * type.antennaAptitude,
+                type.receptionFloor, channel, leg.dimensional(), leg.propagation());
     }
     public static RadioLinkMath.Result receiveAtReceiver(double distance, double power, double cap,
                                                          FrequencingType sender, RadioReceiver receiver, ChannelKey channel) {
-        return receiveAtReceiver(distance, power, cap, sender, receiver, channel, false);
+        return receive(distance, power, cap, sender, receiver.getPower(), receiver.frequencingType.receptionFloor,
+                channel, false, RadioPropagation.NORMAL);
     }
-    public static RadioLinkMath.Result receiveAtReceiver(double distance, double power, double cap,
-                                                         FrequencingType sender, RadioReceiver receiver, ChannelKey channel, boolean dimensional) {
-        return receive(distance, power, cap, sender, receiver.getPower(), receiver.frequencingType.receptionFloor, channel, dimensional);
+    public static RadioLinkMath.Result receiveAtReceiver(RadioSpace.Leg leg, double power, double cap,
+                                                         FrequencingType sender, RadioReceiver receiver, ChannelKey channel) {
+        return receive(leg.distance(), power, cap, sender, receiver.getPower(), receiver.frequencingType.receptionFloor,
+                channel, leg.dimensional(), leg.propagation());
     }
     private static RadioLinkMath.Result receive(double distance, double power, double cap, FrequencingType type,
-                                                double reception, double floor, ChannelKey channel, boolean dimensional) {
+                                                double reception, double floor, ChannelKey channel, boolean dimensional, RadioPropagation.Profile propagation) {
         double loss = type.transmissionDiminishment;
-        double travel = loss + (dimensional ? SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference
+        double travel = loss + (dimensional ? SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference * propagation.dimensionalMultiplier()
                 / (channel.mode() == com.codinglitch.simpleradio.central.Frequency.Modulation.AMPLITUDE ? 2 : 1) : 0);
-        return RadioLinkMath.receive(distance, power, cap, reception, floor, loss, travel,
+        var received = RadioLinkMath.receive(distance, power, cap, reception, floor, loss, travel,
                 type.diminishmentMethod == FrequencingType.DiminishmentMethod.MULTIPLICATIVE ? RadioLinkMath.Loss.MULTIPLICATIVE
                         : RadioLinkMath.Loss.ADDITIVE, type.getDiminishThreshold(channel.mode()), base(channel));
+        return received == null ? null : new RadioLinkMath.Result(received.power(),
+                Math.max(received.severity(), Math.min(100, base(channel) + propagation.noiseFloorAddition())));
     }
     public static int configurationStamp() {
         FrequencingType tx = SimpleRadioFrequencing.TRANSMITTER, rx = SimpleRadioFrequencing.RECEIVER;
