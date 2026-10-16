@@ -159,7 +159,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         nextRefresh = verification.nextAttempt(now); updateDisplayedState(manager);
     }
     private void updateDisplayedState(TowerManager manager) {
-        status = !enabled ? 4 : RepeatersConfig.INSTANCE.requireCatalyst && !hasCatalyst() ? 2
+        status = !enabled ? 4 : !hasCatalyst() ? 2
                 : cardBank == null ? 7 : channels().isEmpty() ? 3 : bankPending ? 8
                 : dirty ? (manager.isEligible(relayId) ? 6 : 5) : antennaPower <= 0 ? 1 : 0;
         boolean ready = manager.isEligible(relayId);

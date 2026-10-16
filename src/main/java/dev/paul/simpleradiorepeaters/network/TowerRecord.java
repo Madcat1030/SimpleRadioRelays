@@ -2,7 +2,6 @@ package dev.paul.simpleradiorepeaters.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
-import dev.paul.simpleradiorepeaters.RepeatersConfig;
 import dev.paul.simpleradiorepeaters.block.BankConnection;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import net.minecraft.resources.ResourceLocation;
@@ -23,8 +22,8 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
         this(id, dimension, position, channels, enabled, catalystItem, verified, antennaScore, footprint, null);
     }
     public boolean catalyst() { return RelayCatalysts.registered(catalystItem); }
-    public double efficiency() { return catalystItem == null && !RepeatersConfig.INSTANCE.requireCatalyst ? 1 : RelayCatalysts.efficiency(catalystItem); }
-    public boolean eligible() { return enabled && (!RepeatersConfig.INSTANCE.requireCatalyst || catalyst()) && verified && antennaScore > 0 && !channels.isEmpty(); }
+    public double efficiency() { return RelayCatalysts.efficiency(catalystItem); }
+    public boolean eligible() { return enabled && catalyst() && verified && antennaScore > 0 && !channels.isEmpty(); }
     public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, ResourceLocation catalyst, CardBankRef controller) {
         return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint, controller);
     }

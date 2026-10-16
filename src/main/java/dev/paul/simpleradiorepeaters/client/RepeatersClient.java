@@ -2,6 +2,7 @@ package dev.paul.simpleradiorepeaters.client;
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import net.fabricmc.fabric.api.client.networking.v1.*;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.resources.ResourceLocation;
 import java.util.*;
 import net.fabricmc.api.ClientModInitializer;
@@ -17,8 +18,13 @@ public final class RepeatersClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(SimpleRadioRepeaters.CATALYST_CATALOG, (client, handler, packet, sender) -> {
             int count = packet.readVarInt(); List<ResourceLocation> items = new ArrayList<>();
             for (int i = 0; i < count; i++) items.add(packet.readResourceLocation());
-            client.execute(() -> RelayCatalysts.updateClient(items));
+            client.execute(() -> {
+                if (client.getConnection() == handler) RelayCatalysts.updateClient(handler, items);
+            });
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> RelayCatalysts.updateClient(List.of()));
+        ClientPlayConnectionEvents.INIT.register((handler, client) -> RelayCatalysts.beginClient(handler));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+                sender.sendPacket(SimpleRadioRepeaters.CATALYST_REQUEST, PacketByteBufs.empty()));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> RelayCatalysts.endClient(handler));
     }
 }

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="Native Simple Radio" tests="7" failures="4" errors="0">
+  <testcase classname="simpleradio:gametest/system/all_routers" name="SystemTest.routerRegistry" time="8.277" />
+  <testcase classname="simpleradio:gametest/system/transceiver_ground_to_ground" name="SystemTest.transceiverGroundToGround" time="8.3" />
+  <testcase classname="simpleradio:gametest/system/wire_survival" name="SystemTest.wireSurvival" time="8.381" />
+  <testcase classname="simpleradio:gametest/system/short_circuit" name="SystemTest.shortCircuit" time="9.816">
+    <failure message="Did not expect wire between  at 0,-59,1 (relative: 1,-57,2) (t=50)" />
+  </testcase>
+  <testcase classname="simpleradio:gametest/system/all_routers" name="SystemTest.garbageCollection" time="10.02">
+    <failure message="Listener found at location at 16,-58,0 (relative: 2,2,0) (t=50)" />
+  </testcase>
+  <testcase classname="simpleradio:gametest/system/closed_system" name="SystemTest.closedSystem" time="12.979">
+    <failure message="Didn't succeed or fail within 100 ticks" />
+  </testcase>
+  <testcase classname="simpleradio:gametest/system/open_system" name="SystemTest.openSystem" time="12.976">
+    <failure message="Didn't succeed or fail within 100 ticks" />
+  </testcase>
+</testsuite>

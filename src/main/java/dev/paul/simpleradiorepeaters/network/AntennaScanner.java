@@ -48,6 +48,9 @@ public final class AntennaScanner {
                 catch (InvocationTargetException e) { throw e.getCause(); }
             });
         try {
+            // Native antennas need a sturdy top face. A floating mast must not give a bare Relay a score.
+            if (!guarded.getBlockState(core).isFaceSturdy(guarded, core, Direction.UP))
+                return new Result(true, 0, Set.copyOf(observed));
             // A loaded insulator can still have no router, or an unresolved wire endpoint.
             // Neither establishes that the antenna extension was disconnected.
             for (Direction direction : Direction.values()) {
@@ -62,6 +65,9 @@ public final class AntennaScanner {
                 }
             }
             BlockPos base = ServerSimpleRadioApi.getInstance().travelExtension(core, guarded).above();
+            BlockPos antennaCore = base.below();
+            if (!guarded.getBlockState(antennaCore).isFaceSturdy(guarded, antennaCore, Direction.UP))
+                return new Result(true, 0, Set.copyOf(observed));
             BlockState state = guarded.getBlockState(base); int score = 0;
             if (state.getBlock() instanceof Antennal antennal) {
                 AtomicInteger total = new AtomicInteger(); List<BlockPos> visited = new ArrayList<>();

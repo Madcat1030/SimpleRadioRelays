@@ -56,8 +56,11 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         for (int height = 1; height <= 32; height++) level.setBlock(coreA.above(height), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(coreA, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         level.setBlock(coreA.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        // Stay within the native support limit so scheduled unstable-top removal cannot change
+        // the score between selecting the near-cutoff distance and measuring the bridge.
+        int mastHeight = SimpleRadioLibrary.SERVER_CONFIG.antenna.maxDistance + 1;
         // Shared decay across both channel legs requires return reception at A.
-        for (int height = 2; height <= 16; height++)
+        for (int height = 2; height <= mastHeight; height++)
             level.setBlock(coreA.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity a = relay(level, coreA, incoming, returning);
         net.minecraft.resources.ResourceLocation relayCatalyst = edge ? TestCatalysts.neutral() : RelayCatalysts.GILDED;
@@ -87,7 +90,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         level.setBlock(coreC, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         for (int height = 1; height <= 32; height++) level.setBlock(coreC.above(height), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(coreC.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        if (edge) for (int height = 2; height <= 16; height++)
+        if (edge) for (int height = 2; height <= mastHeight; height++)
             level.setBlock(coreC.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity c = relay(level, coreC, incoming, returning, nearSide ? Direction.EAST : Direction.NORTH);
         if (edge) { TestCatalysts.boosted(); c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.ENDER_PEARL), false); }

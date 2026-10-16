@@ -98,7 +98,7 @@ public class CatalystGameTests implements FabricGameTest {
         } finally { frequency.getReceivers().remove(receiver); manager.removeAt(level.dimension().location().toString(), pos); }
         helper.succeed();
     }
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
     public void native_efficiency_change_invalidates_unloaded_tower_routes(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
         ResourceLocation item = BuiltInRegistries.ITEM.getKey(Items.QUARTZ);
@@ -107,18 +107,99 @@ public class CatalystGameTests implements FabricGameTest {
         BlockPos pos = helper.absolutePos(new BlockPos(50000, 80, 50000)); UUID id = UUID.randomUUID();
         TowerRecord tower = new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, item, true, 32, Set.of(pos.asLong()));
         manager.updateSnapshot(tower); var first = manager.network(level, key); float low = NativeRadioAdapter.departurePower(tower, key, 2);
-        catalyst.setEfficiency(.9f); var second = manager.network(level, key);
+        catalyst.setEfficiency(.9f);
+        check(first == manager.network(level, key), "Packet-path network lookup must not fingerprint the native configuration");
+        TowerManager.resourcesReloaded(level.getServer()); var second = manager.network(level, key);
         check(first != second && Math.abs(NativeRadioAdapter.departurePower(tower, key, 2) / low - 1.5) < .0001
                 && manager.snapshot(id).catalystItem().equals(item) && !level.hasChunkAt(pos),
                 "Native registry changes must rebuild cached routes for unloaded towers without replacing their item identity or loading them");
-        TowerManager.resourcesReloaded(level.getServer()); check(manager.network(level, key) != second, "Data-pack reload completion must also discard cached routes");
         TowerRecord empty = new TowerRecord(UUID.randomUUID(), tower.dimension(), pos, Set.of(key), true, null, true, 32, Set.of(pos.asLong()));
-        check(TowerRecord.load(empty.save()).equals(empty), "An absent optional catalyst must remain absent after a save/load round trip");
-        RelayCatalysts.updateClient(RelayCatalysts.items());
+        check(TowerRecord.load(empty.save()).equals(empty) && !empty.eligible() && empty.efficiency() == 0,
+                "A saved empty socket must stay empty and ineligible");
+        Object session = new Object(); RelayCatalysts.beginClient(session);
+        RelayCatalysts.updateClient(session, RelayCatalysts.items());
         check(RelayCatalysts.acceptsClient(new ItemStack(Items.AMETHYST_BLOCK)) && !RelayCatalysts.acceptsClient(new ItemStack(Items.DIRT)),
                 "Client prediction must use the server catalog, including amethyst and excluding unrelated blocks");
-        RelayCatalysts.updateClient(List.of());
-        manager.removeAt(tower.dimension(), pos); helper.succeed();
+        RelayCatalysts.endClient(session);
+        catalyst.setEfficiency(.7f);
+        int untilPeriodicCheck = 100 - Math.floorMod(level.getServer().getTickCount(), 100) + 2;
+        helper.runAfterDelay(untilPeriodicCheck, () -> {
+            check(manager.network(level, key) != second && !level.hasChunkAt(pos),
+                    "The 100-tick fallback must detect direct registry changes without loading virtual towers");
+            var periodic = manager.network(level, key); catalyst.setEfficiency(.8f); manager.refreshLoaded();
+            check(manager.network(level, key) != periodic, "An explicit refresh must also detect configuration changes immediately");
+            manager.removeAt(tower.dimension(), pos); helper.succeed();
+        });
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void only_positive_native_catalysts_and_verified_antennas_are_eligible(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(80000, 80, 80000));
+        ChannelKey key = ChannelKey.from(channel(320));
+        for (Item item : List.of(Items.SLIME_BALL, Items.CLAY_BALL, Items.RABBIT_HIDE, Items.PRISMARINE_SHARD)) {
+            float strength = item == Items.SLIME_BALL ? 0 : item == Items.CLAY_BALL ? -1
+                    : item == Items.RABBIT_HIDE ? Float.NaN : Float.POSITIVE_INFINITY;
+            CatalystRegistry.register(SimpleRadioRepeaters.id("invalid_" + BuiltInRegistries.ITEM.getKey(item).getPath()),
+                    new Catalyst(item).setEfficiency(strength));
+        }
+        TestCatalysts.boosted();
+        for (ResourceLocation item : Arrays.asList(null, BuiltInRegistries.ITEM.getKey(Items.DIRT),
+                new ResourceLocation("missing", "catalyst"), BuiltInRegistries.ITEM.getKey(Items.SLIME_BALL),
+                BuiltInRegistries.ITEM.getKey(Items.CLAY_BALL), BuiltInRegistries.ITEM.getKey(Items.RABBIT_HIDE),
+                BuiltInRegistries.ITEM.getKey(Items.PRISMARINE_SHARD))) {
+            TowerRecord tower = new TowerRecord(UUID.randomUUID(), level.dimension().location().toString(), pos,
+                    Set.of(key), true, item, true, 32, Set.of(pos.asLong()));
+            check(!tower.eligible() && tower.efficiency() == 0 && !TowerRecord.load(tower.save()).eligible(),
+                    "Missing, unrelated, nonpositive and nonfinite catalysts must stay offline, including after reload: " + item);
+            check(!RelayCatalysts.items().contains(item), "The client catalog must exclude unusable catalysts: " + item);
+        }
+        for (Item item : List.of(Items.AMETHYST_BLOCK, Items.GILDED_BLACKSTONE, Items.ENDER_PEARL))
+            for (boolean verified : new boolean[]{false, true}) for (int score : new int[]{0, 1}) {
+                TowerRecord tower = new TowerRecord(UUID.randomUUID(), level.dimension().location().toString(), pos,
+                        Set.of(key), true, BuiltInRegistries.ITEM.getKey(item), verified, score, Set.of(pos.asLong()));
+                check(tower.eligible() == (verified && score > 0), "A valid catalyst must still require a verified positive antenna score");
+            }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 80)
+    public void relay_needs_a_core_and_antenna_but_keeps_native_receiver_gain(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2)), pos = core.north();
+        level.setBlock(core, Blocks.AIR.defaultBlockState(), 3); level.setBlock(core.above(), Blocks.AIR.defaultBlockState(), 3);
+        level.setBlock(pos, SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
+        level.setBlock(pos.above(), SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        RelayBlockEntity relay = (RelayBlockEntity) level.getBlockEntity(pos);
+        ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos.above());
+        Frequency frequency = channel(322); ChannelKey key = ChannelKey.from(frequency);
+        ItemStack card = new ItemStack(SimpleRadioRepeaters.CARD);
+        SimpleRadioRepeaters.CARD.setFrequency(card, frequency.getFrequency(), frequency.getModulation()); bank.setItem(0, card);
+        relay.installCatalyst(new ItemStack(Items.GILDED_BLACKSTONE), false);
+        helper.runAfterDelay(35, () -> {
+            TowerManager manager = TowerManager.get(level.getServer());
+            check(!manager.isEligible(relay.relayId()), "A bare Relay and Bank must never become eligible on base RF power");
+            check(AntennaScanner.scan(level, pos, core).score() == 0, "Missing core must not count as an antenna");
+            level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+            check(AntennaScanner.scan(level, pos, core).score() == 0, "A core without any antenna must stay offline");
+            level.setBlock(core, Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 2);
+            check(AntennaScanner.scan(level, pos, core).score() == 0, "A floating antenna with no supporting core must stay offline");
+            level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+            level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+            relay.refresh(manager); TowerRecord tower = manager.snapshot(relay.relayId());
+            check(tower != null && tower.eligible() && tower.antennaScore() > 0,
+                    "One supported native antenna and a valid catalyst must be enough");
+            var sender = SimpleRadioFrequencing.TRANSCEIVER; var receiver = SimpleRadioFrequencing.RECEIVER;
+            float power = sender.getTransmissionPower(key.mode());
+            double distance = power + tower.antennaScore() * receiver.antennaAptitude + receiver.receptionPower / 2d;
+            check(NativeRadioAdapter.receiveAtTower(distance, power, power, sender, tower, key) != null
+                            && power + tower.antennaScore() * receiver.antennaAptitude < distance,
+                    "The eligible tower must retain the native receiver base gain as well as its antenna gain");
+            check(relay.removeCatalyst().is(Items.GILDED_BLACKSTONE) && !manager.isEligible(relay.relayId()),
+                    "Extracting the catalyst must immediately stop an otherwise valid minimum tower");
+            CompoundTag invalid = relay.getUpdateTag(); invalid.put("Catalyst", new ItemStack(Items.DIRT).save(new CompoundTag()));
+            relay.load(invalid); manager.settingsChanged(relay); relay.refresh(manager);
+            check(!manager.isEligible(relay.relayId()) && relay.displayStatus() == 2 && relay.removeCatalyst().is(Items.DIRT),
+                    "Invalid catalyst NBT must show NO CAT, remain offline and still allow the installed item to be recovered");
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+        });
     }
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void mixed_native_catalyst_chains_use_the_shared_decay_curve(GameTestHelper helper) {

@@ -40,6 +40,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
 
     public static ResourceLocation id(String path) { return new ResourceLocation(ID, path); }
     public static final ResourceLocation CATALYST_CATALOG = id("catalysts");
+    public static final ResourceLocation CATALYST_REQUEST = id("request_catalysts");
     private static void syncCatalysts(ServerPlayer player) {
         var packet = PacketByteBufs.create(); var items = RelayCatalysts.items(); packet.writeVarInt(items.size());
         items.forEach(packet::writeResourceLocation); ServerPlayNetworking.send(player, CATALYST_CATALOG, packet);
@@ -64,7 +65,11 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
             if (success) { TowerManager.resourcesReloaded(server); server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts); }
         });
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> syncCatalysts(handler.player));
+        ServerPlayNetworking.registerGlobalReceiver(CATALYST_REQUEST, (server, player, handler, packet, sender) ->
+                server.execute(() -> {
+                    if (server.getPlayerList().getPlayer(player.getUUID()) == player && player.connection == handler)
+                        syncCatalysts(player);
+                }));
         ServerTickEvents.END_SERVER_TICK.register(TowerManager::tick);
         ServerChunkEvents.CHUNK_LOAD.register(TowerManager::chunkLoaded);
         ServerChunkEvents.CHUNK_UNLOAD.register(TowerManager::chunkUnloaded);

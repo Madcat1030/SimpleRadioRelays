@@ -37,6 +37,8 @@ public final class RelayBlock extends BaseEntityBlock {
     }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
+        // Send the ordinary interaction to the authoritative server, but do not predict item placement before its catalog arrives.
+        if (level.isClientSide && !held.isEmpty() && !RelayCatalysts.clientReady()) return InteractionResult.CONSUME;
         if (!held.isEmpty() && !(level.isClientSide ? RelayCatalysts.acceptsClient(held) : RelayCatalysts.accepts(held))) return InteractionResult.PASS;
         if (!(level.getBlockEntity(pos) instanceof RelayBlockEntity relay)) return InteractionResult.PASS;
         if (!held.isEmpty()) {

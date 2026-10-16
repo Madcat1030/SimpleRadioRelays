@@ -29,7 +29,7 @@ public final class TowerManager {
     public long forwardedFrames, receiverDeliveries;
 
     private TowerManager(MinecraftServer server, TowerSavedData data) {
-        this.server = server; this.data = data;
+        this.server = server; this.data = data; configStamp = NativeRadioAdapter.configurationStamp();
         for (TowerRecord record : data.towers.values()) index(record);
     }
     public static TowerManager get(MinecraftServer server) { return MANAGERS.get(server); }
@@ -206,7 +206,6 @@ public final class TowerManager {
     public boolean isEligible(UUID id) { TowerRecord node = data.towers.get(id); return node != null && node.eligible(); }
     public TowerRecord snapshot(UUID id) { return data.towers.get(id); }
     public Network network(ServerLevel level, ChannelKey channel) {
-        checkConfiguration();
         Scope scope = new Scope(level.dimension().location().toString(), channel);
         return networks.computeIfAbsent(scope, key -> {
             List<TowerRecord> nodes = data.towers.values().stream().filter(n -> n.eligible() && n.dimension().equals(key.dimension())
@@ -248,6 +247,7 @@ public final class TowerManager {
         return peers.size();
     }
     public void refreshLoaded() {
+        checkConfiguration();
         reconcileLoadedChunks();
         loaded.values().stream().filter(b -> !b.isRemoved()).forEach(RelayBlockEntity::markDirty);
     }

@@ -1,10 +1,10 @@
-# Simple Radio Repeaters 0.3.1
+# Simple Radio Repeaters 0.3.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A separate six-card Repeater Bank selects the channels, and both blocks expose their controls and status in the world.
 
-Version 0.3.1 applies each tower's native catalyst strength once and a shared 10% loss for every relay visit after the first. Gilded blackstone defaults to 90% and amethyst blocks to 60%. Custom strengths of 100% and above also decay. Audio retains its worst degradation, and wires/channel changes retain the relay count. Numeric route caching and exact dominance pruning reduce repeated search and source-copy work.
+Version 0.3.2 requires a usable catalyst and a verified antenna on a supported core. Configuration fingerprints run outside the packet path, and catalyst catalogs are scoped to the active client connection. Each tower applies its native catalyst strength once and a shared 10% loss for every relay visit after the first. Gilded blackstone defaults to 90% and amethyst blocks to 60%. Custom strengths of 100% and above also decay. Audio retains its worst degradation, and wires/channel changes retain the relay count. Numeric route caching and exact dominance pruning reduce repeated search and source-copy work.
 
-The 0.3 series uses a catalyst-aware network store without importing earlier stores. When upgrading from 0.2, load each existing tower's chunk once to register and verify it. Version 0.3.1 uses the same store as 0.3.0, with no reset or migration layer. Relay and Bank blocks directly store their catalyst/card items. Banks must be directly above Relays.
+The 0.3 series uses a catalyst-aware network store without importing earlier stores. When upgrading from 0.2, load each existing tower's chunk once to register and verify it. Version 0.3.2 uses the same store as 0.3.0 and 0.3.1, with no reset or migration layer. Relay and Bank blocks directly store their catalyst/card items. Banks must be directly above Relays.
 
 ## Installation and first tower
 
@@ -20,7 +20,7 @@ Install the addon on the server and every client. Replace the previous addon JAR
 
 The Relay has no container, menu or inventory slots. Its catalyst is a directly installed component. The Bank holds six physical cards and has no inventory screen. Blank cards can be inserted, but they do not activate a channel until tuned. Matching numeric frequencies on AM and FM are separate channels. Duplicate matching cards select the channel once; they do not increase range or duplicate audio.
 
-The Relay requires no additional microphone, speaker, receiver or transmitter block. Normal handhelds and wired stations participate through their existing radio endpoints.
+The Relay needs a registered catalyst with finite, positive strength, a solid core and at least one supported antenna producing a positive native score. A bare Relay and Bank cannot operate. A copper-wire extension can connect the core to a supported remote antenna. The Relay requires no additional microphone, speaker, receiver or transmitter block. Normal handhelds and wired stations participate through their existing radio endpoints.
 
 ## Crafting recipes
 
@@ -84,7 +84,7 @@ The screen shows `ANT`, a status code and `LINK`. `ANT` is the native antenna st
 | --- | --- |
 | `READY` | Verification finished; the Relay is configured and has a positive antenna score |
 | `NO ANT` | A completed, confirmed scan found no connected antenna |
-| `NO CAT` | The required catalyst is missing |
+| `NO CAT` | The catalyst is missing or has no usable positive native strength |
 | `NO CARD` | The connected Bank contains no tuned channel |
 | `OFF` | The Relay is disabled |
 | `SCAN` | Antenna verification is pending without an eligible saved snapshot |
@@ -114,7 +114,7 @@ The router checks actual reach and native attenuation at every reduced-power leg
 The audio retains the worst interference encountered on its chosen path. Regeneration increases RF reach relative to the received carrier without repairing audio. At a fixed tower, a higher count survives only if it is strictly cleaner than every lower-count arrival. Final delivery evaluates those useful alternatives, finds the lowest worst interference, admits candidates at most one point above that minimum, and chooses the strongest remaining carrier. Equal power prefers cleaner audio, then fewer visits. The selected source retains its actual interference.
 For additive attenuation, the native calculation first rejects a leg if transmission power plus reception power cannot cover distance times the loss factor. It then subtracts the effective distance from transmission power, accounting for the receiver's reception power and floor. Remaining power is compared with the sender's degradation threshold to calculate interference. A leg with no remaining power or complete interference is unavailable.
 
-The towers use native transmitter/receiver RF settings. Catalyst efficiency affects departure power through the formula above; it does not multiply receiver reception gain or directly change audio volume. Server acceptance and efficiency come from Simple Radio's catalyst registry, including data-pack values.
+The towers use native transmitter/receiver RF settings. Catalyst efficiency affects departure power through the formula above; it does not multiply receiver reception gain or directly change audio volume. Server acceptance and efficiency come from Simple Radio's catalyst registry, including data-pack values. Missing, unregistered, zero-strength, negative and non-finite entries cannot activate a Relay. Eligible towers keep the native receiver's full base reception bonus plus antenna gain; that base bonus does not bypass the positive-antenna requirement.
 
 Relays repeat matching frequency/modulation pairs. They do not translate between channels. A receiver on one channel wired through a transmitter on another channel remains a native station that can bridge those channels. The existing A → B → C → B → A arrangement therefore works when C performs that wired bridge and the relevant Banks select both channels.
 
@@ -161,12 +161,11 @@ The first server launch creates `config/simpleradio-repeaters.json`:
 ```json
 {
   "maxRelayHops": 64,
-  "persistentUnloadedTowers": true,
-  "requireCatalyst": true
+  "persistentUnloadedTowers": true
 }
 ```
 
-Restart after editing these settings. Disabling persistence makes unloaded towers unavailable. Disabling the catalyst requirement permits a Relay to operate without an installed catalyst. Native Simple Radio settings continue to control radio reach and degradation. Relay paths stay within one dimension; existing direct cross-dimension behavior remains governed by the base mod.
+Restart after editing these settings. Disabling persistence makes unloaded towers unavailable. Catalysts are always required. The former `requireCatalyst` setting has been removed; obsolete copies are ignored and omitted when the config is rewritten. Native Simple Radio settings continue to control radio reach and degradation. Relay paths stay within one dimension; existing direct cross-dimension behavior remains governed by the base mod.
 
 For a voice check, start with two players who cannot reach each other's handhelds directly but can both reach one Relay. Test both directions. Add a second tower and repeat with the middle tower's chunk unloaded. For a wired core, unload and reload it and allow the verification retry interval before changing its configuration.
 
@@ -198,9 +197,9 @@ The Bank rechecks attachment every ten ticks or after a relevant neighbor change
 
 ### TowerManager, TowerRecord and TowerSavedData
 
-`TowerRecord` is the immutable routing snapshot. The catalyst item identifier and optional Bank reference are persisted alongside the RF fields. `efficiency()` resolves the native registry without reading terrain; a catalyst-free tower uses factor 1 only when the config makes catalysts optional. The record constructor clears a non-top Bank reference and its channels. This invariant applies to saved-data restoration, publication, reconciliation and controller edits without querying chunks. Changing cards or catalyst/settings creates a new record while retaining its verified antenna score and footprint.
+`TowerRecord` is the immutable routing snapshot. The catalyst item identifier and optional Bank reference are persisted alongside the RF fields. `efficiency()` resolves the native registry without reading terrain and returns zero for a missing or unusable catalyst. Eligibility requires an enabled Relay, a usable catalyst, a verified positive antenna score and at least one tuned channel. The record constructor clears a non-top Bank reference and its channels. This invariant applies to saved-data restoration, publication, reconciliation and controller edits without querying chunks. Changing cards or catalyst/settings creates a new record while retaining its verified antenna score and footprint.
 
-`TowerManager` owns the per-server loaded-instance map, saved records and per-channel graph cache. Updating a record marks saved data dirty, maintains the component-position index and clears cached graphs. Network construction caches distances and numeric directed-link rows by sender and relay count. Radio/catalyst/config fingerprints are checked before reusing a network, and successful data-pack reloads invalidate it explicitly. Pending chunk reconciliation checks Relay and Bank block types and UUIDs only in chunks already available. A pending Relay entity does not prevent checking the Bank block or identity in that same chunk. `controllerChanged` lets a loaded Bank update its unloaded Relay's channel snapshot. `controllerRemovedAt` clears the binding during an ordinary Bank break; the same clearing logic handles a chunk edit that bypasses block callbacks. Removing a loaded instance only publishes settings if that instance is still the registered owner, so an obsolete entity cannot overwrite a newer saved state.
+`TowerManager` owns the per-server loaded-instance map, saved records and per-channel graph cache. Updating a record marks saved data dirty, maintains the component-position index and clears cached graphs. Network construction caches distances and numeric directed-link rows by sender and relay count. Radio/catalyst/config fingerprints run when the manager starts, on explicit refresh and every 100 server ticks as a fallback. Successful data-pack reloads invalidate networks immediately and update the fingerprint. Audio-packet network lookups do not scan or sort the catalyst registry to fingerprint it. Normal component edits still clear routes immediately. Pending chunk reconciliation checks Relay and Bank block types and UUIDs only in chunks already available. A pending Relay entity does not prevent checking the Bank block or identity in that same chunk. `controllerChanged` lets a loaded Bank update its unloaded Relay's channel snapshot. `controllerRemovedAt` clears the binding during an ordinary Bank break; the same clearing logic handles a chunk edit that bypasses block callbacks. Removing a loaded instance only publishes settings if that instance is still the registered owner, so an obsolete entity cannot overwrite a newer saved state.
 
 `TowerSavedData` stores the deterministic list of records in `simpleradio_repeaters_relays_v3`, with schema 3. It does not migrate earlier saved networks. Clearing an invalid saved binding marks the data dirty so the correction persists. Damaged individual records are skipped with a logged warning.
 
@@ -220,19 +219,20 @@ The optimization removes repeated parsing and allocation. Version 0.2.6 uses six
 
 ## Implementation: existing radio and antenna modules
 
-The antenna scanner and settling policy retain their existing behavior. Version 0.3 changes RF regeneration and traversal while preserving stream ownership, worst audio degradation and one-copy delivery.
+The guarded antenna scanner also requires a sturdy upper face on the local core and the remote antenna core, when a copper-wire extension is used. Missing cores and floating mast snapshots return a complete zero score. Its loaded-chunk guards and restoration settling policy remain in place. Version 0.3 changes RF regeneration and traversal while preserving stream ownership, worst audio degradation and one-copy delivery.
 
 | Module | Responsibility |
 | --- | --- |
 | `SimpleRadioRepeaters` | Register the Relay, six-card Bank, Frequency Card, creative tab, server lifecycle hooks and commands |
-| `RepeatersConfig` | Read and validate hop limit, persistence and catalyst settings |
+| `RepeatersConfig` | Read and validate hop limit and unloaded-tower persistence |
 | `FrequencyCardItem` | Participate in native radiosmithing, preserve frequency/modulation tags and show tuning tooltips |
 | `ChannelKey` | Represent an exact frequency/modulation pair and keep AM/FM distinct |
 | `AntennaScanner` | Run native antenna/extension geometry through a guarded accessor, track dependency positions and detect pending wire/router data |
 | `AntennaVerification` | Enforce settling time, retry intervals and confirmation before replacing a verified antenna with zero |
 | `NativeRadioAdapter` | Read native power/reception settings, calculate counted departure power and evaluate each physical leg |
 | `RelayPower` | Apply native catalyst strength once, then universal 90% retention for each visit after the first, with no percentage cutoff |
-| `RelayCatalysts` | Resolve native registered catalysts, efficiencies, configuration fingerprints and the server-supplied client catalog |
+| `RelayCatalysts` | Resolve usable native catalysts, efficiencies, configuration fingerprints and the server-supplied client catalog |
+| `ClientSessionCatalog` | Keep an immutable, connection-scoped catalog with explicit readiness and stale-callback rejection |
 | `RadioLinkMath` | Compute wireless eligibility, remaining power and interference using the target native rules |
 | `RelayGraph` | Cache numeric entry routes and links; prune redundant count states before expansion while preserving strictly cleaner alternatives |
 | `RelayRouter` | Rank numeric delivery candidates, create the winning source, and preserve wired fan-out and custom routing callbacks |
@@ -247,7 +247,9 @@ Encoded voice bytes, source ownership, original ownership and activity survive f
 
 ## Implementation: catalyst state and counted routing
 
-`RelayCatalysts` resolves an installed item through the native `CatalystRegistry`. It rejects unregistered, negative or non-finite efficiency data. The default registry entries are `minecraft:gilded_blackstone` at .9 and `minecraft:amethyst_block` at .6. The server sends accepted item identifiers at join and after data-pack reload; clients use that list for right-click prediction. Disconnect clears the client list. Numeric efficiencies remain server-owned.
+`RelayCatalysts` resolves an installed item through the native `CatalystRegistry`. It rejects unknown item IDs and unregistered, nonpositive or non-finite efficiency data. The default registry entries are `minecraft:gilded_blackstone` at .9 and `minecraft:amethyst_block` at .6. At play-handler initialization, the client starts a pending catalog for that connection. Its JOIN callback requests the accepted item identifiers; the server replies only while that player and handler are still current. Successful data-pack reloads push a replacement catalog. Clients use the identifiers for right-click prediction, while numeric efficiencies remain server-owned.
+
+`ClientSessionCatalog` stores one immutable snapshot behind a volatile reference. Mutations synchronize the connection check and replacement. A pending catalog differs from a ready, empty catalog. Disconnect clears only its own connection; delayed packets or disconnect callbacks from a previous connection cannot alter a newer one. The client also checks that an incoming catalog's handler is still current before applying its scheduled task. While the catalog is pending, held-item use on a Relay consumes client prediction so that a catalyst block is not speculatively placed; the ordinary use packet still reaches the server, which authoritatively validates the item.
 
 `RelayPower.departure(maximum, efficiency, count)` is pure numeric code. It applies `maximum × efficiency × 0.9^(count−1)` with count 1 immediately. Positive results below 1% remain usable; invalid numeric inputs produce no power. Finite values above the native float range saturate to that range. The current tower's catalyst is applied once, including when its strength is 1 or greater. No cumulative catalyst product or extra native catalyst adjustment is inserted.
 
@@ -270,16 +272,16 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gra
 ./gradlew runGameTest
 ```
 
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.3.1 passes 38 unit tests and 36 addon Minecraft tests. Reports are under `validation/0.3.1/`, with a current summary at `validation/build-verification.json`.
+The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.3.2 passes 43 unit tests and 38 addon Minecraft tests. Reports are under `validation/0.3.2/`, with a current summary at `validation/build-verification.json`.
 
-New power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
+Power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
 
-The search is compared with an uncached, unpruned tower/count reference on 2,000 randomized directed networks, with changed ingress noise on a second packet. Separate checks cover cache reuse, bounded-entry eviction, immutable cached numeric values, count-aware re-entry, equal-noise cycle collapse and fractional-quality improvements. Synthetic dense graphs retain 5/25/100 ordinary options where the old search retained 315/1,575/6,300. The benchmark source, CSV and scope notes accompany the reports; timings are local graph-only measurements, not server TPS or voice-playback guarantees.
+The search is compared with an uncached, unpruned tower/count reference on 2,000 randomized directed networks, with changed ingress noise on a second packet. Separate checks cover cache reuse, bounded-entry eviction, immutable cached numeric values, count-aware re-entry, equal-noise cycle collapse and fractional-quality improvements. The recorded 0.3.1 synthetic dense graphs retain 5/25/100 ordinary options where the old search retained 315/1,575/6,300. The benchmark source, CSV and scope notes remain under `validation/0.3.1/`; timings are local graph-only measurements, not server TPS or voice-playback guarantees.
 
-Existing regressions cover top mounting, copy isolation, missing/replaced components, card controls, antenna restoration, catalyst identity/reload changes and client catalog filtering. The real copper-wire channel bridge verifies that neither the wire nor its frequency change resets the carried visit count.
+New regressions cover missing/invalid/nonpositive/non-finite catalysts, saved eligibility, core-only and floating antennas, a minimum supported antenna, native receiver base gain, scheduled configuration checks and session-catalog ordering. Existing regressions cover top mounting, copy isolation, missing/replaced components, card controls, antenna restoration, catalyst identity/reload changes and client catalog filtering. The real copper-wire channel bridge verifies that neither the wire nor its frequency change resets the carried visit count.
 
 The near-tie carrier fixtures use a registered 100% test strength at A/B and 200% at C, with matched A/C masts. Their B-to-C distance is derived from B's actual count-2 departure. This preserves the deliberately exhausted direct carrier while supplying a viable return budget under universal decay. These fixtures still verify the complete native wire and return route. The ordinary A/B/C bridge uses gilded blackstone throughout.
 
 The combined run also contains seven native Simple Radio tests. The same four failures seen in the earlier addon-disabled headless control remain: `shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`. Their cause is unresolved and they are not established live-server bugs. Addon/native XML reports are separated. Game tests use synthetic encoded bytes, not captured microphones.
 
-The 0.3.0 native client review remains the appearance check: this release changes server power/routing code and retains the same catalyst rendering, three-unit cards and click padding above only. Historical preview captions describe their original version's power rule. Real multiplayer voice playback and a dedicated-client join/reload session have not been exercised in this run.
+A native client connected to a local dedicated server verifies initial catalog request/reply, a live data-pack reload adding a 200% catalyst, disconnect clearing, reconnect to the updated catalog and rejection of stale callbacks. Its temporary QA mod and logs accompany the current validation evidence and are absent from the release JAR. The 0.3.0 native client review remains the appearance check: models, renderers, three-unit cards and click padding above only are unchanged. Historical preview captions describe their original version's power rule. Real multiplayer voice playback has not been exercised in this run.

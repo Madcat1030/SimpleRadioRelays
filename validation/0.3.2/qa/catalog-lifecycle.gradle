@@ -1,0 +1,38 @@
+gradle.projectsEvaluated {
+    def project = gradle.rootProject
+    def qaRoot = new File(System.getenv('REPEATERS_QA_ROOT'))
+    def compileQa = project.tasks.register('compileCatalogLifecycleQa', JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qaRoot, 'java')) { include '**/*.java' }
+        classpath = project.sourceSets.main.runtimeClasspath
+        destinationDirectory = new File(qaRoot, 'classes')
+        options.release = 17
+        options.encoding = 'UTF-8'
+    }
+    def qaJar = project.tasks.register('catalogLifecycleQaJar', Jar) {
+        dependsOn compileQa
+        archiveFileName = 'catalog-lifecycle-qa.jar'
+        destinationDirectory = project.file('run/mods')
+        from new File(qaRoot, 'classes')
+        from new File(qaRoot, 'resources')
+    }
+    project.tasks.named('runClient') { dependsOn qaJar }
+    project.tasks.named('runServer') {
+        standardInput = System.in
+        args 'nogui'
+    }
+    project.tasks.register('snapshotCatalogLaunches') {
+        dependsOn qaJar, project.tasks.named('configureClientLaunch')
+        doLast {
+            def launches = [:]
+            ['server', 'client'].each { side ->
+                def task = project.tasks.named(side == 'server' ? 'runServer' : 'runClient').get()
+                def java = task.javaLauncher.get().executablePath.asFile.absolutePath
+                def command = [java] + task.allJvmArgs + [task.mainClass.get()] + task.args
+                task.argumentProviders.each { provider -> command.addAll(provider.asArguments()) }
+                launches[side] = [command: command]
+            }
+            new File(qaRoot, 'launches.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(launches))
+        }
+    }
+}

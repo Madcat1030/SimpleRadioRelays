@@ -43,7 +43,6 @@ public final class NativeRadioAdapter {
                 rx.antennaAptitude, SimpleRadioLibrary.SERVER_CONFIG.frequency.baseAMInterference,
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.baseFMInterference, RelayCatalysts.configurationStamp(),
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
-                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.requireCatalyst,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers);
     }
 }

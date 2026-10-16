@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.3.1
+# Simple Radio Repeaters 0.3.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A Radio Relay attaches to an antenna core, and a six-card Repeater Bank plugs into its top. Relays carry voice through a persistent network while retaining the worst audio degradation along the chosen path.
 
-Version 0.3.1 uses each catalyst's native strength as the first-relay power ceiling, then applies a shared 10% loss per additional relay. It also prunes redundant routes, caches numeric paths and avoids building a native source for every delivery candidate. Gilded blackstone defaults to 90% strength and amethyst blocks to 60%; custom values of 100% and above decay by the same rule.
+Version 0.3.2 requires a usable catalyst and a verified antenna on a supported core. It hardens catalyst synchronization across joins and moves configuration fingerprints off the packet path. Each tower uses its catalyst's native strength as the first-relay power ceiling, then applies a shared 10% loss per additional relay. It also prunes redundant routes, caches numeric paths and avoids building a native source for every delivery candidate. Gilded blackstone defaults to 90% strength and amethyst blocks to 60%; custom values of 100% and above decay by the same rule.
 
 ## Install and existing worlds
 
-Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.3.1.jar`. Requirements:
+Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.3.2.jar`. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -14,7 +14,7 @@ Replace the addon JAR on both server and clients with `simple-radio-repeaters-fa
 
 The development environment uses Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18.
 
-The 0.3 series uses `data/simpleradio_repeaters_relays_v3.dat`. **When upgrading from 0.2, load each existing tower's chunk once to register it.** Towers already registered in 0.3.0 remain in that same store; 0.3.1 does not reset it. Earlier network stores are not imported. Relay and Bank blocks store their catalyst and cards directly. Banks must be directly above their Relays.
+The 0.3 series uses `data/simpleradio_repeaters_relays_v3.dat`. **When upgrading from 0.2, load each existing tower's chunk once to register it.** Towers already registered in 0.3.0 or 0.3.1 remain in that same store; 0.3.2 does not reset it. Earlier network stores are not imported. Relay and Bank blocks store their catalyst and cards directly. Banks must be directly above their Relays.
 
 Once a tower is verified in the 0.3 store, it can relay while unloaded under the normal persistence setting. No additional chunk loader or voice-chat port is required.
 
@@ -26,7 +26,7 @@ Once a tower is verified in the 0.3 store, it can relay while unloaded under the
 4. Tune Frequency Cards in the native radiosmithing station and insert them into the Bank's front slots.
 5. Right-click the Relay with gilded blackstone or an amethyst block. Wait for a positive `ANT` score and `READY`.
 
-The server accepts items from Simple Radio's catalyst registry and uses their configured efficiency. A server-supplied catalog keeps client insertion prediction correct on join and after data-pack reload. The installed catalyst uses its actual block/item rendering, including amethyst's purple native texture.
+A catalyst is mandatory, even if an older config disabled that requirement. It must be registered with Simple Radio and have a finite, positive efficiency. A Relay also needs a supported core and at least one antenna producing a positive native score; a bare Relay and Bank stay offline. Eligible towers retain the native receiver's base reception bonus in addition to antenna gain. A connection-scoped server catalog supplies client insertion prediction on join and after data-pack reload. The installed catalyst uses its actual block/item rendering, including amethyst's purple native texture.
 
 ## Power and audio
 
@@ -78,9 +78,9 @@ The [full guide](docs/Simple-Radio-Repeaters-Documentation.md#crafting-recipes) 
 
 `/radiorepeaters status` shows tower and packet counts. Operator commands `/radiorepeaters list` and `/radiorepeaters refresh` show tower details and request loaded-component/antenna checks. The list includes catalyst identity and efficiency.
 
-The server config is `config/simpleradio-repeaters.json`: `maxRelayHops: 64`, `persistentUnloadedTowers: true`, `requireCatalyst: true`. The hop setting limits total relay visits, starting at 1 and continuing through wired re-entry. When catalysts are optional, an empty socket uses a neutral factor of 1; an installed catalyst still supplies its native efficiency.
+The server config is `config/simpleradio-repeaters.json`: `maxRelayHops: 64`, `persistentUnloadedTowers: true`. The hop setting limits total relay visits, starting at 1 and continuing through wired re-entry. There is no optional-catalyst mode. Missing, unregistered, zero-strength or invalid catalysts make the Relay ineligible.
 
-Native power, reception and catalyst changes invalidate cached radio calculations. Successful data-pack reloads also refresh the client catalyst catalog. These updates do not force-load tower chunks or rescan unchanged antenna geometry.
+Configuration fingerprints run at startup, on explicit refresh, after successful data-pack reload and every 100 server ticks as a fallback, rather than per audio packet. Ordinary component edits still invalidate routes immediately. Successful data-pack reloads also refresh the client catalyst catalog. These updates do not force-load tower chunks or rescan unchanged antenna geometry.
 
 ## Routing cost
 
@@ -94,12 +94,12 @@ Ordinary routing creates a repeated native source only for the selected delivery
 
 - [Gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md).
 - [Model editing guide](art/Model-Editing-Guide.md), with editable projects under `art/blockbench/`.
-- Build, test and synthetic graph-performance evidence: `validation/0.3.1/` and `validation/build-verification.json`.
+- Current build and test evidence: `validation/0.3.2/` and `validation/build-verification.json`. The graph benchmark remains under `validation/0.3.1/`.
 
 Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. Run `./gradlew build` and `./gradlew runGameTest`.
 
-All 38 unit tests and 36 addon Minecraft tests pass. New checks compare the optimized search against an uncached reference on 2,000 randomized directed networks, including changed ingress noise, and verify cache reuse, eviction, cold-cluster pruning, useful fractional-quality improvements, both mixed-catalyst chain orders, custom 100%/200% strengths and custom routing callbacks. Existing coverage includes sub-1% reception, actual native receiver output, catalyst reloads, copied Relays, real copper-wire channel bridges, antenna restoration and card interactions. Near-tie bridge fixtures use explicit 100% and 200% test strengths and matched masts to retain a return budget under universal decay; the ordinary bridge uses gilded blackstone throughout.
+All 43 unit tests and 38 addon Minecraft tests pass. New checks require usable catalysts and supported antennas, preserve native receiver gain, verify scheduled configuration invalidation and reject stale client catalog updates. Routing checks compare the optimized search against an uncached reference on 2,000 randomized directed networks, including changed ingress noise, and verify cache reuse, eviction, cold-cluster pruning, useful fractional-quality improvements, both mixed-catalyst chain orders, custom 100%/200% strengths and custom routing callbacks. Existing coverage includes sub-1% reception, actual native receiver output, catalyst reloads, copied Relays, real copper-wire channel bridges, antenna restoration and card interactions. Near-tie bridge fixtures use explicit 100% and 200% test strengths and matched masts to retain a return budget under universal decay; the ordinary bridge uses gilded blackstone throughout.
 
-The combined GameTest run also contains seven native Simple Radio tests. Four have the same failures as the earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. Reports separate addon and native results. Packet tests use synthetic encoded bytes; real multiplayer voice playback has not been exercised in this run.
+The combined GameTest run also contains seven native Simple Radio tests. Four have the same failures as the earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. Reports separate addon and native results. An actual local dedicated-server/client session verifies the join request/reply, data-pack reload push, disconnect clearing, reconnect and rejection of stale callbacks. Packet tests use synthetic encoded bytes; real multiplayer voice playback has not been exercised in this run.
 
 Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.

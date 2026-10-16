@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "client_exit": 0,
+  "checks": [
+    "join-one",
+    "reload",
+    "disconnect",
+    "reconnect-and-stale-callbacks",
+    "pass"
+  ],
+  "scope": "Actual local dedicated server and native client: join request/reply, reload push, disconnect/reset, reconnect, stale callbacks. No voice playback."
+}

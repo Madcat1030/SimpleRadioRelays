@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "repeaters_catalog_lifecycle_qa",
+  "version": "0.0.0",
+  "name": "Temporary Catalyst Catalog Lifecycle QA",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.paul.simpleradiorepeaters.qa.CatalogLifecycleClient"]},
+  "depends": {"simpleradio_repeaters": "*"}
+}
