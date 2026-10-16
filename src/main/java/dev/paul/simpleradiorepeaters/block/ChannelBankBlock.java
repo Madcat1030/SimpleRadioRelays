@@ -20,7 +20,7 @@ import net.minecraft.world.phys.shapes.*;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
-public final class ChannelBankBlock extends BaseEntityBlock {
+public class ChannelBankBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty CONNECTED = BooleanProperty.create("connected");
     public ChannelBankBlock(Properties properties) {
@@ -35,8 +35,10 @@ public final class ChannelBankBlock extends BaseEntityBlock {
     }
     @Override public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, level, lines, flag);
-        lines.add(Component.translatable("tooltip.simpleradio_repeaters.bank").withStyle(ChatFormatting.GRAY));
+        lines.add(Component.translatable(tooltip()).withStyle(ChatFormatting.GRAY));
     }
+    protected String tooltip() { return "tooltip.simpleradio_repeaters.bank"; }
+    protected int cardAt(net.minecraft.world.phys.Vec3 local) { return BankConnection.cardAt(local); }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(FACING)) {
             case EAST -> Block.box(6, 0, 1, 16, 16, 15);
@@ -57,7 +59,7 @@ public final class ChannelBankBlock extends BaseEntityBlock {
         if (!held.isEmpty() && !held.is(SimpleRadioRepeaters.CARD)) return InteractionResult.PASS;
         if (hit.getDirection() != state.getValue(FACING)) return InteractionResult.PASS;
         if (!(level.getBlockEntity(pos) instanceof ChannelBankBlockEntity bank)) return InteractionResult.PASS;
-        int slot = BankConnection.cardAt(BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation()));
+        int slot = cardAt(BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation()));
         if (held.is(SimpleRadioRepeaters.CARD)) {
             if (slot < 0) slot = bank.firstEmptySlot();
             if (slot < 0 || !bank.getItem(slot).isEmpty()) return InteractionResult.FAIL;

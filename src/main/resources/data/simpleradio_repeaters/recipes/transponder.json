@@ -1,0 +1,38 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "IGI",
+    "RCT",
+    "IWI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "simpleradio:receiving_module"
+    },
+    "C": [
+      {
+        "item": "minecraft:amethyst_block"
+      },
+      {
+        "item": "minecraft:gilded_blackstone"
+      }
+    ],
+    "T": {
+      "item": "simpleradio:transmitting_module"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:transponder",
+    "count": 1
+  }
+}

@@ -3,6 +3,7 @@ package dev.paul.simpleradiorepeaters.block;
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.item.CardState;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
+import dev.paul.simpleradiorepeaters.network.TransponderChannels;
 import net.minecraft.core.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -13,19 +14,25 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /** The visible six-card module; the Relay owns the catalyst, antenna, and persistent RF identity. */
-public final class ChannelBankBlockEntity extends BlockEntity implements Container {
-    private NonNullList<ItemStack> items = NonNullList.withSize(6, ItemStack.EMPTY);
+public class ChannelBankBlockEntity extends BlockEntity implements Container {
+    private final int slots;
+    private NonNullList<ItemStack> items;
     private UUID bankId = UUID.randomUUID();
-    private List<CardState> lastCards = cardStates();
+    private List<CardState> lastCards;
     private List<CardState> displaySource = List.of();
     @Nullable private List<CardDisplay> displayCards;
     private boolean connectionDirty = true;
-    public ChannelBankBlockEntity(BlockPos pos, BlockState state) { super(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, pos, state); }
+    public ChannelBankBlockEntity(BlockPos pos, BlockState state) { this(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, 6, pos, state); }
+    protected ChannelBankBlockEntity(BlockEntityType<?> type, int slots, BlockPos pos, BlockState state) {
+        super(type, pos, state); this.slots = slots; items = NonNullList.withSize(slots, ItemStack.EMPTY); lastCards = cardStates();
+    }
+    @Nullable public TransponderChannels transponderChannels() { return null; }
     public UUID bankId() { return bankId; }
     public List<CardState> cardStates() { return items.stream().map(CardState::of).toList(); }
     /** Lazily derived client display data; no ItemStack or tuning parsing on subsequent frames. */
@@ -63,7 +70,7 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
         if (state.getValue(ChannelBankBlock.CONNECTED) != connected)
             level.setBlock(pos, state.setValue(ChannelBankBlock.CONNECTED, connected), Block.UPDATE_CLIENTS);
     }
-    public int firstEmptySlot() { for (int slot = 0; slot < 6; slot++) if (items.get(slot).isEmpty()) return slot; return -1; }
+    public int firstEmptySlot() { for (int slot = 0; slot < slots; slot++) if (items.get(slot).isEmpty()) return slot; return -1; }
     public boolean insert(int slot, ItemStack held, boolean creative) {
         if (slot < 0 || slot >= items.size() || !items.get(slot).isEmpty() || !held.is(SimpleRadioRepeaters.CARD)) return false;
         ItemStack card = held.copy(); card.setCount(1); items.set(slot, card);
@@ -72,7 +79,7 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
     public static void give(Player player, ItemStack stack) {
         if (!stack.isEmpty() && !player.getInventory().add(stack)) player.drop(stack, false);
     }
-    @Override public int getContainerSize() { return 6; }
+    @Override public int getContainerSize() { return slots; }
     @Override public boolean isEmpty() { return items.stream().allMatch(ItemStack::isEmpty); }
     @Override public ItemStack getItem(int slot) { return items.get(slot); }
     @Override public ItemStack removeItem(int slot, int count) {
@@ -95,7 +102,10 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
         List<CardState> current = cardStates();
         if (!current.equals(displaySource)) displayCards = null;
         if (current.equals(lastCards)) return;
-        lastCards = current; savedAndSynced();
+        lastCards = current; configurationChanged();
+    }
+    protected final void configurationChanged() {
+        savedAndSynced();
         if (level instanceof ServerLevel server) {
             RelayBlockEntity relay = relay();
             if (relay != null) relay.bankChanged();
@@ -112,7 +122,7 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
         super.saveAdditional(tag); ContainerHelper.saveAllItems(tag, items); tag.putUUID("CardBankId", bankId);
     }
     @Override public void load(CompoundTag tag) {
-        super.load(tag); items = NonNullList.withSize(6, ItemStack.EMPTY); ContainerHelper.loadAllItems(tag, items);
+        super.load(tag); items = NonNullList.withSize(slots, ItemStack.EMPTY); ContainerHelper.loadAllItems(tag, items);
         if (tag.hasUUID("CardBankId")) bankId = tag.getUUID("CardBankId");
         lastCards = cardStates(); displayCards = null; connectionDirty = true;
     }

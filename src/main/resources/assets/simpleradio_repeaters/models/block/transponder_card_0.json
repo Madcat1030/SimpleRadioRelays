@@ -1,0 +1,107 @@
+{
+  "credit": "Made with Blockbench",
+  "textures": {
+    "0": "simpleradio_repeaters:block/card_bank_front",
+    "1": "simpleradio_repeaters:block/card_bank_side",
+    "2": "simpleradio_repeaters:block/connector",
+    "3": "simpleradio_repeaters:block/card_back",
+    "particle": "simpleradio_repeaters:block/card_bank_side"
+  },
+  "elements": [
+    {
+      "name": "card_0",
+      "from": [
+        10,
+        6,
+        0
+      ],
+      "to": [
+        15,
+        9,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        },
+        "south": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        },
+        "east": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        },
+        "west": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        },
+        "up": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        },
+        "down": {
+          "uv": [
+            5,
+            6,
+            11,
+            9
+          ],
+          "texture": "#3"
+        }
+      }
+    },
+    {
+      "name": "label_0",
+      "from": [
+        11,
+        7,
+        -0.004
+      ],
+      "to": [
+        14,
+        8,
+        -0.004
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "texture": "#3"
+        }
+      }
+    }
+  ],
+  "ambientocclusion": false
+}

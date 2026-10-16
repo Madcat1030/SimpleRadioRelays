@@ -3,6 +3,7 @@ package dev.paul.simpleradiorepeaters.block;
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
+import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.*;
@@ -37,6 +38,12 @@ public final class RelayBlock extends BaseEntityBlock {
     }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
+        if (RelayAttachment.of(held) != RelayAttachment.NONE) {
+            if (!(level.getBlockEntity(pos) instanceof RelayBlockEntity relay)) return InteractionResult.PASS;
+            if (!relay.attachment().isEmpty()) return InteractionResult.FAIL;
+            if (level.isClientSide) return InteractionResult.SUCCESS;
+            return relay.installAttachment(held, player.getAbilities().instabuild) ? InteractionResult.CONSUME : InteractionResult.FAIL;
+        }
         // Send the ordinary interaction to the authoritative server, but do not predict item placement before its catalog arrives.
         if (level.isClientSide && !held.isEmpty() && !RelayCatalysts.clientReady()) return InteractionResult.CONSUME;
         if (!held.isEmpty() && !(level.isClientSide ? RelayCatalysts.acceptsClient(held) : RelayCatalysts.accepts(held))) return InteractionResult.PASS;
@@ -49,6 +56,13 @@ public final class RelayBlock extends BaseEntityBlock {
         if (player.isShiftKeyDown()) {
             if (level.isClientSide) return InteractionResult.SUCCESS;
             relay.setEnabled(!relay.enabled()); return InteractionResult.CONSUME;
+        }
+        var local = BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation());
+        if (hit.getDirection() == state.getValue(FACING) && local.x * 16 >= 9 && local.x * 16 <= 15
+                && local.y * 16 >= 1 && local.y * 16 <= 7) {
+            if (relay.attachment().isEmpty()) return InteractionResult.PASS;
+            if (level.isClientSide) return InteractionResult.SUCCESS;
+            ChannelBankBlockEntity.give(player, relay.removeAttachment()); return InteractionResult.CONSUME;
         }
         if (relay.catalyst().isEmpty()) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
@@ -64,6 +78,8 @@ public final class RelayBlock extends BaseEntityBlock {
             }
             if (level.getBlockEntity(pos) instanceof RelayBlockEntity relay && !relay.catalyst().isEmpty())
                 Block.popResource(level, pos, relay.catalyst().copy());
+            if (level.getBlockEntity(pos) instanceof RelayBlockEntity relay && !relay.attachment().isEmpty())
+                Block.popResource(level, pos, relay.attachment().copy());
         }
         super.onRemove(old, level, pos, next, moved);
     }

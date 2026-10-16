@@ -16,6 +16,11 @@ public final class RelayRenderer implements BlockEntityRenderer<RelayBlockEntity
     public RelayRenderer(BlockEntityRendererProvider.Context context) { font = context.getFont(); }
     @Override public void render(RelayBlockEntity relay, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         pose.pushPose(); DeviceRendering.face(pose, relay.getBlockState().getValue(RelayBlock.FACING));
+        if (!relay.attachment().isEmpty()) {
+            pose.pushPose(); pose.translate(12d / 16, 4d / 16, -1d / 16); pose.scale(.25f, .25f, .25f);
+            Minecraft.getInstance().getItemRenderer().renderStatic(relay.attachment(), ItemDisplayContext.FIXED,
+                    light, overlay, pose, buffers, relay.getLevel(), 0); pose.popPose();
+        }
         if (!relay.catalyst().isEmpty()) {
             pose.pushPose();
             if (relay.catalyst().getItem() instanceof BlockItem block) {

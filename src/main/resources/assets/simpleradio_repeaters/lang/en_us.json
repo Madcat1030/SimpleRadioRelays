@@ -5,5 +5,13 @@
   "item.simpleradio_repeaters.frequency_card": "Frequency Card",
   "tooltip.simpleradio_repeaters.untuned": "Untuned",
   "tooltip.simpleradio_repeaters.bank": "Plug into the top of a Relay attached to an antenna to allow inserted channels to be repeated.",
-  "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then right-click a Repeater Bank to insert."
+  "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then right-click a Repeater Bank to insert.",
+  "block.simpleradio_repeaters.transponder": "Radio Transponder",
+  "item.simpleradio_repeaters.nether_focus": "Nether Focus",
+  "item.simpleradio_repeaters.end_focus": "End Focus",
+  "item.simpleradio_repeaters.relay_amplifier": "Relay Amplifier",
+  "tooltip.simpleradio_repeaters.transponder": "Plug into a Relay. Left card to right cards; click the display to toggle simplex/duplex.",
+  "tooltip.simpleradio_repeaters.nether_focus": "Install in a Relay to project reception and broadcast at matching Nether coordinates, at the roof.",
+  "tooltip.simpleradio_repeaters.end_focus": "Install in a Relay to project reception and broadcast at matching End coordinates, at the bottom.",
+  "tooltip.simpleradio_repeaters.amplifier": "Install in a Relay to reset carrier decay to its catalyst-scaled tower strength. Audio degradation remains."
 }

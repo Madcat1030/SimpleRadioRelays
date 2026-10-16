@@ -3,16 +3,31 @@
   "id": "simpleradio_repeaters",
   "version": "${version}",
   "name": "Simple Radio Repeaters",
-  "description": "In-world six-card banks and catalyst-powered relays with persistent antenna networks for Simple Radio.",
-  "authors": ["Paul", "OpenAI"],
+  "description": "Persistent catalyst-powered relays, six-card banks, directional transponders, dimensional foci and decay-reset amplifiers for Simple Radio.",
+  "authors": [
+    "Paul",
+    "OpenAI"
+  ],
   "license": "GPL-3.0-only",
   "environment": "*",
   "entrypoints": {
-    "main": ["dev.paul.simpleradiorepeaters.SimpleRadioRepeaters"],
-    "client": ["dev.paul.simpleradiorepeaters.client.RepeatersClient"],
-    "fabric-gametest": ["dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests", "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests", "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests"]
+    "main": [
+      "dev.paul.simpleradiorepeaters.SimpleRadioRepeaters"
+    ],
+    "client": [
+      "dev.paul.simpleradiorepeaters.client.RepeatersClient"
+    ],
+    "fabric-gametest": [
+      "dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.ExpansionGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.ExpansionHardwareGameTests"
+    ]
   },
-  "mixins": ["simpleradio_repeaters.mixins.json"],
+  "mixins": [
+    "simpleradio_repeaters.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.19.0",
     "fabric-api": "*",

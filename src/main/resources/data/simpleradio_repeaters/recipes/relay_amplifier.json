@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    " D ",
+    "RER",
+    " W "
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:ancient_debris"
+    },
+    "R": {
+      "item": "minecraft:end_rod"
+    },
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:relay_amplifier",
+    "count": 1
+  }
+}

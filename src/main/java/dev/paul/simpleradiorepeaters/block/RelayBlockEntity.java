@@ -5,6 +5,7 @@ import dev.paul.simpleradiorepeaters.*;
 import dev.paul.simpleradiorepeaters.item.CardState;
 import dev.paul.simpleradiorepeaters.network.*;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
+import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.*;
 import net.minecraft.nbt.*;
@@ -22,13 +23,16 @@ import java.util.*;
 public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     private UUID relayId = UUID.randomUUID();
     private ItemStack catalyst = ItemStack.EMPTY;
+    private ItemStack attachment = ItemStack.EMPTY;
     private boolean enabled = true, dirty = true, firstTick = true, updatingBank, bankPending;
     private int antennaPower, status = 2, displayPeers;
     private long nextRefresh;
     @Nullable private CardBankRef cardBank;
     private List<CardState> cachedCards = emptyCards();
+    @Nullable private TransponderChannels transponder;
     private final AntennaVerification verification = new AntennaVerification();
-    private record Settings(List<CardState> cards, ResourceLocation catalyst, boolean enabled, CardBankRef controller) {}
+    private record Settings(List<CardState> cards, ResourceLocation catalyst, boolean enabled, CardBankRef controller,
+                            ResourceLocation attachment, TransponderChannels transponder) {}
     private Settings lastSettings = settingsSnapshot();
     private record Display(int score, int status, int peers, int channels, boolean enabled) {}
     @Nullable private Display lastDisplay;
@@ -40,6 +44,9 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     public int displayStatus() { return status; }
     public int displayPeers() { return displayPeers; }
     public ItemStack catalyst() { return catalyst; }
+    public ItemStack attachment() { return attachment; }
+    public RelayAttachment attachmentType() { return RelayAttachment.of(attachment); }
+    @Nullable public TransponderChannels transponderChannels() { return transponder; }
     @Nullable public CardBankRef cardBank() { return cardBank; }
     public void setEnabled(boolean value) { if (enabled != value) { enabled = value; setChanged(); } }
     @Override public int getAntennaPower() { return antennaPower; }
@@ -58,6 +65,15 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     public ItemStack removeCatalyst() {
         if (catalyst.isEmpty()) return ItemStack.EMPTY;
         ItemStack result = catalyst; catalyst = ItemStack.EMPTY; setChanged(); return result;
+    }
+    public boolean installAttachment(ItemStack held, boolean creative) {
+        if (!attachment.isEmpty() || RelayAttachment.of(held) == RelayAttachment.NONE) return false;
+        attachment = held.copy(); attachment.setCount(1);
+        if (!creative) held.shrink(1); setChanged(); return true;
+    }
+    public ItemStack removeAttachment() {
+        if (attachment.isEmpty()) return ItemStack.EMPTY;
+        ItemStack result = attachment; attachment = ItemStack.EMPTY; setChanged(); return result;
     }
     public BlockPos corePos() { return worldPosition.relative(getBlockState().getValue(RelayBlock.FACING).getOpposite()); }
     public Set<ChannelKey> channels() {
@@ -80,7 +96,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
                 controllerRemoved(cardBank.position());
             if (cardBank != null) {
                 BlockState state = BankConnection.state(level, cardBank.position());
-                if (state == null || (state.is(SimpleRadioRepeaters.CHANNEL_BANK)
+                if (state == null || (state.getBlock() instanceof ChannelBankBlock
                         && !(BankConnection.entity(level, cardBank.position()) instanceof ChannelBankBlockEntity bank && !bank.isRemoved()))) {
                     bankPending = true; return;
                 }
@@ -88,27 +104,33 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
             bankPending = false;
             ChannelBankBlockEntity bank = findAssignedBank();
             if (bank == null) {
-                if (cardBank != null) { cardBank = null; cachedCards = emptyCards(); setChanged(); }
+                if (cardBank != null) { cardBank = null; cachedCards = emptyCards(); transponder = null; setChanged(); }
                 return;
             }
             CardBankRef current = new CardBankRef(bank.getBlockPos(), bank.bankId());
             List<CardState> cards = bank.cardStates();
-            if (!current.equals(cardBank) || !cards.equals(cachedCards)) { cardBank = current; cachedCards = cards; setChanged(); }
+            TransponderChannels routing = bank.transponderChannels();
+            if (!current.equals(cardBank) || !cards.equals(cachedCards) || !Objects.equals(routing, transponder)) {
+                cardBank = current; cachedCards = cards; transponder = routing; setChanged();
+            }
         } finally { updatingBank = false; }
     }
     public void controllerRemoved(BlockPos pos) {
         if (cardBank != null && cardBank.position().equals(pos)) {
-            cardBank = null; cachedCards = emptyCards(); bankPending = false; setChanged();
+            cardBank = null; cachedCards = emptyCards(); transponder = null; bankPending = false; setChanged();
         }
     }
     private void adoptSavedController(TowerRecord saved) {
-        if (saved == null || (Objects.equals(saved.cardBank(), cardBank) && saved.channels().equals(channels()))) return;
+        if (saved == null || (Objects.equals(saved.cardBank(), cardBank) && saved.channels().equals(channels())
+                && Objects.equals(saved.transponder(), transponder))) return;
         // Changes observed in the Bank's loaded chunk override an older Relay NBT cache.
         cardBank = saved.cardBank();
+        transponder = saved.transponder();
         List<CardState> cards = new ArrayList<>();
-        if (cardBank != null) saved.channels().stream().sorted().limit(6)
+        if (transponder != null) cards.addAll(transponder.cards());
+        else if (cardBank != null) saved.channels().stream().sorted().limit(6)
                 .forEach(channel -> cards.add(new CardState(true, channel.frequency(), channel.modulation())));
-        while (cards.size() < 6) cards.add(CardState.EMPTY);
+        while (cards.size() < (transponder == null ? 6 : 3)) cards.add(CardState.EMPTY);
         cachedCards = List.copyOf(cards);
         lastSettings = settingsSnapshot();
         super.setChanged();
@@ -126,7 +148,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
             syncClient();
         }
     }
-    private Settings settingsSnapshot() { return new Settings(cachedCards, catalystItem(), enabled, cardBank); }
+    private Settings settingsSnapshot() { return new Settings(cachedCards, catalystItem(), enabled, cardBank,
+            RelayCatalysts.item(attachment), transponder); }
     public static void tick(Level level, BlockPos pos, BlockState state, RelayBlockEntity relay) {
         TowerManager manager = TowerManager.get(((ServerLevel) level).getServer()); if (manager == null) return;
         // Resolve copied identities before adopting or publishing any controller settings.
@@ -160,7 +183,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     }
     private void updateDisplayedState(TowerManager manager) {
         status = !enabled ? 4 : !hasCatalyst() ? 2
-                : cardBank == null ? 7 : channels().isEmpty() ? 3 : bankPending ? 8
+                : cardBank == null ? 7 : channels().isEmpty() || (transponder != null && !transponder.ready()) ? 3 : bankPending ? 8
                 : dirty ? (manager.isEligible(relayId) ? 6 : 5) : antennaPower <= 0 ? 1 : 0;
         boolean ready = manager.isEligible(relayId);
         BlockState state = getBlockState();
@@ -184,6 +207,9 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         if (tag.hasUUID("RelayId")) relayId = tag.getUUID("RelayId");
         catalyst = tag.contains("Catalyst", Tag.TAG_COMPOUND) ? ItemStack.of(tag.getCompound("Catalyst")) : ItemStack.EMPTY;
         if (!catalyst.isEmpty()) catalyst.setCount(1);
+        attachment = tag.contains("Attachment", Tag.TAG_COMPOUND) ? ItemStack.of(tag.getCompound("Attachment")) : ItemStack.EMPTY;
+        if (!attachment.isEmpty()) attachment.setCount(1);
+        transponder = tag.contains("Transponder", Tag.TAG_COMPOUND) ? TransponderChannels.load(tag.getCompound("Transponder")) : null;
         enabled = !tag.contains("Enabled") || tag.getBoolean("Enabled"); antennaPower = tag.getInt("AntennaScore");
         cardBank = tag.hasUUID("CardBankId") && tag.contains("CardBankPosition")
                 ? new CardBankRef(BlockPos.of(tag.getLong("CardBankPosition")), tag.getUUID("CardBankId")) : null;
@@ -191,7 +217,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         for (int i = 0; i < selected.size(); i++) cards.add(CardState.load(selected.getCompound(i)));
         cachedCards = cards.isEmpty() ? emptyCards() : List.copyOf(cards);
         if (cardBank == null || !BankConnection.isMounted(worldPosition, cardBank.position())) {
-            cardBank = null; cachedCards = emptyCards();
+            cardBank = null; cachedCards = emptyCards(); transponder = null;
         }
         status = tag.contains("DisplayStatus") ? tag.getInt("DisplayStatus") : 2; displayPeers = tag.getInt("DisplayPeers");
         lastSettings = settingsSnapshot(); firstTick = true; lastDisplay = null;
@@ -200,6 +226,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag); tag.putUUID("RelayId", relayId);
         if (!catalyst.isEmpty()) tag.put("Catalyst", catalyst.save(new CompoundTag()));
+        if (!attachment.isEmpty()) tag.put("Attachment", attachment.save(new CompoundTag()));
+        if (transponder != null) tag.put("Transponder", transponder.save());
         tag.putBoolean("Enabled", enabled); tag.putInt("AntennaScore", antennaPower);
         if (cardBank != null) { tag.putLong("CardBankPosition", cardBank.position().asLong()); tag.putUUID("CardBankId", cardBank.id()); }
         ListTag cards = new ListTag(); cachedCards.forEach(card -> cards.add(card.save())); tag.put("CachedCards", cards);

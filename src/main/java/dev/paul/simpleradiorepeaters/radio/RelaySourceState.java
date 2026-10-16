@@ -7,4 +7,6 @@ public interface RelaySourceState {
     void repeaters$setInheritedSeverity(double severity);
     int repeaters$getRelayCount();
     void repeaters$setRelayCount(int count);
+    int repeaters$getDecayCount();
+    void repeaters$setDecayCount(int count);
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    " P ",
+    "ECE",
+    " W "
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:ender_pearl"
+    },
+    "E": {
+      "item": "minecraft:end_stone"
+    },
+    "C": {
+      "item": "minecraft:chorus_fruit"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:end_focus",
+    "count": 1
+  }
+}

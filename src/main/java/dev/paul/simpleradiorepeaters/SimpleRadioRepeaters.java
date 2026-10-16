@@ -2,6 +2,8 @@ package dev.paul.simpleradiorepeaters;
 
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.item.FrequencyCardItem;
+import dev.paul.simpleradiorepeaters.item.RelayAttachmentItem;
+import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import net.fabricmc.api.ModInitializer;
@@ -34,9 +36,15 @@ public final class SimpleRadioRepeaters implements ModInitializer {
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final ChannelBankBlock CHANNEL_BANK = new ChannelBankBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
+    public static final TransponderBlock TRANSPONDER = new TransponderBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final FrequencyCardItem CARD = new FrequencyCardItem(new Item.Properties().stacksTo(1));
+    public static final RelayAttachmentItem NETHER_FOCUS = new RelayAttachmentItem(RelayAttachment.NETHER_FOCUS);
+    public static final RelayAttachmentItem END_FOCUS = new RelayAttachmentItem(RelayAttachment.END_FOCUS);
+    public static final RelayAttachmentItem RELAY_AMPLIFIER = new RelayAttachmentItem(RelayAttachment.AMPLIFIER);
     public static BlockEntityType<RelayBlockEntity> RELAY_ENTITY;
     public static BlockEntityType<ChannelBankBlockEntity> CHANNEL_BANK_ENTITY;
+    public static BlockEntityType<TransponderBlockEntity> TRANSPONDER_ENTITY;
 
     public static ResourceLocation id(String path) { return new ResourceLocation(ID, path); }
     public static final ResourceLocation CATALYST_CATALOG = id("catalysts");
@@ -51,15 +59,25 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         Registry.register(BuiltInRegistries.ITEM, id("relay"), new BlockItem(RELAY, new Item.Properties()));
         Registry.register(BuiltInRegistries.BLOCK, id("channel_bank"), CHANNEL_BANK);
         Registry.register(BuiltInRegistries.ITEM, id("channel_bank"), new BlockItem(CHANNEL_BANK, new Item.Properties()));
+        Registry.register(BuiltInRegistries.BLOCK, id("transponder"), TRANSPONDER);
+        Registry.register(BuiltInRegistries.ITEM, id("transponder"), new BlockItem(TRANSPONDER, new Item.Properties()));
         Registry.register(BuiltInRegistries.ITEM, id("frequency_card"), CARD);
+        Registry.register(BuiltInRegistries.ITEM, id("nether_focus"), NETHER_FOCUS);
+        Registry.register(BuiltInRegistries.ITEM, id("end_focus"), END_FOCUS);
+        Registry.register(BuiltInRegistries.ITEM, id("relay_amplifier"), RELAY_AMPLIFIER);
         RELAY_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("relay"),
                 FabricBlockEntityTypeBuilder.create(RelayBlockEntity::new, RELAY).build());
         CHANNEL_BANK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("channel_bank"),
                 FabricBlockEntityTypeBuilder.create(ChannelBankBlockEntity::new, CHANNEL_BANK).build());
+        TRANSPONDER_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("transponder"),
+                FabricBlockEntityTypeBuilder.create(TransponderBlockEntity::new, TRANSPONDER).build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id("repeaters"), FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.simpleradio_repeaters"))
                 .icon(() -> new ItemStack(RELAY))
-                .displayItems((parameters, output) -> { output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(CARD); }).build());
+                .displayItems((parameters, output) -> {
+                    output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(TRANSPONDER); output.accept(CARD);
+                    output.accept(NETHER_FOCUS); output.accept(END_FOCUS); output.accept(RELAY_AMPLIFIER);
+                }).build());
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {

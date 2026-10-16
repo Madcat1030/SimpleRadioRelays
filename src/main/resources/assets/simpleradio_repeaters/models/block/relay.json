@@ -5,7 +5,8 @@
     "side": "simpleradio_repeaters:block/relay_side",
     "top": "simpleradio_repeaters:block/relay_top",
     "screen": "simpleradio_repeaters:block/relay_screen",
-    "particle": "simpleradio_repeaters:block/relay_side"
+    "particle": "simpleradio_repeaters:block/relay_side",
+    "attachment_frame": "simpleradio_repeaters:block/card_back"
   },
   "elements": [
     {
@@ -488,6 +489,307 @@
             2
           ],
           "texture": "#side"
+        }
+      }
+    },
+    {
+      "name": "attachment_left",
+      "from": [
+        9,
+        1,
+        -1
+      ],
+      "to": [
+        10,
+        7,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "south": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "east": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "west": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "up": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "down": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        }
+      }
+    },
+    {
+      "name": "attachment_right",
+      "from": [
+        14,
+        1,
+        -1
+      ],
+      "to": [
+        15,
+        7,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "south": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "east": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "west": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "up": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "down": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        }
+      }
+    },
+    {
+      "name": "attachment_bottom",
+      "from": [
+        10,
+        1,
+        -1
+      ],
+      "to": [
+        14,
+        2,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "south": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "east": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "west": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "up": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "down": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        }
+      }
+    },
+    {
+      "name": "attachment_top",
+      "from": [
+        10,
+        6,
+        -1
+      ],
+      "to": [
+        14,
+        7,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "south": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "east": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "west": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "up": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        },
+        "down": {
+          "uv": [
+            5,
+            6,
+            6,
+            7
+          ],
+          "texture": "#attachment_frame"
+        }
+      }
+    },
+    {
+      "name": "attachment_socket",
+      "from": [
+        10,
+        2,
+        -0.01
+      ],
+      "to": [
+        14,
+        6,
+        -0.01
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "texture": "#attachment_frame"
         }
       }
     }

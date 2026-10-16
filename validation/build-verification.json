@@ -1,22 +1,22 @@
 {
-  "version": "0.3.2",
+  "version": "0.4.0",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
-  "verified_at_utc": "2026-10-16T20:54:04.013168+00:00",
+  "verified_at_utc": "2026-10-16T22:11:49.729768+00:00",
   "java_bytecode": 17,
-  "jar_sha256": "5d80eab5cfcad614f771801a62bcd54798b452876d687a46004fc58136deab69",
+  "jar_sha256": "e262adf9f51335ebe24ba1ef181bb535464fad20969633648a30d1186bc6c4e0",
   "build": "passed",
   "build_command": "--offline build",
   "minecraft_test_command": "--offline build runGameTest",
   "combined_minecraft_task_exit": 1,
   "unit_tests": {
     "status": "passed",
-    "tests": 43,
+    "tests": 48,
     "failures": 0
   },
   "addon_minecraft_tests": {
     "status": "passed",
-    "tests": 38,
+    "tests": 50,
     "failures": 0
   },
   "native_minecraft_tests": {
@@ -27,167 +27,98 @@
       "SystemTest.closedSystem",
       "SystemTest.openSystem"
     ],
-    "note": "Same four headless native test failures as the earlier addon-disabled baseline. Cause unresolved; not established live-server bugs."
+    "note": "Same four headless test names fail in the earlier addon-disabled baseline. Cause unresolved; not established live-server bugs."
+  },
+  "dimensions": {
+    "native_mode": "Follow frequency.crossDimensional automatically; physical sites, all native XYZ scaling, native dimensional attenuation, foci ignored.",
+    "focus_mode": "Only a focus adds a foreign-world site while native cross-dimensional radio is disabled.",
+    "mapping": "home X/Z * home coordinate scale / target coordinate scale",
+    "nether_y": "minimum build height + logical height (default 128)",
+    "end_y": "minimum build height (default 0)",
+    "end_radius_cap": null,
+    "attenuation": "Native base-loss reach gate, then travel with dimensionalInterference (halved for AM).",
+    "pocket_to_pocket": false,
+    "physical_target_hub": true,
+    "native_speaker": "Focus output localizes carrier origin only; ownership, bytes, activity, worst noise and both counts retained.",
+    "chunk_force_loading": false
   },
   "power": {
-    "formula": "current tower nominal power * current catalyst strength * 0.9 ^ (total relay count - 1)",
-    "first_relay_count": 1,
-    "hop_retention": 0.9,
-    "amethyst_sequence": [
-      0.6,
-      0.54,
-      0.486
-    ],
-    "gilded_sequence": [
-      0.9,
-      0.81,
-      0.729
-    ],
-    "custom_double_strength_sequence": [
-      2,
-      1.8,
-      1.62
-    ],
-    "mixed_chain": "Each tower applies its own catalyst once; universal decay and worst noise continue across changes.",
-    "wire_channel_bridge": "Preserves the total relay count; further relay visits continue universal loss.",
-    "cutoff": "No artificial percentage floor; native reach and total visit budget apply."
+    "formula": "current tower nominal power * current catalyst strength * 0.9 ^ (decay count - 1)",
+    "ordinary": "Increment total visits and decay count.",
+    "amplifier": "Increment total visits, reset decay to 1.",
+    "budget": "Configured maximum total visits also applies across amplifiers, wires and conversions.",
+    "audio": "Retain worst interference; amplifier cannot repair audio.",
+    "catalyst": "Always required; native registered item with finite positive strength.",
+    "antenna": "Verified positive native score on supported core; native receiver base gain retained.",
+    "cutoff": "No artificial percentage floor."
+  },
+  "transponder": {
+    "mount": "Directly atop Relay, mutually exclusive with six-card Bank.",
+    "slots": 3,
+    "required": "Tuned left plus at least one tuned right.",
+    "simplex": "Left to both selected right channels.",
+    "duplex": "Left to rights; either right to left.",
+    "same_channel_both_sides": true,
+    "am_fm_conversion": true,
+    "right_to_right_internal_port": false,
+    "mode_switch": "Empty-hand front center display; card boundary excluded.",
+    "persistent": "Ordered card policy and mode update unloaded Relay records and survive pending entity restoration."
   },
   "routing": {
-    "dominance": "At a fixed tower, discard an arrival if a lower count has equal or cleaner noise. Prune before expanding.",
-    "cold_entrances": "Seed all direct entrances; skip an entrance search when its descendants are already dominated.",
-    "cache_key": "entry tower, previous total relay count, pruning mode; scoped to an immutable network snapshot",
+    "nodes": "Directed channel input/output ports over immutable tower snapshots.",
+    "dominance": "Same port; no greater total visits, no greater decay, no worse noise.",
+    "amplifier_detours": "Retain higher-total routes when lower decay makes them useful.",
+    "route_cache_key": "Entry port, previous total, previous decay, pruning mode; scoped by network revision and native dimensional mode.",
     "route_cache_limits": {
       "entries": 128,
-      "numeric_route_and_row_elements": 32768
+      "numeric_elements": 32768
     },
     "link_cache_limits": {
       "rows": 512,
       "edges": 65536
     },
-    "invalidation": "Component edits immediately discard graphs; configuration fingerprints run at startup, reload, explicit refresh and each 100 server ticks.",
-    "live_inputs": "Reapply entrance noise and evaluate moving receivers every packet. No frame/source/player/entity cache.",
-    "source_copies": "Ordinary repeated delivery materializes only its selected source per receiver.",
-    "custom_predicates": "Keep original count alternatives; independent callback copies and resulting carrier power participate in selection."
+    "live_inputs": "Packet ingress noise and receiver position/reception are not cached.",
+    "source_copies": "Materialize selected ordinary delivery only; independent copies for custom callbacks.",
+    "fingerprint_packet_path": false,
+    "configuration_fallback_ticks": 100
   },
   "regressions": {
-    "randomized_directed_networks": 2000,
+    "ordinary_randomized_graphs": 2000,
+    "amplified_randomized_graphs": 1000,
     "changed_ingress_packets_each": 2,
-    "reference_comparison": "Optimized frontier and custom-predicate fallback match the uncached full tower/count reference.",
-    "native_mixed_chains": [
-      "gilded/gilded/amethyst",
-      "amethyst/amethyst/gilded"
-    ],
-    "native_custom_strengths": [
-      1,
-      2
-    ],
-    "native_sub_one_percent_delivery": true,
+    "native_end_beyond_500_blocks": true,
+    "native_focus_return": true,
+    "native_speaker_origin_gate": true,
+    "native_hub_required": true,
+    "native_am_fm_simplex_duplex_conversion": true,
+    "amplifier_budget_and_audio": true,
+    "all_facing_card_and_socket_controls": true,
+    "unloaded_relay_module_edits_and_restore": true,
+    "native_recipe_ingredients": true,
     "real_copper_wire_count_and_channel_bridge": true,
-    "fixture_note": "Near-tie masts stay within the native maxDistance+1 support height so scheduled unstable-top removal cannot alter the measured cutoff. Final run used a fresh generated GameTest world."
-  },
-  "benchmark": {
-    "scope": "Synthetic graph only; no receivers, world access, audio or networking.",
-    "rows": [
-      {
-        "towers": "5",
-        "entrances": "1",
-        "old_options": "315",
-        "new_options": "5",
-        "old_warm_ms": "0.057022",
-        "new_cold_ms": "0.044156",
-        "new_warm_ms": "0.007019"
-      },
-      {
-        "towers": "5",
-        "entrances": "5",
-        "old_options": "320",
-        "new_options": "5",
-        "old_warm_ms": "0.058320",
-        "new_cold_ms": "0.011434",
-        "new_warm_ms": "0.006840"
-      },
-      {
-        "towers": "25",
-        "entrances": "1",
-        "old_options": "1575",
-        "new_options": "25",
-        "old_warm_ms": "0.214597",
-        "new_cold_ms": "0.051260",
-        "new_warm_ms": "0.012019"
-      },
-      {
-        "towers": "25",
-        "entrances": "25",
-        "old_options": "1600",
-        "new_options": "25",
-        "old_warm_ms": "0.223824",
-        "new_cold_ms": "0.008949",
-        "new_warm_ms": "0.008675"
-      },
-      {
-        "towers": "100",
-        "entrances": "1",
-        "old_options": "6300",
-        "new_options": "100",
-        "old_warm_ms": "2.687101",
-        "new_cold_ms": "0.321277",
-        "new_warm_ms": "0.006099"
-      },
-      {
-        "towers": "100",
-        "entrances": "100",
-        "old_options": "6400",
-        "new_options": "100",
-        "old_warm_ms": "2.840396",
-        "new_cold_ms": "0.091590",
-        "new_warm_ms": "0.032304"
-      }
-    ],
-    "note": "Recorded 0.3.1 graph-only benchmark retained; graph/power implementation is unchanged in 0.3.2."
-  },
-  "persistence": {
-    "store": "data/simpleradio_repeaters_relays_v3.dat",
-    "schema": 3,
-    "note": "Unchanged from 0.3.0. No migration code or network reset added. Upgrades from 0.2 still require loading each tower once."
+    "fresh_gametest_world": true,
+    "fixture_note": "Native speaker fixture removes itself from both its container and global map, avoiding stale validation of a reused router ID."
   },
   "appearance": {
-    "assets_and_renderers_identical_to_0_3_1": true,
-    "new_render_capture": false
+    "native_render_capture": "Relay-Expansion-0.4.0.png",
+    "temporary_qa_absent_from_release": true,
+    "existing_bank_assets_and_renderer_unchanged": true,
+    "texture_bitmaps_unchanged": true,
+    "attachment_item_and_transponder_models": "Code-native meshes using existing 16px palette and native Minecraft textures."
+  },
+  "persistence": {
+    "store": "simpleradio_repeaters_relays_v3",
+    "schema": 3,
+    "new_optional_fields": [
+      "Attachment",
+      "Transponder"
+    ],
+    "migration_layer": false
   },
   "limits": [
-    "Packet tests use synthetic bytes; actual multiplayer microphone playback was not exercised.",
-    "Four native headless GameTest failures match the earlier addon-disabled control; cause unresolved."
-  ],
-  "client_connection_lifecycle": {
-    "passed": true,
-    "client_exit": 0,
-    "checks": [
-      "join-one",
-      "reload",
-      "disconnect",
-      "reconnect-and-stale-callbacks",
-      "pass"
-    ],
-    "scope": "Actual local dedicated server and native client: join request/reply, reload push, disconnect/reset, reconnect, stale callbacks. No voice playback."
-  },
-  "eligibility": {
-    "required": [
-      "enabled",
-      "native registered catalyst with finite positive strength",
-      "verified positive antenna score",
-      "tuned channel"
-    ],
-    "geometry": "Sturdy local core and antenna core required; native copper-wire extensions retained.",
-    "receiver_gain": "Native receiver base reception plus antenna score times native receiver aptitude; no catalyst scaling of reception.",
-    "requireCatalyst_setting": "Removed; obsolete JSON keys are ignored and omitted on config rewrite.",
-    "restoration": "Verified antenna snapshot survives pending dependency restoration; confirmed zero uses existing two-scan policy."
-  },
-  "configuration_checks": {
-    "packet_path": false,
-    "startup": true,
-    "successful_datapack_reload": "immediate",
-    "operator_refresh": "immediate",
-    "fallback_server_ticks": 100,
-    "component_edits": "Immediate existing snapshot invalidation."
-  }
+    "Synthetic encoded packets, not actual multiplayer microphone playback.",
+    "Native rendering checked in standalone Minecraft QA screen, not a joined 0.4 multiplayer session.",
+    "Historical 0.3.2 catalog lifecycle and 0.3.1 graph benchmark retained under their original versions; neither is a new 0.4 measurement.",
+    "Four native headless GameTest failures remain; cause unresolved."
+  ]
 }

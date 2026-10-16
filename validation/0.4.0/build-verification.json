@@ -1,0 +1,124 @@
+{
+  "version": "0.4.0",
+  "minecraft": "1.20.1",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "verified_at_utc": "2026-10-16T22:11:49.729768+00:00",
+  "java_bytecode": 17,
+  "jar_sha256": "e262adf9f51335ebe24ba1ef181bb535464fad20969633648a30d1186bc6c4e0",
+  "build": "passed",
+  "build_command": "--offline build",
+  "minecraft_test_command": "--offline build runGameTest",
+  "combined_minecraft_task_exit": 1,
+  "unit_tests": {
+    "status": "passed",
+    "tests": 48,
+    "failures": 0
+  },
+  "addon_minecraft_tests": {
+    "status": "passed",
+    "tests": 50,
+    "failures": 0
+  },
+  "native_minecraft_tests": {
+    "tests": 7,
+    "failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ],
+    "note": "Same four headless test names fail in the earlier addon-disabled baseline. Cause unresolved; not established live-server bugs."
+  },
+  "dimensions": {
+    "native_mode": "Follow frequency.crossDimensional automatically; physical sites, all native XYZ scaling, native dimensional attenuation, foci ignored.",
+    "focus_mode": "Only a focus adds a foreign-world site while native cross-dimensional radio is disabled.",
+    "mapping": "home X/Z * home coordinate scale / target coordinate scale",
+    "nether_y": "minimum build height + logical height (default 128)",
+    "end_y": "minimum build height (default 0)",
+    "end_radius_cap": null,
+    "attenuation": "Native base-loss reach gate, then travel with dimensionalInterference (halved for AM).",
+    "pocket_to_pocket": false,
+    "physical_target_hub": true,
+    "native_speaker": "Focus output localizes carrier origin only; ownership, bytes, activity, worst noise and both counts retained.",
+    "chunk_force_loading": false
+  },
+  "power": {
+    "formula": "current tower nominal power * current catalyst strength * 0.9 ^ (decay count - 1)",
+    "ordinary": "Increment total visits and decay count.",
+    "amplifier": "Increment total visits, reset decay to 1.",
+    "budget": "Configured maximum total visits also applies across amplifiers, wires and conversions.",
+    "audio": "Retain worst interference; amplifier cannot repair audio.",
+    "catalyst": "Always required; native registered item with finite positive strength.",
+    "antenna": "Verified positive native score on supported core; native receiver base gain retained.",
+    "cutoff": "No artificial percentage floor."
+  },
+  "transponder": {
+    "mount": "Directly atop Relay, mutually exclusive with six-card Bank.",
+    "slots": 3,
+    "required": "Tuned left plus at least one tuned right.",
+    "simplex": "Left to both selected right channels.",
+    "duplex": "Left to rights; either right to left.",
+    "same_channel_both_sides": true,
+    "am_fm_conversion": true,
+    "right_to_right_internal_port": false,
+    "mode_switch": "Empty-hand front center display; card boundary excluded.",
+    "persistent": "Ordered card policy and mode update unloaded Relay records and survive pending entity restoration."
+  },
+  "routing": {
+    "nodes": "Directed channel input/output ports over immutable tower snapshots.",
+    "dominance": "Same port; no greater total visits, no greater decay, no worse noise.",
+    "amplifier_detours": "Retain higher-total routes when lower decay makes them useful.",
+    "route_cache_key": "Entry port, previous total, previous decay, pruning mode; scoped by network revision and native dimensional mode.",
+    "route_cache_limits": {
+      "entries": 128,
+      "numeric_elements": 32768
+    },
+    "link_cache_limits": {
+      "rows": 512,
+      "edges": 65536
+    },
+    "live_inputs": "Packet ingress noise and receiver position/reception are not cached.",
+    "source_copies": "Materialize selected ordinary delivery only; independent copies for custom callbacks.",
+    "fingerprint_packet_path": false,
+    "configuration_fallback_ticks": 100
+  },
+  "regressions": {
+    "ordinary_randomized_graphs": 2000,
+    "amplified_randomized_graphs": 1000,
+    "changed_ingress_packets_each": 2,
+    "native_end_beyond_500_blocks": true,
+    "native_focus_return": true,
+    "native_speaker_origin_gate": true,
+    "native_hub_required": true,
+    "native_am_fm_simplex_duplex_conversion": true,
+    "amplifier_budget_and_audio": true,
+    "all_facing_card_and_socket_controls": true,
+    "unloaded_relay_module_edits_and_restore": true,
+    "native_recipe_ingredients": true,
+    "real_copper_wire_count_and_channel_bridge": true,
+    "fresh_gametest_world": true,
+    "fixture_note": "Native speaker fixture removes itself from both its container and global map, avoiding stale validation of a reused router ID."
+  },
+  "appearance": {
+    "native_render_capture": "Relay-Expansion-0.4.0.png",
+    "temporary_qa_absent_from_release": true,
+    "existing_bank_assets_and_renderer_unchanged": true,
+    "texture_bitmaps_unchanged": true,
+    "attachment_item_and_transponder_models": "Code-native meshes using existing 16px palette and native Minecraft textures."
+  },
+  "persistence": {
+    "store": "simpleradio_repeaters_relays_v3",
+    "schema": 3,
+    "new_optional_fields": [
+      "Attachment",
+      "Transponder"
+    ],
+    "migration_layer": false
+  },
+  "limits": [
+    "Synthetic encoded packets, not actual multiplayer microphone playback.",
+    "Native rendering checked in standalone Minecraft QA screen, not a joined 0.4 multiplayer session.",
+    "Historical 0.3.2 catalog lifecycle and 0.3.1 graph benchmark retained under their original versions; neither is a new 0.4 measurement.",
+    "Four native headless GameTest failures remain; cause unresolved."
+  ]
+}

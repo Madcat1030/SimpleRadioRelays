@@ -13,12 +13,15 @@ public abstract class RadioSourceMixin implements RelaySourceState {
     @Unique private RelayFrame repeaters$frame;
     @Unique private double repeaters$inheritedSeverity;
     @Unique private int repeaters$relayCount;
+    @Unique private int repeaters$decayCount = -1;
     @Override public RelayFrame repeaters$getFrame() { return repeaters$frame; }
     @Override public void repeaters$setFrame(RelayFrame value) { repeaters$frame = value; }
     @Override public double repeaters$getInheritedSeverity() { return repeaters$inheritedSeverity; }
     @Override public void repeaters$setInheritedSeverity(double value) { repeaters$inheritedSeverity = value; }
     @Override public int repeaters$getRelayCount() { return repeaters$relayCount; }
     @Override public void repeaters$setRelayCount(int value) { repeaters$relayCount = Math.max(0, value); }
+    @Override public int repeaters$getDecayCount() { return repeaters$decayCount < 0 ? repeaters$relayCount : repeaters$decayCount; }
+    @Override public void repeaters$setDecayCount(int value) { repeaters$decayCount = Math.max(0, value); }
 
     @Inject(method = "copy()Lcom/codinglitch/simpleradio/radio/RadioSource;", at = @At("RETURN"))
     private void repeaters$copy(CallbackInfoReturnable<RadioSource> cir) {
@@ -27,6 +30,7 @@ public abstract class RadioSourceMixin implements RelaySourceState {
         copy.repeaters$setFrame(repeaters$frame);
         copy.repeaters$setInheritedSeverity(repeaters$inheritedSeverity);
         copy.repeaters$setRelayCount(repeaters$relayCount);
+        copy.repeaters$setDecayCount(repeaters$getDecayCount());
         if (repeaters$frame.managed) cir.getReturnValue().activity = ((RadioSource) (Object) this).activity;
     }
 

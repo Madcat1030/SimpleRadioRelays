@@ -16,8 +16,9 @@ import java.util.*;
 
 public final class TowerManager {
     private static final Map<MinecraftServer, TowerManager> MANAGERS = new IdentityHashMap<>();
-    public record Scope(String dimension, ChannelKey channel) {}
-    public record Network(List<TowerRecord> towers, List<List<RelayGraph.Edge>> edges, RelayGraph graph) {}
+    public record Scope(String dimension, ChannelKey channel, boolean nativeCrossDimensional) {}
+    public record Network(List<TowerRecord> towers, List<List<RelayGraph.Edge>> edges, RelayGraph graph,
+                          List<RelayPort> ports, boolean nativeCrossDimensional) {}
     private record ChunkKey(String dimension, long position) {}
     private final MinecraftServer server;
     private final TowerSavedData data;
@@ -126,7 +127,7 @@ public final class TowerManager {
                 }
                 CardBankRef controller = record.cardBank();
                 if (controller != null && new ChunkPos(controller.position()).toLong() == key.position()) {
-                    if (!chunk.getBlockState(controller.position()).is(SimpleRadioRepeaters.CHANNEL_BANK)) {
+                    if (!(chunk.getBlockState(controller.position()).getBlock() instanceof ChannelBankBlock)) {
                         clearController(record);
                         continue;
                     }
@@ -161,7 +162,7 @@ public final class TowerManager {
         for (UUID id : Set.copyOf(towersByChunk.getOrDefault(key, Set.of()))) {
             TowerRecord record = data.towers.get(id); CardBankRef controller = record == null ? null : record.cardBank();
             if (controller != null && controller.position().equals(bank.getBlockPos()) && controller.id().equals(bank.bankId())) {
-                put(record.settings(channels, record.enabled(), record.catalystItem(), controller));
+                put(record.settings(channels, record.enabled(), record.catalystItem(), controller, record.attachment(), bank.transponderChannels()));
                 RelayBlockEntity relay = loaded.get(id); if (relay != null && !relay.isRemoved()) relay.bankChanged();
             }
         }
@@ -188,11 +189,13 @@ public final class TowerManager {
         // A placement notification can precede the copy's first tick and UUID reassignment.
         if (saved != null && saved.position().equals(relay.getBlockPos())
                 && saved.dimension().equals(relay.getLevel().dimension().location().toString()))
-            put(saved.settings(relay.channels(), relay.enabled(), relay.catalystItem(), relay.cardBank()));
+            put(saved.settings(relay.channels(), relay.enabled(), relay.catalystItem(), relay.cardBank(),
+                    relay.attachmentType(), relay.transponderChannels()));
     }
     public void publish(RelayBlockEntity relay, AntennaScanner.Result antenna) {
         updateSnapshot(new TowerRecord(relay.relayId(), relay.getLevel().dimension().location().toString(), relay.getBlockPos(), relay.channels(),
-                relay.enabled(), relay.catalystItem(), true, antenna.score(), antenna.footprint(), relay.cardBank()));
+                relay.enabled(), relay.catalystItem(), true, antenna.score(), antenna.footprint(), relay.cardBank(),
+                relay.attachmentType(), relay.transponderChannels()));
     }
     /** Accept a verified snapshot from a stationary tower adapter, on the server thread. */
     public void updateSnapshot(TowerRecord record) {
@@ -206,33 +209,69 @@ public final class TowerManager {
     public boolean isEligible(UUID id) { TowerRecord node = data.towers.get(id); return node != null && node.eligible(); }
     public TowerRecord snapshot(UUID id) { return data.towers.get(id); }
     public Network network(ServerLevel level, ChannelKey channel) {
-        Scope scope = new Scope(level.dimension().location().toString(), channel);
-        return networks.computeIfAbsent(scope, key -> {
-            List<TowerRecord> nodes = data.towers.values().stream().filter(n -> n.eligible() && n.dimension().equals(key.dimension())
-                    && n.channels().contains(channel) && (RepeatersConfig.INSTANCE.persistentUnloadedTowers || loaded.containsKey(n.id())))
-                    .sorted(Comparator.comparing(n -> n.id().toString())).toList();
-            double[][] distances = new double[nodes.size()][nodes.size()];
-            float[] nominal = new float[nodes.size()]; double[] efficiency = new double[nodes.size()];
-            for (int from = 0; from < nodes.size(); from++) {
-                nominal[from] = NativeRadioAdapter.towerPower(nodes.get(from), channel); efficiency[from] = nodes.get(from).efficiency();
-                for (int to = 0; to < nodes.size(); to++)
-                    distances[from][to] = nodes.get(from).position().getCenter().distanceTo(nodes.get(to).position().getCenter()) * level.dimensionType().coordinateScale();
+        // One cheap policy flag makes mode changes immediate; full fingerprints stay off the packet path.
+        Scope scope = new Scope(level.dimension().location().toString(), channel,
+                com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional);
+        return networks.computeIfAbsent(scope, key -> buildNetwork(level, key));
+    }
+    private Network buildNetwork(ServerLevel sourceLevel, Scope scope) {
+        List<RelayPort> all = new ArrayList<>(); Map<ChannelKey, List<RelayPort>> listeners = new HashMap<>();
+        for (TowerRecord tower : data.towers.values().stream().filter(n -> n.eligible()
+                && (RepeatersConfig.INSTANCE.persistentUnloadedTowers || loaded.containsKey(n.id())))
+                .sorted(Comparator.comparing(n -> n.id().toString())).toList()) {
+            List<RadioSpace.Site> sites = RadioSpace.sites(server, tower, scope.nativeCrossDimensional());
+            if (sites.isEmpty()) continue;
+            for (var conversion : tower.ports()) {
+                RelayPort port = new RelayPort(tower, conversion.input(), conversion.output(), sites); all.add(port);
+                listeners.computeIfAbsent(port.input(), ignored -> new ArrayList<>()).add(port);
             }
-            RelayGraph.Links links = (from, count) -> {
-                List<RelayGraph.Edge> row = new ArrayList<>();
-                float power = RelayPower.departure(nominal[from], efficiency[from], count);
-                if (power > 0) for (int to = 0; to < nodes.size(); to++) if (to != from) {
-                    RadioLinkMath.Result link = NativeRadioAdapter.receiveAtTower(distances[from][to], power, power,
-                            SimpleRadioFrequencing.TRANSMITTER, nodes.get(to), channel);
-                    if (link != null) row.add(new RelayGraph.Edge(to, link.severity()));
+        }
+        // Channel/dimension closure is topology work, once per snapshot. Actual RF reach still depends on decay.
+        Set<RelayPort> included = new LinkedHashSet<>(); ArrayDeque<RelayPort> pending = new ArrayDeque<>();
+        for (RelayPort port : all) if (port.input().equals(scope.channel()) && (scope.nativeCrossDimensional()
+                || port.sites().stream().anyMatch(site -> site.level() == sourceLevel))) { included.add(port); pending.add(port); }
+        while (!pending.isEmpty()) {
+            RelayPort from = pending.remove();
+            for (RelayPort to : listeners.getOrDefault(from.output(), List.of()))
+                if (!from.tower().id().equals(to.tower().id()) && !included.contains(to)
+                        && !RadioSpace.between(from.sites(), to.sites(), scope.nativeCrossDimensional()).isEmpty()) {
+                    included.add(to); pending.add(to);
                 }
-                return List.copyOf(row);
-            };
-            RelayGraph graph = new RelayGraph(nodes.size(), links, RepeatersConfig.INSTANCE.maxRelayHops);
-            List<List<RelayGraph.Edge>> edges = new ArrayList<>();
-            for (int from = 0; from < nodes.size(); from++) edges.add(graph.outgoing(from, 1));
-            return new Network(nodes, List.copyOf(edges), graph);
-        });
+        }
+        List<RelayPort> ports = List.copyOf(included); List<TowerRecord> nodes = ports.stream().map(RelayPort::tower).toList();
+        List<Map<Integer, List<RadioSpace.Leg>>> geometry = new ArrayList<>();
+        float[] nominal = new float[ports.size()]; double[] efficiency = new double[ports.size()];
+        for (int from = 0; from < ports.size(); from++) {
+            RelayPort sender = ports.get(from); nominal[from] = NativeRadioAdapter.towerPower(sender.tower(), sender.output());
+            efficiency[from] = sender.tower().efficiency(); Map<Integer, List<RadioSpace.Leg>> row = new LinkedHashMap<>();
+            for (int to = 0; to < ports.size(); to++) {
+                RelayPort receiver = ports.get(to);
+                if (sender.tower().id().equals(receiver.tower().id()) || !sender.output().equals(receiver.input())) continue;
+                var legs = RadioSpace.between(sender.sites(), receiver.sites(), scope.nativeCrossDimensional());
+                if (!legs.isEmpty()) row.put(to, legs);
+            }
+            geometry.add(Map.copyOf(row));
+        }
+        RelayGraph.Links links = (from, decay) -> {
+            List<RelayGraph.Edge> row = new ArrayList<>(); RelayPort sender = ports.get(from);
+            float power = RelayPower.departure(nominal[from], efficiency[from],
+                    sender.tower().attachment() == RelayAttachment.AMPLIFIER ? 1 : decay);
+            if (power > 0) for (var target : geometry.get(from).entrySet()) {
+                double best = Double.POSITIVE_INFINITY;
+                for (RadioSpace.Leg leg : target.getValue()) {
+                    var link = NativeRadioAdapter.receiveAtTower(leg.distance(), power, power,
+                            SimpleRadioFrequencing.TRANSMITTER, nodes.get(target.getKey()), sender.output(), leg.dimensional());
+                    if (link != null) best = Math.min(best, link.severity());
+                }
+                if (Double.isFinite(best)) row.add(new RelayGraph.Edge(target.getKey(), best));
+            }
+            return List.copyOf(row);
+        };
+        RelayGraph graph = new RelayGraph(ports.size(), links, RepeatersConfig.INSTANCE.maxRelayHops,
+                node -> nodes.get(node).attachment() == RelayAttachment.AMPLIFIER);
+        List<List<RelayGraph.Edge>> edges = new ArrayList<>();
+        for (int from = 0; from < ports.size(); from++) edges.add(graph.outgoing(from, 1));
+        return new Network(nodes, List.copyOf(edges), graph, ports, scope.nativeCrossDimensional());
     }
     public int peers(UUID id) {
         TowerRecord tower = data.towers.get(id); if (tower == null || !tower.eligible()) return 0;
@@ -261,7 +300,9 @@ public final class TowerManager {
         List<String> result = new ArrayList<>(); result.add(summary());
         data.towers.values().stream().sorted(Comparator.comparing(n -> n.id().toString())).forEach(n -> result.add(n.dimension() + " "
                 + n.position().toShortString() + " | " + (n.eligible() ? loaded.containsKey(n.id()) ? "loaded" : "saved" : "inactive")
-                + " | antenna " + n.antennaScore() + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%) | " + n.channels().stream().sorted().toList()));
+                + " | antenna " + n.antennaScore() + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%)"
+                + " | " + n.attachment() + " | " + (n.transponder() == null ? "bank" : n.transponder().duplex() ? "duplex" : "simplex")
+                + " | " + n.channels().stream().sorted().toList()));
         return result;
     }
     public Collection<TowerRecord> records() { return List.copyOf(data.towers.values()); }

@@ -1,4 +1,4 @@
-# Relay and Repeater Bank models — 0.3.1
+# Relay, Bank and Transponder models — 0.4.0
 
 Open `blockbench/Relay.bbmodel` and `blockbench/Repeater-Bank.bbmodel` as **Java Block/Item** projects. Each project embeds its textures, and every face has an explicit UV rectangle. All supplied block textures are 16×16. The master projects show the inserted components so you can edit them in place.
 
@@ -64,10 +64,33 @@ The inactive and active Relay models have identical geometry; only the front LED
 
 The runtime resource root is `src/main/resources/assets/simpleradio_repeaters/`. Models go under `models/block/`, textures under `textures/block/`, and facing variants under `blockstates/`. Item models reference the empty housing, so inserted cards and the catalyst appear only on placed blocks.
 
-`RepeatersClient` explicitly registers all seven partial models with Fabric's model loader. If you rename a partial JSON, update the matching resource ID in `RelayRenderer` or `ChannelBankRenderer` and its registration. The six physical slots and their serialized inventory size are defined in `ChannelBankBlockEntity`; changing the slot count also requires changing the renderer and cached card list.
+`RepeatersClient` explicitly registers the six Bank and three Transponder partial models with Fabric's model loader. If you rename a partial JSON, update the matching resource ID in `RelayRenderer` or `ChannelBankRenderer` and its registration. The six physical slots and their serialized inventory size are defined in `ChannelBankBlockEntity`; changing the slot count also requires changing the renderer and cached card list.
 
 The Bank must be directly above the Relay, with its pins aligned to the top sockets. Normal placement requires a Relay below and copies its facing. Side and bottom connections are not supported.
 
 ## Catalyst rendering in 0.3
 
 The Relay renders the actual installed block/item. Its Blockbench catalyst group remains a placement reference and is excluded from the base housing. The fixed `relay_catalyst.json` model and catalyst bitmap are removed. Block catalysts render inside X/Y=2–6, Z=−2–1 through the translation and scale in `RelayRenderer`; non-block catalysts use an item transform centered in that socket. Change these Java transforms if you move or resize the socket. Native gilded blackstone and amethyst textures follow the active resource pack.
+
+## 0.4 attachment socket and Transponder
+
+The existing Bank geometry is unchanged. Runtime `relay.json`/`relay_active.json` add the attachment socket left of the catalyst, and `transponder.json`/`transponder_connected.json` define the new three-slot module. The older Relay `.bbmodel` does not include the new socket. Import the current runtime JSON as a Java Block/Item model when editing these additions; use the current JSON as the authoritative geometry.
+
+`make_expansion_models.py` writes these new meshes and their recipes/tooltips from the existing 16px palette. It reads existing textures to choose palette pixels; it does not create or edit a bitmap. Rerunning it replaces the expansion models and named `attachment_*` Relay elements, so export hand changes directly when you want to retain them.
+
+| New part | X | Visible Y | Clickable Y |
+| --- | --- | --- | --- |
+| Relay attachment frame | 9–15 | 1–7 | 1–7 |
+| Attachment insert | Center 12 | Center 4 | Front frame only for removal |
+| Transponder left card | 10–15 | 6–9 | 6–10 |
+| Transponder upper-right card | 1–6 | 10–13 | 10–14 |
+| Transponder lower-right card | 1–6 | 2–5 | 2–6 |
+| Transponder mode display | Strictly between 6 and 10 | 6–10 | 6–10 |
+
+The screen's strict X edges leave X=10 available to the left card. `TransponderBlock.slotX`, `slotY` and `cardAt` own these hit regions. The Transponder reuses the Bank's orientation, selection shape and top-mounted plug connection.
+
+`RelayRenderer` places the actual attachment item at `(12/16, 4/16, -1/16)` with scale `.25` and FIXED item display context. Item meshes are under `models/item/nether_focus.json`, `end_focus.json` and `relay_amplifier.json`; their FIXED rotation is zero so the native item icon faces outward in the socket. Their case, cap, contacts and icon use Minecraft textures and honor resource packs.
+
+`TransponderRenderer.CARDS` registers `transponder_card_0` through `_2`. Labels are centered at `slotX + 2.5`, `slotY + 1.5` and fit a 3-by-.8-unit area at preferred scale `.0065`. The three-unit dark strip is part of each card model. Simplex draws a right arrow at Y=8; duplex draws right/left arrows at Y=8.8/7.2, all centered at X=8. Arrow fitting uses width 3.25, height 1.3 and preferred scale `.012`. Labels and arrows remain dynamic; exclude them from the base mesh.
+
+The shared card-container base now accepts a slot count in its protected constructor. Normal Banks remain six slots; Transponders use three, preserving ordered input/output roles and a separate duplex flag. Changing a model does not change those roles automatically.
