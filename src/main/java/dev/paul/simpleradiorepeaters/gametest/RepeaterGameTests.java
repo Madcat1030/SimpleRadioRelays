@@ -420,7 +420,8 @@ public class RepeaterGameTests implements FabricGameTest {
         for (int slot = 0; slot < 6; slot++) {
             var card = full.get(slot); var tag = bank.getItem(slot).getTag();
             check(card.present() && card.frequencyLabel().equals(tag.getString("frequency"))
-                            && card.modulationLabel().equals(tag.getString("modulation")),
+                            && card.modulationLabel().equals(tag.getString("modulation"))
+                            && card.label().equals(card.frequencyLabel() + " " + card.modulationLabel()),
                     "Each visible slot must retain its own stored tuning labels");
         }
         for (int frame = 0; frame < 120; frame++) check(bank.displayCards() == full, "Unchanged frames must reuse the same snapshot");
@@ -431,12 +432,13 @@ public class RepeaterGameTests implements FabricGameTest {
         check(!bank.displayCards().get(3).present() && full.get(3).present(), "Removing a card must hide only its current display");
         bank.insert(3, new ItemStack(SimpleRadioRepeaters.CARD), false);
         var blank = bank.displayCards().get(3);
-        check(blank.present() && blank.frequencyLabel().equals("BLANK") && blank.modulationLabel().equals("--"),
+        check(blank.present() && blank.frequencyLabel().equals("BLANK") && blank.modulationLabel().equals("--") && blank.label().equals("BLANK --"),
                 "An inserted untuned card must keep the existing blank labels");
         bank.getItem(0).getOrCreateTag().putString("frequency", "000.77");
         bank.getItem(0).getOrCreateTag().putString("modulation", "FM"); bank.setChanged();
         var retuned = bank.displayCards();
-        check(retuned != full && retuned.get(0).frequencyLabel().equals("000.77") && retuned.get(0).modulationLabel().equals("FM"),
+        check(retuned != full && retuned.get(0).frequencyLabel().equals("000.77") && retuned.get(0).modulationLabel().equals("FM")
+                        && retuned.get(0).label().equals("000.77 FM"),
                 "An in-place tuning edit with setChanged must refresh both labels");
         bank.getItem(2).getOrCreateTag().putString("modulation", "invalid"); bank.setChanged();
         check(bank.displayCards().get(2).frequencyLabel().equals("BLANK"), "Invalid tuning must retain the existing blank-card appearance");
@@ -456,6 +458,46 @@ public class RepeaterGameTests implements FabricGameTest {
         clientCopy.clearContent();
         check(clientCopy.displayCards().stream().noneMatch(ChannelBankBlockEntity.CardDisplay::present), "Clearing the Bank must hide every card");
         helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void card_hit_bands_accept_one_row_above_and_below_in_every_facing(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        var player = helper.makeMockPlayer(); player.getAbilities().instabuild = false;
+        int[] order = {5, 3, 1, 4, 2, 0};
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            level.setBlock(pos, SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
+            ChannelBankBlockEntity bank = (ChannelBankBlockEntity) level.getBlockEntity(pos);
+            for (double offset : new double[]{-.5, 1, 2.5}) {
+                bank.clearContent();
+                for (int slot : order) {
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                    ItemStack held = tunedCard(160 + slot), expected = held.copy();
+                    player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+                    var hit = bankFrontHit(pos, facing, x, (bottom + offset) / 16);
+                    SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                            net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                    check(held.isEmpty() && ItemStack.isSameItemSameTags(bank.getItem(slot), expected),
+                            "Clicks on, above or below a card must insert into that exact slot in every facing");
+                }
+                player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                CompoundTag before = bank.saveWithoutMetadata();
+                for (int slot : order) for (double outside : new double[]{-1.25, 3.25}) {
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                    SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                            net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, x, (bottom + outside) / 16));
+                    check(before.equals(bank.saveWithoutMetadata()), "Clicks beyond the expanded band must not eject a neighbouring row");
+                }
+                for (int slot : order) {
+                    double x = slot % 2 == 0 ? 12.0 / 16 : 4.0 / 16, bottom = 12 - (slot / 2) * 5;
+                    player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    SimpleRadioRepeaters.CHANNEL_BANK.use(bank.getBlockState(), level, pos, player,
+                            net.minecraft.world.InteractionHand.MAIN_HAND, bankFrontHit(pos, facing, x, (bottom + offset) / 16));
+                    check(bank.getItem(slot).isEmpty(), "Clicks on, above or below a card must remove that exact slot in every facing");
+                }
+            }
+        }
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); helper.succeed();
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)

@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.2.5
+# Simple Radio Repeaters 0.2.6
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A catalyst-powered Radio Relay connects to the antenna core, and a separate six-card Repeater Bank selects its channels. Both blocks are operated in the world, with live antenna/status/link text and visible card frequency labels.
 
-**0.2.5 retains existing 0.2.0 through 0.2.4 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
+**0.2.6 retains existing 0.2.0 through 0.2.5 towers and cards.** The 0.2.x hardware starts fresh from 0.1.x. Old combined 0.1.x banks, their inventories and saved network records are not migrated. Rebuild towers with the new Relay and Bank. Existing Frequency Card items keep their tuning. The Relay has no container or inventory screen; gilded blackstone is a directly inserted component.
 
 ## Install
 
-Put `simple-radio-repeaters-fabric-1.20.1-0.2.5.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
+Put `simple-radio-repeaters-fabric-1.20.1-0.2.6.jar` in the server and client `mods` folders, replacing the previous addon JAR. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -42,6 +42,8 @@ The Relay uses one adjacent Bank, preferably above it. A Bank belongs to one Rel
 
 Version 0.2.5 caches the Bank's parsed card labels between inventory updates. Unchanged frames reuse the same immutable display data, and text layout measures each label once per draw. Appearance and radio behavior are unchanged. This reduces repeated client work; no FPS improvement has been measured.
 
+Version 0.2.6 imports the redesigned Bank with two-unit-tall cards. Each card shows one centered frequency/modulation line in its upper half, on a dark strip. Labels fit the strip in both dimensions, remain cached between updates, and the slot hit regions accept one extra model unit above and below each card for both insertion and removal.
+
 ## Radio behavior
 
 A handheld must reach an entry Relay using its own transmitter. Every Relay departure uses that tower's full RF power, while audio retains the worst interference along the selected path. The final wireless leg can degrade it further. Hearing a strong tower broadcast does not guarantee that a distant handheld can reply.
@@ -57,7 +59,7 @@ Loaded Relays also recheck antennas on the native 200-tick world-time boundary, 
 - [Gameplay and implementation guide](docs/Simple-Radio-Repeaters-Documentation.md): setup, controls, RF behavior, persistence, configuration and code reference.
 - [Model editing guide](art/Model-Editing-Guide.md): Blockbench groups, exact coordinates, partial exports and Java text placement.
 - `art/blockbench/Relay.bbmodel` and `Repeater-Bank.bbmodel`: editable Java Block/Item projects with embedded 16×16 textures.
-- `art/Repeater-Bank-0.2.0-Native-Preview.png`: actual Minecraft model/font rendering, including empty and occupied states.
+- `art/Repeater-Bank-0.2.6-Native-Preview.png`: actual Minecraft model/font rendering, including empty and occupied states, all four facings, blank cards and long labels.
 
 The master models show inserted components in separate groups. Those components are excluded from the base runtime models and rendered only when present. `art/make_assets.py` reproduces the original supplied assets; do not rerun it over hand edits.
 
@@ -77,8 +79,8 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17.
 ./gradlew runBaseGameTest
 ```
 
-All 21 unit tests and 26 addon Minecraft tests passed. The 0.2.5 rendering regression verifies snapshot reuse across unchanged frames, all six slot labels, no-op notifications, blank and invalid tuning, in-place retuning, removal, extraction/restoration, clearing, and client chunk/update tags. The exact results and XML reports are under `validation/0.2.5/` and `validation/build-verification.json`. The opposite-side receiver/Relay bridge was reproduced on 0.2.3 before the fix; the corrected run verifies packet return while retaining the actual noisier path. Selection tests also cover the inclusive one-point boundary, rejection beyond it, iteration-order independence and prevention of chained near-ties. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The unchanged 0.2.0 artwork was reviewed in the native client in all four facing states. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
+All 21 unit tests and 27 addon Minecraft tests passed. The 0.2.6 interaction regression checks insertion and removal on each card and one model unit above/below it, in every facing, with negative checks in the gaps outside those bands. The 0.2.5 rendering regression verifies snapshot reuse across unchanged frames, all six slot labels, no-op notifications, blank and invalid tuning, in-place retuning, removal, extraction/restoration, clearing, and client chunk/update tags. The exact results and XML reports are under `validation/0.2.6/` and `validation/build-verification.json`. The opposite-side receiver/Relay bridge was reproduced on 0.2.3 before the fix; the corrected run verifies packet return while retaining the actual noisier path. Selection tests also cover the inclusive one-point boundary, rejection beyond it, iteration-order independence and prevention of chained near-ties. Tests cover routing, native antenna/wire restoration, split ownership, real card/catalyst interactions, no-op clicks, component identities, delayed entity data and stale Relay caches. The redesigned Bank was reviewed in the native client in all four facings, including its empty housing, filled slots, blank cards and a long frequency. The Relay artwork retains the 0.2.0 review. The 0.2.1 regressions exercise a real receiver/copper-wire/transmitter bridge, a weak-carrier return failure, packet return while the Relay is checking after reload, missed mast notifications and repeated build notifications. The 0.2.2 interaction checks insert into all six slots out of order in every facing, preserve occupied targets and creative-held cards, and reject side/back/top/bottom and empty-hand background clicks.
 
-Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.5 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
+Four native Simple Radio tests failed in the 0.2.1 addon-disabled baseline in this headless environment: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. The same four baseline failures occur in the 0.2.6 combined GameTest run, so that task exits nonzero; addon regressions are reported separately. Their underlying cause has not been established, and these are not confirmed live-server bugs. Multiplayer voice playback and shader/resource-pack combinations need in-game checks.
 
-The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.5. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.
+The 0.1.3 PDF under `docs/history/` is historical documentation. Use the current Markdown guide for 0.2.6. Licensed GPL-3.0-only; dependencies are distributed separately by their authors.

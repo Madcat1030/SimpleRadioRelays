@@ -12,6 +12,10 @@ import java.util.stream.IntStream;
 public final class ChannelBankRenderer implements BlockEntityRenderer<ChannelBankBlockEntity> {
     public static final ResourceLocation[] CARDS = IntStream.range(0, 6)
             .mapToObj(slot -> SimpleRadioRepeaters.id("block/bank_card_" + slot)).toArray(ResourceLocation[]::new);
+    // Model pixels: the four-pixel strip is centered in the upper half of each two-pixel card.
+    private static final double LABEL_WIDTH = 3.75, LABEL_HEIGHT = .8;
+    private static final float LABEL_SCALE = .0065f;
+    private static final int LABEL_COLOR = 0xffe0d8b8;
     private final Font font;
     public ChannelBankRenderer(BlockEntityRendererProvider.Context context) { font = context.getFont(); }
     @Override public void render(ChannelBankBlockEntity bank, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
@@ -20,9 +24,9 @@ public final class ChannelBankRenderer implements BlockEntityRenderer<ChannelBan
         for (int slot = 0; slot < 6; slot++) {
             var card = cards.get(slot); if (!card.present()) continue;
             DeviceRendering.part(CARDS[slot], bank.getBlockState(), pose, buffers, light, overlay);
-            double x = BankConnection.slotX(slot) + 3, y = BankConnection.slotY(slot);
-            DeviceRendering.text(font, card.frequencyLabel(), x, y + 2.75, 0, 5.5, .0065f, 0xff172522, pose, buffers);
-            DeviceRendering.text(font, card.modulationLabel(), x, y + 1.3, 0, 5.5, .0065f, 0xff172522, pose, buffers);
+            double x = BankConnection.slotX(slot) + 3, y = BankConnection.slotY(slot) + 1.5;
+            DeviceRendering.centeredText(font, card.label(), x, y, 0, LABEL_WIDTH, LABEL_HEIGHT, LABEL_SCALE,
+                    LABEL_COLOR, pose, buffers);
         }
         pose.popPose();
     }

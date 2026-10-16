@@ -37,10 +37,11 @@ public final class ChannelBankBlockEntity extends BlockEntity implements Contain
         }
         return displayCards;
     }
-    public record CardDisplay(boolean present, String frequencyLabel, String modulationLabel) {
+    public record CardDisplay(boolean present, String frequencyLabel, String modulationLabel, String label) {
         private static CardDisplay of(CardState card) {
             boolean tuned = card.channel() != null;
-            return new CardDisplay(card.present(), tuned ? card.frequency() : "BLANK", tuned ? card.modulation() : "--");
+            String frequency = tuned ? card.frequency() : "BLANK", modulation = tuned ? card.modulation() : "--";
+            return new CardDisplay(card.present(), frequency, modulation, frequency + " " + modulation);
         }
     }
     @Nullable public BlockPos primaryRelayPosition() {

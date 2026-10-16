@@ -1,0 +1,147 @@
+{
+  "input_sha256": "50e962335691e010f783add983ad4970a016deafccfa111a231300119e4ac93d",
+  "input_elements": 16,
+  "base_elements": 10,
+  "conditional_card_models": 6,
+  "label_width": 3.75,
+  "label_height": 0.8,
+  "label_color": "0xffe0d8b8",
+  "click_padding_model_units": 1,
+  "targeting": "Explicit per-slot rectangles, no nearest-match targeting",
+  "slots": [
+    {
+      "slot": 0,
+      "card_from": [
+        9,
+        12,
+        0
+      ],
+      "card_to": [
+        15,
+        14,
+        1
+      ],
+      "label_center": [
+        12,
+        13.5,
+        0
+      ],
+      "click_band_y": [
+        11,
+        15
+      ]
+    },
+    {
+      "slot": 1,
+      "card_from": [
+        1,
+        12,
+        0
+      ],
+      "card_to": [
+        7,
+        14,
+        1
+      ],
+      "label_center": [
+        4,
+        13.5,
+        0
+      ],
+      "click_band_y": [
+        11,
+        15
+      ]
+    },
+    {
+      "slot": 2,
+      "card_from": [
+        9,
+        7,
+        0
+      ],
+      "card_to": [
+        15,
+        9,
+        1
+      ],
+      "label_center": [
+        12,
+        8.5,
+        0
+      ],
+      "click_band_y": [
+        6,
+        10
+      ]
+    },
+    {
+      "slot": 3,
+      "card_from": [
+        1,
+        7,
+        0
+      ],
+      "card_to": [
+        7,
+        9,
+        1
+      ],
+      "label_center": [
+        4,
+        8.5,
+        0
+      ],
+      "click_band_y": [
+        6,
+        10
+      ]
+    },
+    {
+      "slot": 4,
+      "card_from": [
+        9,
+        2,
+        0
+      ],
+      "card_to": [
+        15,
+        4,
+        1
+      ],
+      "label_center": [
+        12,
+        3.5,
+        0
+      ],
+      "click_band_y": [
+        1,
+        5
+      ]
+    },
+    {
+      "slot": 5,
+      "card_from": [
+        1,
+        2,
+        0
+      ],
+      "card_to": [
+        7,
+        4,
+        1
+      ],
+      "label_center": [
+        4,
+        3.5,
+        0
+      ],
+      "click_band_y": [
+        1,
+        5
+      ]
+    }
+  ],
+  "texture_bitmaps": "Unchanged; strip samples an existing dark pixel",
+  "native_preview": "1280x900, four facings, empty/full, blank/long labels, inventory update cache checks"
+}

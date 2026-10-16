@@ -1,11 +1,10 @@
 {
-  "parent": "minecraft:block/block",
+  "credit": "Made with Blockbench",
   "textures": {
-    "front": "simpleradio_repeaters:block/card_bank_front",
-    "side": "simpleradio_repeaters:block/card_bank_side",
-    "top": "simpleradio_repeaters:block/card_bank_side",
-    "connector": "simpleradio_repeaters:block/connector",
-    "card": "simpleradio_repeaters:block/card_back",
+    "0": "simpleradio_repeaters:block/card_bank_front",
+    "1": "simpleradio_repeaters:block/card_bank_side",
+    "2": "simpleradio_repeaters:block/connector",
+    "3": "simpleradio_repeaters:block/card_back",
     "particle": "simpleradio_repeaters:block/card_bank_side"
   },
   "elements": [
@@ -13,7 +12,7 @@
       "name": "card_5",
       "from": [
         9,
-        1,
+        2,
         0
       ],
       "to": [
@@ -21,15 +20,33 @@
         4,
         1
       ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          8,
+          8,
+          8
+        ]
+      },
       "faces": {
         "north": {
           "uv": [
             5,
             6,
             11,
-            9
+            8
           ],
-          "texture": "#card"
+          "texture": "#3"
+        },
+        "east": {
+          "uv": [
+            10,
+            6,
+            11,
+            8
+          ],
+          "texture": "#3"
         },
         "south": {
           "uv": [
@@ -38,25 +55,16 @@
             11,
             9
           ],
-          "texture": "#card"
+          "texture": "#3"
         },
         "west": {
           "uv": [
             5,
             6,
             6,
-            9
+            8
           ],
-          "texture": "#card"
-        },
-        "east": {
-          "uv": [
-            10,
-            6,
-            11,
-            9
-          ],
-          "texture": "#card"
+          "texture": "#3"
         },
         "up": {
           "uv": [
@@ -65,7 +73,7 @@
             11,
             7
           ],
-          "texture": "#card"
+          "texture": "#3"
         },
         "down": {
           "uv": [
@@ -74,9 +82,35 @@
             11,
             9
           ],
-          "texture": "#card"
+          "texture": "#3"
+        }
+      }
+    },
+    {
+      "name": "card_5_label_strip",
+      "from": [
+        10,
+        3,
+        -0.004
+      ],
+      "to": [
+        14,
+        4,
+        -0.004
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            4,
+            5,
+            5,
+            6
+          ],
+          "texture": "#3"
         }
       }
     }
-  ]
+  ],
+  "ambientocclusion": false
 }

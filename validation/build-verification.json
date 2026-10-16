@@ -1,16 +1,16 @@
 {
-  "version": "0.2.5",
+  "version": "0.2.6",
   "minecraft": "1.20.1",
   "simple_radio": "1.20.1-4.5.7.9",
   "java_bytecode": 17,
   "build": "passed",
-  "jar_sha256": "92c2ebdc60a10196ac1bf9a5ae6566694c94913e0ad220a5663a20760f2d779d",
+  "jar_sha256": "0c261c2adf030651b81cfd364c86a2a41a11fbc2e04adcd23a188f2d42cdaf8f",
   "unit_tests": {
     "total": 21,
     "failures": 0
   },
   "addon_minecraft_tests": {
-    "total": 26,
+    "total": 27,
     "failures": 0
   },
   "quality_tolerance": 1.0,
@@ -36,11 +36,11 @@
   "game_test_server_exit": 4,
   "gradle_build_and_game_test_command_exit": 1,
   "baseline_failure_scope": "Headless environment; root causes unresolved; not confirmed live-server bugs",
-  "compatibility": "Existing 0.2.0 through 0.2.4 hardware, inventories and saved network retained",
-  "recipes_models_and_rendering": "Recipes, models, text placement and routing unchanged; cached card labels and per-draw font-width reuse added",
+  "compatibility": "Existing 0.2.0 through 0.2.5 hardware, inventories and saved network retained",
+  "recipes_models_and_rendering": "Imported Bank geometry; separate conditional two-unit cards and dark label strips; one centered line per card. Recipes and Relay artwork unchanged.",
   "voice_audio_playback": "Synthetic packet routing verified; decoded multiplayer audio not exercised",
   "build_exit": 0,
-  "current_change": "Lazy immutable card-display snapshot, invalidated independently of the Relay configuration snapshot",
+  "current_change": "Redesigned Bank and one-line cached labels, with one model unit of hit padding above and below each card for insertion/removal",
   "rendering_cache_regression": "card_display_cache_tracks_inventory_edits_and_client_update_tags",
   "rendering_cache_cases": [
     "six-slot labels",
@@ -54,7 +54,11 @@
     "initial chunk/update NBT",
     "subsequent update NBT"
   ],
-  "rendering_cache_storage": "Transient per-block-entity value data; not serialized or networked; allocated lazily by rendering",
-  "rendering_performance": "Repeated parsing/allocation removed; FPS gain and crowded-room performance not benchmarked",
-  "client_visual_review": "Models and placement unchanged from 0.2.0 native review; no new native-client visual run for 0.2.5"
+  "rendering_cache_storage": "Transient immutable card display data, including prejoined frequency/modulation; invalidated on actual inventory changes and incoming NBT",
+  "rendering_performance": "Six text lines instead of twelve per full Bank; no FPS benchmark",
+  "client_visual_review": "0.2.6 Minecraft model/font pipeline, all four facings, empty/full Banks, blank/long labels and live client update-tag cache changes; software OpenGL",
+  "native_client_preview_exit": 0,
+  "interaction_regression": "card_hit_bands_accept_one_row_above_and_below_in_every_facing",
+  "model_validation": "validation/0.2.6/model-verification.json",
+  "qa_mod": "Separate temporary client mod, removed after preview; not present in release JAR"
 }

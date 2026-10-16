@@ -1,0 +1,20 @@
+gradle.projectsEvaluated {
+    def project = gradle.rootProject
+    def qaRoot = new File(System.getenv('REPEATERS_QA_ROOT') ?: new File(project.projectDir, 'validation/0.2.6/qa').absolutePath)
+    def compileQa = project.tasks.register('compileBankModelQa', JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qaRoot, 'java')) { include '**/*.java' }
+        classpath = project.sourceSets.main.runtimeClasspath
+        destinationDirectory = new File(qaRoot, 'classes')
+        options.release = 17
+        options.encoding = 'UTF-8'
+    }
+    def qaJar = project.tasks.register('bankModelQaJar', Jar) {
+        dependsOn compileQa
+        archiveFileName = 'bank-model-qa.jar'
+        destinationDirectory = project.file('run/mods')
+        from new File(qaRoot, 'classes')
+        from new File(qaRoot, 'resources')
+    }
+    project.tasks.named('runClient') { dependsOn qaJar }
+}

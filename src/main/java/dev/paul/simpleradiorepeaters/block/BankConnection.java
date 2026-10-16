@@ -37,11 +37,12 @@ public final class BankConnection {
         };
     }
     public static double slotX(int slot) { return slot % 2 == 0 ? 9 : 1; }
-    public static double slotY(int slot) { return 11 - (slot / 2) * 5; }
+    public static double slotY(int slot) { return 12 - (slot / 2) * 5; }
+    /** The visible card is two units tall; its hit band includes one extra unit above and below. */
     public static int cardAt(Vec3 local) {
         double x = local.x * 16, y = local.y * 16;
         for (int slot = 0; slot < 6; slot++)
-            if (x >= slotX(slot) && x <= slotX(slot) + 6 && y >= slotY(slot) && y <= slotY(slot) + 4) return slot;
+            if (x >= slotX(slot) && x <= slotX(slot) + 6 && y >= slotY(slot) - 1 && y <= slotY(slot) + 3) return slot;
         return -1;
     }
 }
