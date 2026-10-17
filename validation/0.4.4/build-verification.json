@@ -1,0 +1,69 @@
+{
+  "version": "0.4.4",
+  "minecraft": "1.20.1",
+  "loader": "Fabric",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "build": "passed",
+  "unit_tests": {
+    "tests": 51,
+    "failures": 0,
+    "errors": 0
+  },
+  "rendering": {
+    "sample": "front neighbor sky/block light",
+    "catalyst_and_attachment": true,
+    "ordinary_environmental_lighting": true,
+    "geometry_and_item_selection_unchanged": true
+  },
+  "native_client_and_server": {
+    "passed": true,
+    "version": "0.4.4",
+    "prototype_sha256": "94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66",
+    "environment": "Production Fabric dedicated server with exact prototype JAR and -Xverify:all; native development client using production renderers",
+    "checks": [
+      "joined",
+      "blackstone-removed",
+      "initial-items-and-front-light",
+      "amethyst-installed-and-model-resolved",
+      "pass"
+    ],
+    "screenshot": "Relay-Sockets-0.4.4-In-World.png",
+    "scope": "Real chunk/update packets, front-cell vs housing light, socket removal and amethyst insertion, native item models; no voice playback."
+  },
+  "prototype": {
+    "passed": true,
+    "version": "0.4.4",
+    "bytes": 196162,
+    "sha256": "94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66",
+    "test_classes_removed": 13,
+    "test_only_methods_removed": 13,
+    "classes_checked": 72,
+    "retained_methods_byte_identical_including_debug": 625,
+    "constant_pools_fields_and_class_attributes_unchanged": true,
+    "resources_and_mixin_configuration_unchanged": true,
+    "metadata_change": "Removed fabric-gametest entrypoints only",
+    "added_renaming_or_obfuscation": false,
+    "required_fabric_intermediary_mapping_retained": true
+  },
+  "change_scope": {
+    "passed": true,
+    "base": "0.4.3-prototype",
+    "changed_entries": [
+      "dev/paul/simpleradiorepeaters/client/RelayRenderer.class",
+      "fabric.mod.json"
+    ],
+    "gameplay_and_assets_byte_identical": true
+  },
+  "historical_gametests": {
+    "version": "0.4.3",
+    "rerun_for_this_patch": false,
+    "addon_tests": 60,
+    "addon_failures": 0,
+    "native_tests": 7,
+    "native_failures": 4,
+    "status": "Recorded baseline retained; native failure causes unresolved, not established live-server bugs."
+  },
+  "limits": [
+    "No live microphone playback; this is a client rendering patch."
+  ]
+}

@@ -1,86 +1,40 @@
 {
-  "version": "0.4.3",
+  "version": "0.4.4",
   "minecraft": "1.20.1",
   "loader": "Fabric",
   "simple_radio": "1.20.1-4.5.7.9",
-  "standalone_build": "passed",
+  "build": "passed",
   "unit_tests": {
     "tests": 51,
-    "failures": 0
+    "failures": 0,
+    "errors": 0
   },
-  "addon_gametests": {
-    "tests": 60,
-    "failures": 0
+  "rendering": {
+    "sample": "front neighbor sky/block light",
+    "catalyst_and_attachment": true,
+    "ordinary_environmental_lighting": true,
+    "geometry_and_item_selection_unchanged": true
   },
-  "native_gametests": {
-    "tests": 7,
-    "failures": 4,
-    "names": [
-      "shortCircuit",
-      "garbageCollection",
-      "openSystem",
-      "closedSystem"
+  "native_client_and_server": {
+    "passed": true,
+    "version": "0.4.4",
+    "prototype_sha256": "94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66",
+    "environment": "Production Fabric dedicated server with exact prototype JAR and -Xverify:all; native development client using production renderers",
+    "checks": [
+      "joined",
+      "blackstone-removed",
+      "initial-items-and-front-light",
+      "amethyst-installed-and-model-resolved",
+      "pass"
     ],
-    "status": "Same recorded addon-disabled headless failures; cause unresolved, not established live-server bugs."
-  },
-  "feature_controls": {
-    "interdimensionalRelays": true,
-    "netherTweaks": true,
-    "active_only_when_native_cross_dimensional_is_off": true,
-    "independent": true,
-    "commands_saved_immediately": true,
-    "cache_scope_tracks_effective_flags": true
-  },
-  "interaction_and_compatibility": {
-    "distance_hooks": "MixinExtras ModifyExpressionValue",
-    "unused_dimensional_field_redirect_removed": true,
-    "socket_only_ejection": true,
-    "all_facings_checked": true,
-    "hopper_automation": false,
-    "unsided_container_api": true,
-    "quiet_removal_next_tick_regression": true,
-    "first_transmitter_delivery_order": "Still open; per-transmitter path selection is separate"
-  },
-  "bug_fixes": {
-    "transponder_pickaxe_and_stone_tool_tags": true,
-    "translated_outputs_use_nullable_lookup": true,
-    "listener_free_virtual_hops_preserved": true
-  },
-  "propagation": {
-    "nether_local_distance_scale": 4,
-    "nether_local_noise_floor_addition": 10,
-    "nether_focused_distance_scale": 2,
-    "nether_focused_noise_floor_addition": 0,
-    "nether_dimensional_modifier_multiplier": 2,
-    "nether_dimensional_coordinate_scale": "native, including Y",
-    "ordinary_native_endpoints": true,
-    "native_wire_and_receiver_internal_fanout_untouched": true
-  },
-  "foci": {
-    "nether_from_overworld": "mapped X/Z, roof Y=128, two-way pocket",
-    "nether_from_nether": "local propagation improvement only; no Overworld projection",
-    "end_from_overworld": "mapped X/Z, bottom Y=0",
-    "end_from_end": "mapped Overworld X/Z, own clamped Y",
-    "end_from_nether": "no projection",
-    "end_radius_cap": null,
-    "projected_to_projected_links": false,
-    "native_cross_dimensional_mode": "native rules exactly; projections, local Focus benefits and all Nether tweaks disabled"
-  },
-  "amplifier": {
-    "display_name": "Amplification Focus",
-    "antenna_multiplier": 1.5,
-    "affects_transmit_and_receive": true,
-    "native_radio_base_multiplied": false,
-    "saved_score_multiplied": false,
-    "decay_reset": 1,
-    "total_visit_limit_preserved": true,
-    "audio_repaired": false
+    "screenshot": "Relay-Sockets-0.4.4-In-World.png",
+    "scope": "Real chunk/update packets, front-cell vs housing light, socket removal and amethyst insertion, native item models; no voice playback."
   },
   "prototype": {
     "passed": true,
-    "version": "0.4.3",
-    "bytes": 196035,
-    "sha256": "a8b32802a4a01d552adc4490f69b2dec2aad62d072acc54d8a3f658ae10d136b",
+    "version": "0.4.4",
+    "bytes": 196162,
+    "sha256": "94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66",
     "test_classes_removed": 13,
     "test_only_methods_removed": 13,
     "classes_checked": 72,
@@ -91,22 +45,25 @@
     "added_renaming_or_obfuscation": false,
     "required_fabric_intermediary_mapping_retained": true
   },
-  "production_smoke": {
+  "change_scope": {
     "passed": true,
-    "exit_code": 0,
-    "environment": "Production Fabric server, development=false, JVM -Xverify:all",
-    "checks": [
-      "Exact prototype JAR loaded from mods folder",
-      "Relay/Bank verified a supported antenna and native catalyst",
-      "Transponder duplex pair, amplifier and End focus loaded and published",
-      "No missing methods/classes or mixin/verification errors",
-      "Clean shutdown"
+    "base": "0.4.3-prototype",
+    "changed_entries": [
+      "dev/paul/simpleradiorepeaters/client/RelayRenderer.class",
+      "fabric.mod.json"
     ],
-    "scope": "No client join or microphone playback; retained bytecode checked separately."
+    "gameplay_and_assets_byte_identical": true
+  },
+  "historical_gametests": {
+    "version": "0.4.3",
+    "rerun_for_this_patch": false,
+    "addon_tests": 60,
+    "addon_failures": 0,
+    "native_tests": 7,
+    "native_failures": 4,
+    "status": "Recorded baseline retained; native failure causes unresolved, not established live-server bugs."
   },
   "limits": [
-    "Synthetic encoded packets; no live multiplayer microphone playback.",
-    "No new client render capture; geometry unchanged, effective ANT label updated.",
-    "Four native headless test failures remain unresolved."
+    "No live microphone playback; this is a client rendering patch."
   ]
 }

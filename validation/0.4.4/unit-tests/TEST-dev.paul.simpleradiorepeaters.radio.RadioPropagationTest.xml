@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.RadioPropagationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-17T00:48:43.516Z" hostname="1f7c0d570614" time="0.002">
+  <properties/>
+  <testcase name="NetherCrossingsRetainMappingAndDoubleTheDimensionalPenalty()" classname="dev.paul.simpleradiorepeaters.radio.RadioPropagationTest" time="0.001"/>
+  <testcase name="AmplificationBoostsAntennaScoreWithoutRoundingOrCreatingAnAntenna()" classname="dev.paul.simpleradiorepeaters.radio.RadioPropagationTest" time="0.001"/>
+  <testcase name="ordinaryNetherRangeIsQuarteredAndAFocusHalvesIt()" classname="dev.paul.simpleradiorepeaters.radio.RadioPropagationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "base": "0.4.3-prototype",
+  "changed_entries": [
+    "dev/paul/simpleradiorepeaters/client/RelayRenderer.class",
+    "fabric.mod.json"
+  ],
+  "gameplay_and_assets_byte_identical": true
+}

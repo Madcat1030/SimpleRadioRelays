@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "repeaters_socket_visual_qa",
+  "version": "0.0.0",
+  "name": "Temporary Relay Socket Visual QA",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.paul.simpleradiorepeaters.qa.SocketVisualClient"]},
+  "depends": {"simpleradio_repeaters": "*"}
+}

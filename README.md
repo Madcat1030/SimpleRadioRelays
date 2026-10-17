@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.4.3
+# Simple Radio Repeaters 0.4.4
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A Radio Relay attaches to an antenna core and carries voice through a persistent tower network. Put a six-card Repeater Bank on top to repeat selected channels, or use a three-card Radio Transponder to translate between channels.
 
-Version 0.4.3 uses composable Nether distance hooks, restricts empty-hand component removal to the visible Relay sockets, and blocks hopper card transfers while retaining direct inventory integration.
+Version 0.4.4 corrects lighting for the Relay's catalyst and attachment. Both sample sky and block light immediately in front of the Relay, so its opaque housing no longer makes the inserts nearly black.
 
 ## Install and existing worlds
 
-Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.3-prototype.jar`. Requirements:
+Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.4-prototype.jar`. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -177,7 +177,7 @@ Configuration fingerprints run at startup, explicit refresh, successful data-pac
 
 Routes use directed channel ports. At a given port, an arrival can discard another only when it uses no more total visits, no more decay and no worse audio. This retains useful amplifier detours while stopping redundant cycles. Numeric cache keys include entry, previous total visits, previous decay and routing mode. Limits remain 128 route entries/32,768 elements and 512 link rows/65,536 edges. Eviction only causes recomputation; packet/player/block-entity objects are not cached.
 
-Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.3/` and `validation/build-verification.json`.
+Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.4/` and `validation/build-verification.json`.
 
 Version 0.4.3 passes **51 unit tests and 60 addon Minecraft tests**. Separated addon/native reports are included with the source. New checks cover native/relay Nether parity, local Focus return range, stricter Nether crossings, reverse End projection and the amplifier's receive/transmit bonus. Coverage includes native dimensional math, focus return paths without chunk loads, End reception beyond 500 blocks, physical hubs between pockets, amplifier resets and budget limits, mixed catalysts, directed AM/FM conversion, conversion loops, socket controls, persistence and real copper-wire bridges. Randomized checks compare ordinary routing on 2,000 graphs and amplified routing on another 1,000 graphs against exhaustive references, with changed ingress on a second packet. Native client captures verify the production renderers, card labels and arrows.
 
@@ -196,3 +196,7 @@ The Bank and Transponder implement `WorldlyContainer` with no exposed sided slot
 The one-point audio tolerance chooses among direct and repeated paths for one transmitter. It does not compare separate transmitters fed copies of the same source. The first accepted managed copy at a receiver can still suppress a better copy from a later transmitter. Resolving that requires collecting competing deliveries before playback; this remains an open routing issue, distinct from the existing path tie-breaker.
 
 The Nether Focus tooltip now explicitly says that an Overworld Relay projects its weak signal high into the Nether. Native expression hooks compile against MixinExtras 0.5.4, supplied at runtime by the required Fabric Loader; the addon bundles no duplicate dependency. Native/relay mode regressions exercise the new hooks, socket controls test every horizontal facing and ignore other faces/background, and actual hopper transfer helpers verify the sided restrictions while direct inventory edits remain usable.
+
+## Socket lighting validation in 0.4.4
+
+The standalone build passes 51 unit tests. A native client joins a production-mode dedicated server running the exact prototype JAR, checks both native catalysts and all three upgrades, verifies that the front cell is lit while the housing cell is dark, and replaces blackstone with amethyst through ordinary socket interactions. The in-world capture uses the production renderer and normal environmental light. Evidence is under `validation/0.4.4/`. The full addon/native GameTest run remains the recorded 0.4.3 baseline; it was not repeated for this client rendering patch. Live microphone playback was not part of the visual check.

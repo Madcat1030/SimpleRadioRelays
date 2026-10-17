@@ -94,3 +94,7 @@ The screen's strict X edges leave X=10 available to the left card. `TransponderB
 `TransponderRenderer.CARDS` registers `transponder_card_0` through `_2`. Labels are centered at `slotX + 2.5`, `slotY + 1.5` and fit a 3-by-.8-unit area at preferred scale `.0065`. The three-unit dark strip is part of each card model. Simplex draws a right arrow at Y=8; duplex draws right/left arrows at Y=8.8/7.2, all centered at X=8. Arrow fitting uses width 3.25, height 1.3 and preferred scale `.012`. Labels and arrows remain dynamic; exclude them from the base mesh.
 
 The shared card-container base now accepts a slot count in its protected constructor. Normal Banks remain six slots; Transponders use three, preserving ordered input/output roles and a separate duplex flag. Changing a model does not change those roles automatically.
+
+## Socket lighting in 0.4.4
+
+The catalyst and attachment use packed sky/block light from the block immediately in front of the Relay (`position.relative(FACING)`). Light inside the solid housing can be zero, even in daylight. Keep this front-cell sample if you edit the insert transforms. Physical inserts remain subject to normal environmental lighting; only display text is full bright.

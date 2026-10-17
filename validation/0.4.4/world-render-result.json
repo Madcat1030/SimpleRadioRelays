@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "version": "0.4.4",
+  "prototype_sha256": "94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66",
+  "environment": "Production Fabric dedicated server with exact prototype JAR and -Xverify:all; native development client using production renderers",
+  "checks": [
+    "joined",
+    "blackstone-removed",
+    "initial-items-and-front-light",
+    "amethyst-installed-and-model-resolved",
+    "pass"
+  ],
+  "screenshot": "Relay-Sockets-0.4.4-In-World.png",
+  "scope": "Real chunk/update packets, front-cell vs housing light, socket removal and amethyst insertion, native item models; no voice playback."
+}

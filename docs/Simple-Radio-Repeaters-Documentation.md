@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.4.3
+# Simple Radio Repeaters 0.4.4
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Amplification Focus. Controls and status remain visible in the world.
 
-Version 0.4.3 uses composable Nether distance hooks, restricts empty-hand component removal to the visible Relay sockets, and blocks hopper card transfers while retaining direct inventory integration.
+Version 0.4.4 corrects lighting for the Relay's catalyst and attachment. Both sample sky and block light immediately in front of the Relay, so its opaque housing no longer makes the inserts nearly black.
 
 The network store remains `data/simpleradio_repeaters_relays_v3.dat`, shared with 0.3. Existing records read naturally with no attachment or transponder policy; no migration/reset layer is added. Earlier stores are not imported. When upgrading from 0.2, load each existing tower's chunk once to register it. Banks and Transponders must be directly above their Relays.
 
@@ -350,6 +350,8 @@ The Bank rechecks attachment every ten ticks or after a relevant neighbor change
 
 ## Implementation: models and client rendering
 
+In 0.4.4, `RelayRenderer` samples packed sky/block light from `relay position + facing` for both installed components. The housing is a solid block, so light at its own position can be zero even in daylight. The front cell is where the visible inserts protrude. The renderer retains ordinary environmental brightness, all existing transforms and the actual installed catalyst block/item. Detached preview entities fall back to the light supplied by the render caller.
+
 All supplied block textures are 16×16, using the original placeholder palette. The imported main cubes retain the supplied whole-unit geometry and UVs. The dark strip is a flat overlay with a small depth offset to prevent flickering against the card face. The base Relay includes its housing, display bezel and recessed top sockets. The base Bank includes its rack, slot lips and connector pins. Inserted cards and the catalyst are absent from these base JSON models.
 
 `RepeatersClient` registers the Relay, Bank and Transponder renderers and nine conditional card models. `RelayRenderer` renders the installed native block into the original catalyst volume, X/Y=2–6 and Z=−2–1. Registered non-block items use the item renderer. Gilded blackstone and amethyst therefore use their actual native textures and honor resource packs. The obsolete fixed catalyst model/bitmap are removed. The renderer also draws the actual attachment item in the new left socket and writes the three live screen lines. `ChannelBankRenderer` draws occupied card models and one combined frequency/modulation label per card. The card geometry is based on the supplied Blockbench JSON, with its height restored to three units and its vertical UVs extended to match. The base export excludes all cards. Each conditional card model includes a four-unit dark strip centered in its middle row, using an existing dark texture pixel. Font fitting uses a 3.75-by-.8-unit area centered at X=12/4 and Y=12.5/7.5/2.5, keeping light text inside the strip even for long frequencies. `TransponderRenderer` uses the same cached display data for its three conditional models, fits labels into a 3-by-.8-unit area, and renders one arrow or opposite arrows on its central display. None of these renderers performs server routing or antenna lookups.
@@ -459,3 +461,7 @@ The Bank and Transponder implement `WorldlyContainer` with no exposed sided slot
 The one-point audio tolerance chooses among direct and repeated paths for one transmitter. It does not compare separate transmitters fed copies of the same source. The first accepted managed copy at a receiver can still suppress a better copy from a later transmitter. Resolving that requires collecting competing deliveries before playback; this remains an open routing issue, distinct from the existing path tie-breaker.
 
 The Nether Focus tooltip now explicitly says that an Overworld Relay projects its weak signal high into the Nether. Native expression hooks compile against MixinExtras 0.5.4, supplied at runtime by the required Fabric Loader; the addon bundles no duplicate dependency. Native/relay mode regressions exercise the new hooks, socket controls test every horizontal facing and ignore other faces/background, and actual hopper transfer helpers verify the sided restrictions while direct inventory edits remain usable.
+
+## Socket lighting validation in 0.4.4
+
+The standalone build passes 51 unit tests. A native client joins a production-mode dedicated server running the exact prototype JAR, checks both native catalysts and all three upgrades, verifies that the front cell is lit while the housing cell is dark, and replaces blackstone with amethyst through ordinary socket interactions. The in-world capture uses the production renderer and normal environmental light. Evidence is under `validation/0.4.4/`. The full addon/native GameTest run remains the recorded 0.4.3 baseline; it was not repeated for this client rendering patch. Live microphone playback was not part of the visual check.

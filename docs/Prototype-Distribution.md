@@ -1,25 +1,23 @@
-# Simple Radio Repeaters 0.4.3 prototype distribution
+# Simple Radio Repeaters 0.4.4 prototype distribution
 
-`simple-radio-repeaters-fabric-1.20.1-0.4.3-prototype.jar` is a separate runtime-only copy of 0.4.3 for Fabric Minecraft 1.20.1 and Simple Radio 1.20.1-4.5.7.9. Replace the existing addon JAR; do not install both copies together. The mod ID, version, network protocol, saved data, gameplay code, assets and recipes remain the same.
+`simple-radio-repeaters-fabric-1.20.1-0.4.4-prototype.jar` is the test-free distribution for Fabric Minecraft 1.20.1 and Simple Radio 1.20.1-4.5.7.9. Replace the previous addon JAR on both server and clients. Existing 0.4 worlds and configuration work directly.
 
-The prototype removes all 13 addon GameTest fixture classes, the `fabric-gametest` entrypoints and 13 unused helper methods. The methods are test convenience constructors/overloads, an unused snapshot-list accessor and the two private lambda bodies used only by removed test constructors. Packaging rejects a helper removal if retained code still calls it. Minecraft overrides, serialization, mixin hooks, record/enum machinery and ordinary diagnostics remain available.
+The prototype removes 13 addon GameTest fixture classes, the `fabric-gametest` entrypoints and 13 audited test-only helper methods. Packaging rejects a removal if retained code still calls it. Minecraft overrides, serialization, hooks, record/enum machinery and normal diagnostics remain.
 
-No obfuscator or general-purpose optimizer is used. Addon class/method names, source-file names, line numbers and other debug data remain intact. Minecraft references still use the required Fabric intermediary names so the JAR works in a normal installation.
+No obfuscator or general optimizer is used. Addon names, source filenames, line numbers and debugging information remain intact. Minecraft references keep Fabric's required intermediary mappings.
 
-The JAR is 196,035 bytes. Independent comparison confirms that all 625 retained methods in 72 classes are byte-identical to the full 0.4.3 build, including debugging data. Runtime resources and mixin configuration are unchanged; only addon fixtures, test entrypoints and audited helper methods are removed.
+The JAR is 196,162 bytes. All 625 retained methods in 72 classes are byte-identical to the full 0.4.4 build, including debug data. Resources and mixin configuration match the full build. Compared with the 0.4.3 prototype, only the Relay renderer and version metadata change.
 
-A production-mode dedicated server loaded the exact prototype JAR with JVM verification enabled. It verified a real antenna/catalyst Bank, a duplex Transponder, an amplifier and an End focus, then shut down cleanly. There were no missing-method, missing-class, verifier or mixin application failures. This check did not include a client join or microphone playback. The full 0.4.3 build passes 51 unit tests and 60 addon Minecraft GameTests; four previously recorded native headless test failures remain unresolved. The prototype preserves the full build's retained gameplay methods exactly.
+The build and 51 unit tests pass. A native client joined a production dedicated server running this exact JAR with `-Xverify:all`, checked socket lighting and ordinary blackstone-to-amethyst replacement, captured the in-world renderer, and shut down cleanly. Live microphone playback was not tested. The full GameTest baseline remains under `validation/0.4.3/` (60 addon passes and four unresolved native failures); current rendering and packaging evidence is under `validation/0.4.4/`.
 
 ## Rebuild
 
-Use the supplied source bundle and JDK 21:
+Use JDK 21 for the build tools; release classes target Java 17.
 
 ```sh
-./gradlew prototypeJar
+./gradlew build prototypeJar
 ```
 
-The output is under `build/libs/` with the `-prototype.jar` suffix. `build/prototype/packaging-report.json` records excluded classes and methods and the output checksum. The tool uses ASM shipped with the pinned Gradle distribution; no extra runtime dependency is added to the mod.
+Output is under `build/libs/`. `build/prototype/packaging-report.json` records removals and checksums. `tools/PrototypeJar.java` performs the conservative filter using ASM supplied with Gradle; no extra runtime dependency is added. Regular development builds and the source bundle retain tests.
 
-`tools/PrototypeJar.java` performs the conservative filter; `tools/prototype.gradle` registers its separate task. Regular development builds retain their tests. The source bundle intentionally includes those tests for further development. Prototype verification and the production-server check are under `validation/0.4.3/`.
-
-SHA-256: `a8b32802a4a01d552adc4490f69b2dec2aad62d072acc54d8a3f658ae10d136b`.
+SHA-256: `94fcd26aa0f2e9f42575149d7a296acd2328d808a1f68949bd45c2d2e124df66`.
