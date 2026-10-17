@@ -17,6 +17,9 @@ dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
     modImplementation 'net.fabricmc:fabric-loader:0.19.3'
+    // Provided at runtime by Fabric Loader; compile the composable expression hooks against its API.
+    compileOnly 'io.github.llamalad7:mixinextras-fabric:0.5.4'
+    annotationProcessor 'io.github.llamalad7:mixinextras-fabric:0.5.4'
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.5+1.20.1'
     modImplementation 'maven.modrinth:simple-radio:f9TIjf7X'
     modImplementation 'maven.modrinth:lexiconfig:NfIErT11'

@@ -793,8 +793,9 @@ public class RepeaterGameTests implements FabricGameTest {
         SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
         check(!relay.enabled() && relay.hasCatalyst(), "Sneaking must toggle power without ejecting the catalyst");
         player.setShiftKeyDown(false);
-        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit);
-        check(!relay.hasCatalyst() && player.getInventory().contains(new ItemStack(Items.GILDED_BLACKSTONE)), "An empty-hand click must return the catalyst");
+        var socket = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(pos.getX()+.25,pos.getY()+.25,pos.getZ()),Direction.NORTH,pos,false);
+        SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, socket);
+        check(!relay.hasCatalyst() && player.getInventory().contains(new ItemStack(Items.GILDED_BLACKSTONE)), "An empty-hand catalyst-socket click must return the catalyst");
         check(!relay.saveWithoutMetadata().contains("Items") && !((Object) relay instanceof net.minecraft.world.Container),
                 "Catalyst interaction must not require a Relay inventory"); helper.succeed();
     }

@@ -58,12 +58,14 @@ public final class RelayBlock extends BaseEntityBlock {
             relay.setEnabled(!relay.enabled()); return InteractionResult.CONSUME;
         }
         var local = BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation());
-        if (hit.getDirection() == state.getValue(FACING) && local.x * 16 >= 9 && local.x * 16 <= 15
-                && local.y * 16 >= 1 && local.y * 16 <= 7) {
+        if (hit.getDirection() != state.getValue(FACING) || local.y * 16 < 1 || local.y * 16 > 7) return InteractionResult.PASS;
+        double x = local.x * 16;
+        if (x >= 9 && x <= 15) {
             if (relay.attachment().isEmpty()) return InteractionResult.PASS;
             if (level.isClientSide) return InteractionResult.SUCCESS;
             ChannelBankBlockEntity.give(player, relay.removeAttachment()); return InteractionResult.CONSUME;
         }
+        if (x < 1 || x > 7) return InteractionResult.PASS;
         if (relay.catalyst().isEmpty()) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
         ItemStack removed = relay.removeCatalyst();

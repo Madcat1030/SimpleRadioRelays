@@ -1,6 +1,6 @@
 package dev.paul.simpleradiorepeaters.mixin;
 
-import com.codinglitch.simpleradio.SimpleRadioServerConfig;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.codinglitch.simpleradio.central.*;
 import com.codinglitch.simpleradio.radio.RadioSource;
 import com.codinglitch.simpleradio.radio.RadioTransmitter;
@@ -14,17 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Native endpoints share the relay propagation policy; wires retain their native calculations. */
 @Mixin(value = RadioSource.class, remap = false)
 public abstract class NativeTravelMixin {
-    @Redirect(method = "travel", at = @At(value = "INVOKE", target =
+    @ModifyExpressionValue(method = "travel", at = @At(value = "INVOKE", target =
             "Lcom/codinglitch/simpleradio/central/WorldlyPosition;distance(Lcom/codinglitch/simpleradio/central/WorldlyPosition;)F"))
-    private float repeaters$distance(WorldlyPosition from, WorldlyPosition to, Router sender, Router receiver, Medium medium) {
-        return (float) (from.distance(to) * (medium instanceof Frequency && sender instanceof RadioTransmitter
-                ? RadioSpace.nativePropagation(from, to).distanceMultiplier() : 1));
-    }
-    @Redirect(method = "travel", at = @At(value = "FIELD", target =
-            "Lcom/codinglitch/simpleradio/SimpleRadioServerConfig$Frequency;dimensionalInterference:Ljava/lang/Double;"))
-    private Double repeaters$dimensionalInterference(SimpleRadioServerConfig.Frequency config, Router from, Router to, Medium medium) {
-        return config.dimensionalInterference * (from instanceof RadioTransmitter
-                ? RadioSpace.nativePropagation(from.getLocation(), to.getLocation()).dimensionalMultiplier() : 1);
+    private float repeaters$distance(float original, Router sender, Router receiver, Medium medium) {
+        return (float) (original * (medium instanceof Frequency && sender instanceof RadioTransmitter
+                ? RadioSpace.nativePropagation(sender.getLocation(), receiver.getLocation()).distanceMultiplier() : 1));
     }
     @Inject(method = "travel", at = @At("RETURN"))
     private void repeaters$noiseFloor(Router from, Router to, Medium medium, CallbackInfo ci) {

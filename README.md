@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.4.2
+# Simple Radio Repeaters 0.4.3
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A Radio Relay attaches to an antenna core and carries voice through a persistent tower network. Put a six-card Repeater Bank on top to repeat selected channels, or use a three-card Radio Transponder to translate between channels.
 
-Version 0.4.2 makes dimension bridges and Nether propagation independently optional. Native dimensional radio takes priority automatically. It also fixes Transponder harvesting and avoids creating empty translated frequencies.
+Version 0.4.3 uses composable Nether distance hooks, restricts empty-hand component removal to the visible Relay sockets, and blocks hopper card transfers while retaining direct inventory integration.
 
 ## Install and existing worlds
 
-Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.2-prototype.jar`. Requirements:
+Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.3-prototype.jar`. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -142,10 +142,10 @@ Audio retains the worst interference on the selected route. An amplifier restore
 - Empty hand on a Transponder's center display: toggle simplex/duplex.
 - Registered catalyst on the Relay: install one if its socket is empty.
 - Focus or amplifier on the Relay: install one if its attachment socket is empty.
-- Empty hand on the attachment socket: return its attachment. Other empty-hand Relay clicks return the catalyst.
+- Empty hand on the front attachment socket: return its attachment. Empty hand on the front catalyst socket: return the catalyst. Both hit regions include one model unit around the visible insert; empty sockets, background and other faces do nothing.
 - Sneak + empty hand on the Relay: toggle power without removing components.
 
-Cards have three-unit height and one unit of click padding above only. A Bank fills top left to bottom right, row by row; a Transponder fills left, upper right, lower right. One module belongs only to the Relay directly below it. Breaking a module drops its cards; breaking a Relay drops both installed components. Hoppers retain card automation.
+Cards have three-unit height and one unit of click padding above only. A Bank fills top left to bottom right, row by row; a Transponder fills left, upper right, lower right. One module belongs only to the Relay directly below it. Breaking a module drops its cards; breaking a Relay drops both installed components. Hoppers and other automation that obeys sided inventory access cannot insert or extract cards. Direct unsided Container access remains available to mod integrations for both Banks and Transponders.
 
 Wrong items, empty-slot clicks and equivalent writes do not restart antenna verification. Wired-core reloads keep verified antenna data while native wires restore. Missing/replaced components are reconciled on chunk load. Copied Relays cannot retain distant controller bindings or alter the original's settings.
 
@@ -177,13 +177,22 @@ Configuration fingerprints run at startup, explicit refresh, successful data-pac
 
 Routes use directed channel ports. At a given port, an arrival can discard another only when it uses no more total visits, no more decay and no worse audio. This retains useful amplifier detours while stopping redundant cycles. Numeric cache keys include entry, previous total visits, previous decay and routing mode. Limits remain 128 route entries/32,768 elements and 512 link rows/65,536 edges. Eviction only causes recomputation; packet/player/block-entity objects are not cached.
 
-Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.2/` and `validation/build-verification.json`.
+Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.3/` and `validation/build-verification.json`.
 
-Version 0.4.2 passes **51 unit tests and 58 addon Minecraft tests**. Separated addon/native reports are included with the source. New checks cover native/relay Nether parity, local Focus return range, stricter Nether crossings, reverse End projection and the amplifier's receive/transmit bonus. Coverage includes native dimensional math, focus return paths without chunk loads, End reception beyond 500 blocks, physical hubs between pockets, amplifier resets and budget limits, mixed catalysts, directed AM/FM conversion, conversion loops, socket controls, persistence and real copper-wire bridges. Randomized checks compare ordinary routing on 2,000 graphs and amplified routing on another 1,000 graphs against exhaustive references, with changed ingress on a second packet. Native client captures verify the production renderers, card labels and arrows.
+Version 0.4.3 passes **51 unit tests and 60 addon Minecraft tests**. Separated addon/native reports are included with the source. New checks cover native/relay Nether parity, local Focus return range, stricter Nether crossings, reverse End projection and the amplifier's receive/transmit bonus. Coverage includes native dimensional math, focus return paths without chunk loads, End reception beyond 500 blocks, physical hubs between pockets, amplifier resets and budget limits, mixed catalysts, directed AM/FM conversion, conversion loops, socket controls, persistence and real copper-wire bridges. Randomized checks compare ordinary routing on 2,000 graphs and amplified routing on another 1,000 graphs against exhaustive references, with changed ingress on a second packet. Native client captures verify the production renderers, card labels and arrows.
 
-The combined 0.4.2 run also contains seven native Simple Radio tests. Four match the failures in an earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. The standalone build succeeds. Tests use synthetic encoded bytes; actual multiplayer microphone playback was not exercised. The 0.3.2 dedicated-server/client catalog lifecycle evidence is retained as historical validation, rather than claimed as a new 0.4 session.
+The combined 0.4.3 run also contains seven native Simple Radio tests. Four match the failures in an earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. The standalone build succeeds. Tests use synthetic encoded bytes; actual multiplayer microphone playback was not exercised. The 0.3.2 dedicated-server/client catalog lifecycle evidence is retained as historical validation, rather than claimed as a new 0.4 session.
 
 See the [implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) and [model editing guide](art/Model-Editing-Guide.md). Existing Bank assets are unchanged. New meshes use the same 16px palette and native Minecraft component textures.
 
 Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.
 Transponders now mine and drop normally with a stone-or-better pickaxe. Translated outputs skip missing native listener frequencies without creating empty registry entries; virtual relay hops still traverse those channels. New checks cover both fixes, all feature-switch/native-mode combinations, immediate cache changes and command persistence.
+## Inventory and delivery details in 0.4.3
+
+The Bank and Transponder implement `WorldlyContainer` with no exposed sided slots and disallow sided insertion/extraction. Vanilla hoppers, including hopper-style extraction, cannot move their cards. Mods using the direct unsided `Container` API can still inspect and edit cards; integrations that obey the sided restrictions are blocked too. Direct manual card insertion/removal remains unchanged.
+
+`removeItemNoUpdate` deliberately follows the quiet inventory contract. The loaded Relay reads its mounted Bank every server tick, so a removed channel disappears from routing on the next tick even without a notification. Integrations must still call `setChanged()` after quiet batch edits for inventory persistence and client synchronization. A native regression verifies the existing next-tick recovery.
+
+The one-point audio tolerance chooses among direct and repeated paths for one transmitter. It does not compare separate transmitters fed copies of the same source. The first accepted managed copy at a receiver can still suppress a better copy from a later transmitter. Resolving that requires collecting competing deliveries before playback; this remains an open routing issue, distinct from the existing path tie-breaker.
+
+The Nether Focus tooltip now explicitly says that an Overworld Relay projects its weak signal high into the Nether. Native expression hooks compile against MixinExtras 0.5.4, supplied at runtime by the required Fabric Loader; the addon bundles no duplicate dependency. Native/relay mode regressions exercise the new hooks, socket controls test every horizontal facing and ignore other faces/background, and actual hopper transfer helpers verify the sided restrictions while direct inventory edits remain usable.

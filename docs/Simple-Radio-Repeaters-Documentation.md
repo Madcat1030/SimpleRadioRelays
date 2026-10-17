@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.4.2
+# Simple Radio Repeaters 0.4.3
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Amplification Focus. Controls and status remain visible in the world.
 
-Version 0.4.2 makes dimension bridges and Nether propagation independently optional. Native dimensional radio takes priority automatically. It also fixes Transponder harvesting and avoids creating empty translated frequencies.
+Version 0.4.3 uses composable Nether distance hooks, restricts empty-hand component removal to the visible Relay sockets, and blocks hopper card transfers while retaining direct inventory integration.
 
 The network store remains `data/simpleradio_repeaters_relays_v3.dat`, shared with 0.3. Existing records read naturally with no attachment or transponder policy; no migration/reset layer is added. Earlier stores are not imported. When upgrading from 0.2, load each existing tower's chunk once to register it. Banks and Transponders must be directly above their Relays.
 
@@ -111,7 +111,8 @@ The two modules are Simple Radio's `simpleradio:receiving_module` and `simplerad
 | Relay: right-click with a registered catalyst | Install one catalyst if the socket is empty |
 | Relay: focus/amplifier right-click | Install one in the empty attachment socket |
 | Relay: empty-hand click on the front attachment socket | Return that attachment, leaving the catalyst installed |
-| Relay: other empty-hand right-click | Return the installed catalyst |
+| Relay: empty-hand click on the front catalyst socket | Return the installed catalyst, leaving the attachment installed |
+| Relay: other ordinary empty-hand click | No change |
 | Transponder: empty-hand click on the center display | Toggle simplex/duplex without touching cards |
 | Relay: sneak + empty-hand right-click | Toggle the Relay on or off without removing its catalyst |
 | Either block: click with an unsupported item | No configuration change |
@@ -421,7 +422,7 @@ The repeated source changes its native frequency medium to the selected output a
 
 `RadioSpace.between` rejects projected/projected and disallowed foreign-world legs, computes native coordinate-scaled distance, and attaches the selected propagation profile. `NativeRadioAdapter` uses the same profile for travel loss and the baseline noise floor. Amplification multiplies only antenna-derived transmission and reception gain by 1.5; raw verified scores remain unchanged in saved records.
 
-`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance, Nether dimensional modifier and inherited baseline noise floor. Its hooks leave wire calculations alone and return unchanged native calculations whenever the Nether preference is off or native dimensional radio is on. Client-local settings never override server routing. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
+`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance and inherited baseline noise floor. Both distance hooks use MixinExtras `ModifyExpressionValue`: they multiply the supplied expression result and preserve other modifiers instead of replacing the distance call. The redundant dimensional-field redirect is removed, leaving native dimensional calculation untouched; projected-leg penalties remain in `NativeRadioAdapter`. Its hooks leave wire calculations alone and return unchanged native calculations whenever the Nether preference is off or native dimensional radio is on. Client-local settings never override server routing. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
 
 ## Build and validation
 
@@ -432,7 +433,7 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gra
 ./gradlew runGameTest
 ```
 
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.2 passes 51 unit tests and 58 addon Minecraft tests. Current results are recorded under `validation/0.4.2/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
+The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.3 passes 51 unit tests and 60 addon Minecraft tests. Current results are recorded under `validation/0.4.3/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
 
 Power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
 
@@ -449,3 +450,12 @@ The 0.4.0 native regressions exercise both dimension policies, native Y scaling 
 The 0.4 native client preview uses actual Minecraft meshes, textures, fonts and production renderers. It shows all three attachments, both Transponder modes and the unchanged six-card Bank. The temporary QA mod, source and log accompany validation and are absent from the release JAR. The existing 0.3.2 dedicated-server/client join, data-pack reload and reconnect evidence remains under its original version; it was not rerun as a 0.4 lifecycle claim. Real multiplayer microphone playback has not been exercised in this run.
 The 0.4.1 regressions additionally compare ordinary native Nether reach/travel with virtual legs, verify the moderate noise floor, exercise focused local reception and transmission without an Overworld projection, check the higher Nether dimensional penalty, test reverse End projection and return traffic, and verify the amplifier's additional receive/transmit antenna gain. Test packets are synthetic; live multiplayer microphone playback is still a separate check.
 The 0.4.2 regressions cover native-mode priority across both feature switches, restoring earlier switch combinations without stale cached geometry, live command persistence, correct-tool Transponder speed/loot, and a two-Transponder path whose intermediate native frequency remains absent. Transponder harvesting now uses the pickaxe and stone-tier block tags. Translated receiver delivery uses a nullable native frequency lookup after virtual graph traversal, avoiding empty channel allocation without dropping listener-free intermediate hops.
+## Inventory and delivery details in 0.4.3
+
+The Bank and Transponder implement `WorldlyContainer` with no exposed sided slots and disallow sided insertion/extraction. Vanilla hoppers, including hopper-style extraction, cannot move their cards. Mods using the direct unsided `Container` API can still inspect and edit cards; integrations that obey the sided restrictions are blocked too. Direct manual card insertion/removal remains unchanged.
+
+`removeItemNoUpdate` deliberately follows the quiet inventory contract. The loaded Relay reads its mounted Bank every server tick, so a removed channel disappears from routing on the next tick even without a notification. Integrations must still call `setChanged()` after quiet batch edits for inventory persistence and client synchronization. A native regression verifies the existing next-tick recovery.
+
+The one-point audio tolerance chooses among direct and repeated paths for one transmitter. It does not compare separate transmitters fed copies of the same source. The first accepted managed copy at a receiver can still suppress a better copy from a later transmitter. Resolving that requires collecting competing deliveries before playback; this remains an open routing issue, distinct from the existing path tie-breaker.
+
+The Nether Focus tooltip now explicitly says that an Overworld Relay projects its weak signal high into the Nether. Native expression hooks compile against MixinExtras 0.5.4, supplied at runtime by the required Fabric Loader; the addon bundles no duplicate dependency. Native/relay mode regressions exercise the new hooks, socket controls test every horizontal facing and ignore other faces/background, and actual hopper transfer helpers verify the sided restrictions while direct inventory edits remain usable.

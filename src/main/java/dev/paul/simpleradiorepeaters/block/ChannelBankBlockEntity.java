@@ -20,7 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /** The visible six-card module; the Relay owns the catalyst, antenna, and persistent RF identity. */
-public class ChannelBankBlockEntity extends BlockEntity implements Container {
+public class ChannelBankBlockEntity extends BlockEntity implements WorldlyContainer {
+    private static final int[] NO_AUTOMATION_SLOTS = new int[0];
     private final int slots;
     private NonNullList<ItemStack> items;
     private UUID bankId = UUID.randomUUID();
@@ -93,6 +94,10 @@ public class ChannelBankBlockEntity extends BlockEntity implements Container {
     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); stack.setCount(Math.min(1, stack.getCount())); setChanged(); }
     @Override public int getMaxStackSize() { return 1; }
     @Override public boolean canPlaceItem(int slot, ItemStack stack) { return stack.is(SimpleRadioRepeaters.CARD); }
+    // Keep direct Container access for integrations; expose no slots to sided automation such as hoppers.
+    @Override public int[] getSlotsForFace(Direction side) { return NO_AUTOMATION_SLOTS; }
+    @Override public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) { return false; }
+    @Override public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) { return false; }
     @Override public boolean stillValid(Player player) {
         return level != null && level.getBlockEntity(worldPosition) == this && player.distanceToSqr(worldPosition.getCenter()) <= 64;
     }

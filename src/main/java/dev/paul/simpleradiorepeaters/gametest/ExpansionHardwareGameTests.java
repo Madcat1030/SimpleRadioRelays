@@ -18,6 +18,7 @@ import net.minecraft.world.*;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.phys.*;
 import java.util.*;
@@ -127,12 +128,67 @@ public class ExpansionHardwareGameTests implements FabricGameTest {
                 RelayBlockEntity reloaded = new RelayBlockEntity(pos, relay.getBlockState()); reloaded.load(relay.saveWithoutMetadata());
                 check(reloaded.attachment().is(item) && reloaded.hasCatalyst(), "Both socket items must persist together");
                 player.setItemInHand(hand, ItemStack.EMPTY);
+                for (double[] point : new double[][]{{8,4},{8,12},{4,9},{12,9},{0,4},{16,4}}) {
+                    SimpleRadioRepeaters.RELAY.use(relay.getBlockState(),level,pos,player,hand,hit(pos,facing,point[0],point[1]));
+                    check(relay.hasCatalyst() && relay.attachment().is(item),"Background clicks must not eject either installed component");
+                }
+                for (Direction side : Direction.values()) if (side!=facing) {
+                    var front=hit(pos,facing,4,4);
+                    SimpleRadioRepeaters.RELAY.use(relay.getBlockState(),level,pos,player,hand,
+                            new BlockHitResult(front.getLocation(),side,pos,false));
+                    check(relay.hasCatalyst() && relay.attachment().is(item),"Other faces must not eject either component");
+                }
+                SimpleRadioRepeaters.RELAY.use(relay.getBlockState(),level,pos,player,hand,hit(pos,facing,1,1));
+                check(!relay.hasCatalyst() && relay.attachment().is(item),"The padded catalyst socket must eject only the catalyst in every facing");
+                relay.installCatalyst(new ItemStack(Items.AMETHYST_BLOCK),false);
+                player.setItemInHand(hand,ItemStack.EMPTY);
                 SimpleRadioRepeaters.RELAY.use(relay.getBlockState(), level, pos, player, hand, hit(pos, facing, 12, 4));
                 check(relay.attachment().isEmpty() && relay.hasCatalyst() && player.getInventory().contains(new ItemStack(item)),
                         "An empty-hand socket click must return only its attachment");
             }
         }
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void hoppers_cannot_move_cards_but_direct_inventory_integrations_can(GameTestHelper helper) {
+        ServerLevel level=helper.getLevel(); BlockPos pos=helper.absolutePos(new BlockPos(2,2,2));
+        level.setBlock(pos,Blocks.HOPPER.defaultBlockState(),3);
+        HopperBlockEntity hopper=(HopperBlockEntity)level.getBlockEntity(pos);
+        for (Block block : List.of(SimpleRadioRepeaters.CHANNEL_BANK,SimpleRadioRepeaters.TRANSPONDER)) {
+            level.setBlock(pos.above(),block.defaultBlockState(),3);
+            ChannelBankBlockEntity bank=(ChannelBankBlockEntity)level.getBlockEntity(pos.above());
+            bank.setItem(0,card(490));
+            check(!HopperBlockEntity.suckInItems(level,hopper) && !bank.getItem(0).isEmpty() && hopper.isEmpty(),
+                    "An actual hopper below either module must not extract its cards");
+            for (Direction side : Direction.values()) {
+                ItemStack remainder=HopperBlockEntity.addItem(hopper,bank,card(491),side);
+                check(remainder.getCount()==1 && bank.getItem(1).isEmpty(),"Vanilla insertion must be blocked on every face");
+            }
+            check(bank.removeItem(0,1).is(SimpleRadioRepeaters.CARD),"Direct Container removal must remain available to integrations");
+            bank.setItem(1,card(492));
+            check(!bank.getItem(1).isEmpty() && bank.removeItem(1,1).is(SimpleRadioRepeaters.CARD),
+                    "Direct Container insertion and extraction must remain functional");
+        }
+        level.setBlock(pos.above(),Blocks.AIR.defaultBlockState(),3);
+        level.setBlock(pos,Blocks.AIR.defaultBlockState(),3); helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void a_loaded_relay_recovers_quiet_card_removal_on_its_next_tick(GameTestHelper helper) {
+        ServerLevel level=helper.getLevel(); BlockPos pos=helper.absolutePos(new BlockPos(2,2,2));
+        level.setBlock(pos.south(),Blocks.IRON_BLOCK.defaultBlockState(),3);
+        level.setBlock(pos.south().above(),SimpleRadioBlocks.ANTENNA.defaultBlockState(),3);
+        level.setBlock(pos,SimpleRadioRepeaters.RELAY.defaultBlockState(),3);
+        level.setBlock(pos.above(),SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(),3);
+        RelayBlockEntity relay=(RelayBlockEntity)level.getBlockEntity(pos);
+        ChannelBankBlockEntity bank=(ChannelBankBlockEntity)level.getBlockEntity(pos.above());
+        bank.setItem(0,card(494)); relay.bankChanged();
+        var channel=bank.cardStates().get(0).channel();
+        check(relay.channels().contains(channel),"Fixture must bind the actual card to its loaded Relay");
+        bank.removeItemNoUpdate(0);
+        RelayBlockEntity.tick(level,pos,relay.getBlockState(),relay);
+        check(!relay.channels().contains(channel),"The existing every-tick poll must remove a quietly removed channel");
+        level.setBlock(pos.above(),Blocks.AIR.defaultBlockState(),3); level.setBlock(pos,Blocks.AIR.defaultBlockState(),3);
+        helper.succeed();
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)

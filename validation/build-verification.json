@@ -1,5 +1,5 @@
 {
-  "version": "0.4.2",
+  "version": "0.4.3",
   "minecraft": "1.20.1",
   "loader": "Fabric",
   "simple_radio": "1.20.1-4.5.7.9",
@@ -9,7 +9,7 @@
     "failures": 0
   },
   "addon_gametests": {
-    "tests": 58,
+    "tests": 60,
     "failures": 0
   },
   "native_gametests": {
@@ -30,6 +30,16 @@
     "independent": true,
     "commands_saved_immediately": true,
     "cache_scope_tracks_effective_flags": true
+  },
+  "interaction_and_compatibility": {
+    "distance_hooks": "MixinExtras ModifyExpressionValue",
+    "unused_dimensional_field_redirect_removed": true,
+    "socket_only_ejection": true,
+    "all_facings_checked": true,
+    "hopper_automation": false,
+    "unsided_container_api": true,
+    "quiet_removal_next_tick_regression": true,
+    "first_transmitter_delivery_order": "Still open; per-transmitter path selection is separate"
   },
   "bug_fixes": {
     "transponder_pickaxe_and_stone_tool_tags": true,
@@ -68,13 +78,13 @@
   },
   "prototype": {
     "passed": true,
-    "version": "0.4.2",
-    "bytes": 195968,
-    "sha256": "a1c75e61aecd5f726f5eb8e8b429a5263811d586ef8468aa1347a21406acd52c",
+    "version": "0.4.3",
+    "bytes": 196035,
+    "sha256": "a8b32802a4a01d552adc4490f69b2dec2aad62d072acc54d8a3f658ae10d136b",
     "test_classes_removed": 13,
     "test_only_methods_removed": 13,
     "classes_checked": 72,
-    "retained_methods_byte_identical_including_debug": 622,
+    "retained_methods_byte_identical_including_debug": 625,
     "constant_pools_fields_and_class_attributes_unchanged": true,
     "resources_and_mixin_configuration_unchanged": true,
     "metadata_change": "Removed fabric-gametest entrypoints only",
