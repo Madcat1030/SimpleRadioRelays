@@ -1,5 +1,5 @@
 {
-  "version": "0.4.1",
+  "version": "0.4.2",
   "minecraft": "1.20.1",
   "loader": "Fabric",
   "simple_radio": "1.20.1-4.5.7.9",
@@ -9,7 +9,7 @@
     "failures": 0
   },
   "addon_gametests": {
-    "tests": 54,
+    "tests": 58,
     "failures": 0
   },
   "native_gametests": {
@@ -22,6 +22,19 @@
       "closedSystem"
     ],
     "status": "Same recorded addon-disabled headless failures; cause unresolved, not established live-server bugs."
+  },
+  "feature_controls": {
+    "interdimensionalRelays": true,
+    "netherTweaks": true,
+    "active_only_when_native_cross_dimensional_is_off": true,
+    "independent": true,
+    "commands_saved_immediately": true,
+    "cache_scope_tracks_effective_flags": true
+  },
+  "bug_fixes": {
+    "transponder_pickaxe_and_stone_tool_tags": true,
+    "translated_outputs_use_nullable_lookup": true,
+    "listener_free_virtual_hops_preserved": true
   },
   "propagation": {
     "nether_local_distance_scale": 4,
@@ -41,7 +54,7 @@
     "end_from_nether": "no projection",
     "end_radius_cap": null,
     "projected_to_projected_links": false,
-    "native_cross_dimensional_mode": "physical links need no focus; projections suppressed; local Nether Focus still active"
+    "native_cross_dimensional_mode": "native rules exactly; projections, local Focus benefits and all Nether tweaks disabled"
   },
   "amplifier": {
     "display_name": "Amplification Focus",
@@ -55,13 +68,13 @@
   },
   "prototype": {
     "passed": true,
-    "version": "0.4.1",
-    "bytes": 193328,
-    "sha256": "226fabc2dfbaad4f33c7b3c0eff680b199ff59a1411865ba3ee2ea8a5dfe0da5",
+    "version": "0.4.2",
+    "bytes": 195968,
+    "sha256": "a1c75e61aecd5f726f5eb8e8b429a5263811d586ef8468aa1347a21406acd52c",
     "test_classes_removed": 13,
     "test_only_methods_removed": 13,
     "classes_checked": 72,
-    "retained_methods_byte_identical_including_debug": 607,
+    "retained_methods_byte_identical_including_debug": 622,
     "constant_pools_fields_and_class_attributes_unchanged": true,
     "resources_and_mixin_configuration_unchanged": true,
     "metadata_change": "Removed fabric-gametest entrypoints only",

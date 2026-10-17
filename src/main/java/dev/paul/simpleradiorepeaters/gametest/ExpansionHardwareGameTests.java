@@ -4,6 +4,7 @@ import com.codinglitch.simpleradio.ServerSimpleRadioApi;
 import com.codinglitch.simpleradio.core.registry.SimpleRadioBlocks;
 import com.codinglitch.simpleradio.central.Frequency;
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
+import dev.paul.simpleradiorepeaters.RepeatersConfig;
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.network.*;
 import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
@@ -16,11 +17,55 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.*;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.phys.*;
 import java.util.*;
 
 public class ExpansionHardwareGameTests implements FabricGameTest {
     private static void check(boolean value, String message) { if (!value) throw new GameTestAssertException(message); }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void transponder_mines_with_a_stone_pickaxe_and_drops_its_block(GameTestHelper helper) {
+        ServerLevel level=helper.getLevel(); BlockPos pos=helper.absolutePos(new BlockPos(2,2,2));
+        level.setBlock(pos,SimpleRadioRepeaters.TRANSPONDER.defaultBlockState(),3);
+        var state=level.getBlockState(pos); var player=helper.makeMockPlayer(); player.setOnGround(true);
+        ItemStack pickaxe=new ItemStack(Items.STONE_PICKAXE);
+        player.setItemInHand(InteractionHand.MAIN_HAND,pickaxe);
+        check(state.is(BlockTags.MINEABLE_WITH_PICKAXE) && state.is(BlockTags.NEEDS_STONE_TOOL)
+                        && pickaxe.isCorrectToolForDrops(state) && !new ItemStack(Items.WOODEN_PICKAXE).isCorrectToolForDrops(state),
+                "A stone-or-better pickaxe must count as the correct Transponder tool");
+        check(state.getDestroyProgress(player,level,pos)>1f/100,"Correct-tool mining must not take the old 350-tick duration");
+        var drops=Block.getDrops(state,level,pos,level.getBlockEntity(pos),player,pickaxe);
+        check(drops.stream().anyMatch(item->item.is(SimpleRadioRepeaters.TRANSPONDER.asItem()) && item.getCount()==1),
+                "Correct-tool harvesting must produce the Transponder itself");
+        level.setBlock(pos,Blocks.AIR.defaultBlockState(),3); helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void feature_commands_are_live_and_saved_for_the_next_start(GameTestHelper helper) throws Exception {
+        var server=helper.getLevel().getServer(); var previous=RepeatersConfig.INSTANCE;
+        boolean oldTweaks=previous.netherTweaks, oldBridges=previous.interdimensionalRelays;
+        var path=net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json");
+        String original=java.nio.file.Files.readString(path);
+        try {
+            var dispatcher=server.getCommands().getDispatcher(); var source=server.createCommandSourceStack();
+            check(dispatcher.execute("radiorepeaters config netherTweaks false",source)==1
+                            && dispatcher.execute("radiorepeaters config interdimensionalRelays false",source)==1,
+                    "Both operator settings must accept live boolean commands");
+            check(!RepeatersConfig.INSTANCE.netherTweaks && !RepeatersConfig.INSTANCE.interdimensionalRelays,
+                    "Commands must take effect immediately");
+            RepeatersConfig.load();
+            check(!RepeatersConfig.INSTANCE.netherTweaks && !RepeatersConfig.INSTANCE.interdimensionalRelays,
+                    "Both command preferences must survive reading the config again");
+            check(dispatcher.execute("radiorepeaters config netherTweaks true",source)==1
+                            && RepeatersConfig.INSTANCE.netherTweaks && !RepeatersConfig.INSTANCE.interdimensionalRelays,
+                    "Enabling Nether tweaks must leave independently disabled bridges unchanged");
+        } finally {
+            previous.netherTweaks=oldTweaks; previous.interdimensionalRelays=oldBridges;
+            RepeatersConfig.INSTANCE=previous; java.nio.file.Files.writeString(path,original);
+            TowerManager.resourcesReloaded(server);
+        }
+        helper.succeed();
+    }
     private static ItemStack card(int offset) {
         var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
         ItemStack card = new ItemStack(SimpleRadioRepeaters.CARD);

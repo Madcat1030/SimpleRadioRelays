@@ -27,7 +27,13 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.codinglitch.simpleradio.SimpleRadioLibrary;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import net.minecraft.commands.CommandSourceStack;
+import java.io.IOException;
 import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.Commands.argument;
 
 public final class SimpleRadioRepeaters implements ModInitializer {
     public static final String ID = "simpleradio_repeaters";
@@ -52,6 +58,30 @@ public final class SimpleRadioRepeaters implements ModInitializer {
     private static void syncCatalysts(ServerPlayer player) {
         var packet = PacketByteBufs.create(); var items = RelayCatalysts.items(); packet.writeVarInt(items.size());
         items.forEach(packet::writeResourceLocation); ServerPlayNetworking.send(player, CATALYST_CATALOG, packet);
+    }
+    private static String featureStatus(String key) {
+        boolean configured = key.equals("netherTweaks") ? RepeatersConfig.INSTANCE.netherTweaks : RepeatersConfig.INSTANCE.interdimensionalRelays;
+        boolean nativeMode = SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional;
+        return key + ": " + (configured ? "enabled" : "disabled")
+                + (nativeMode ? "; inactive while Simple Radio cross-dimensional radio is enabled (native behavior)."
+                    : configured ? "; active." : "; inactive.");
+    }
+    private static LiteralArgumentBuilder<CommandSourceStack> featureCommand(String key) {
+        return literal(key).executes(context -> {
+            context.getSource().sendSuccess(() -> Component.literal(featureStatus(key)), false); return 1;
+        }).then(argument("enabled", BoolArgumentType.bool()).executes(context -> {
+            boolean value = BoolArgumentType.getBool(context, "enabled"), nether = key.equals("netherTweaks");
+            boolean previous = nether ? RepeatersConfig.INSTANCE.netherTweaks : RepeatersConfig.INSTANCE.interdimensionalRelays;
+            if (nether) RepeatersConfig.INSTANCE.netherTweaks = value; else RepeatersConfig.INSTANCE.interdimensionalRelays = value;
+            try { RepeatersConfig.save(); }
+            catch (IOException error) {
+                if (nether) RepeatersConfig.INSTANCE.netherTweaks = previous; else RepeatersConfig.INSTANCE.interdimensionalRelays = previous;
+                context.getSource().sendFailure(Component.literal("Could not save repeater settings; the previous setting remains active."));
+                LOGGER.error("Cannot save repeater settings", error); return 0;
+            }
+            TowerManager.resourcesReloaded(context.getSource().getServer());
+            context.getSource().sendSuccess(() -> Component.literal(featureStatus(key) + " Saved."), true); return 1;
+        }));
     }
     @Override public void onInitialize() {
         RepeatersConfig.load();
@@ -99,6 +129,10 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                             ? "Repeater network is starting." : manager.summary()), false);
                     return 1;
                 }))
+                .then(literal("config").requires(source -> source.hasPermission(2)).executes(context -> {
+                    context.getSource().sendSuccess(() -> Component.literal(featureStatus("netherTweaks")), false);
+                    context.getSource().sendSuccess(() -> Component.literal(featureStatus("interdimensionalRelays")), false); return 1;
+                }).then(featureCommand("netherTweaks")).then(featureCommand("interdimensionalRelays")))
                 .then(literal("list").requires(source -> source.hasPermission(2)).executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     if (manager != null) for (String line : manager.describe())

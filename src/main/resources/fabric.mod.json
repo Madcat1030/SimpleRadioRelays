@@ -3,7 +3,7 @@
   "id": "simpleradio_repeaters",
   "version": "${version}",
   "name": "Simple Radio Repeaters",
-  "description": "Persistent catalyst-powered relays, six-card banks, directional transponders, dimensional foci and decay-reset amplifiers for Simple Radio.",
+  "description": "Persistent radio relays and channel transponders for Simple Radio, with optional focus-based dimension bridges and Nether radio tweaks. Both custom features default on only while native cross-dimensional radio is disabled.",
   "authors": [
     "Paul",
     "OpenAI"

@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.4.1
+# Simple Radio Repeaters 0.4.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Amplification Focus. Controls and status remain visible in the world.
 
-Version 0.4.1 revises Nether range and interference for native radios and relays, adds local Nether Focus benefits and reverse End projection, and gives the Amplification Focus a 50% antenna bonus alongside its carrier-decay reset. Relays still require a usable native catalyst and a verified antenna on a supported core. They retain worst audio degradation, per-copy traversal state, frame deduplication and bounded numeric routing caches.
+Version 0.4.2 makes dimension bridges and Nether propagation independently optional. Native dimensional radio takes priority automatically. It also fixes Transponder harvesting and avoids creating empty translated frequencies.
 
 The network store remains `data/simpleradio_repeaters_relays_v3.dat`, shared with 0.3. Existing records read naturally with no attachment or transponder policy; no migration/reset layer is added. Earlier stores are not imported. When upgrading from 0.2, load each existing tower's chunk once to register it. Banks and Transponders must be directly above their Relays.
 
@@ -153,11 +153,43 @@ Card insertion/removal follows the Bank's front-face rules. Background insertion
 
 Simplex describes the direction of channel conversion. It does not stop an ordinary radio's own direct transmission or another tower from operating on those same channels. A listen-only branch is a network design choice; it does not enforce player permissions.
 
+## Optional dimension features
+
+Simple Radio Repeaters optionally adds focus-assisted dimension bridges and local Nether radio adjustments. Both addon settings default to `true`, but they become active only while Simple Radio's `frequency.crossDimensional` is `false`. Enabling native dimensional radio restores Simple Radio's original Nether range, interference and dimensional calculations automatically. Foci are inert in native mode; ordinary relays, Transponders and amplifiers still work.
+
+| Simple Radio dimensional radio | Addon preference | Effective behavior |
+| --- | --- | --- |
+| Enabled | Either value | Native radio calculations; no focus projections or local Focus bonuses |
+| Disabled | `interdimensionalRelays: true` | Focus projections can bridge Overworld–Nether and Overworld–End |
+| Disabled | `interdimensionalRelays: false` | No addon dimension bridges |
+| Disabled | `netherTweaks: true` | Revised Nether distance/interference and local Nether Focus benefits |
+| Disabled | `netherTweaks: false` | Native Nether distance and interference, including on any enabled focus pockets |
+
+The two addon preferences are independent and remain saved when native dimensional radio temporarily takes priority. Disabling custom bridges does not block the base mod's own dimensional radio when that native feature is enabled.
+
+Edit the server's `config/simpleradio-repeaters.json` and restart, or use operator commands for an immediate, saved change:
+
+```text
+/radiorepeaters config netherTweaks false
+/radiorepeaters config interdimensionalRelays false
+```
+
+Use `true` instead of `false` to enable a preference again. `/radiorepeaters config` shows both preferences and whether native mode is overriding them; either command without its boolean shows that setting. Changing one leaves the other unchanged. Commands require operator permission level 2 and invalidate cached routes immediately. File settings are server-authoritative.
+
+```json
+{
+  "maxRelayHops": 64,
+  "persistentUnloadedTowers": true,
+  "interdimensionalRelays": true,
+  "netherTweaks": true
+}
+```
+
 ## Dimensions and focus pockets
 
-The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections are disabled in this mode, while a Nether Focus installed on a Nether Relay still improves that Relay's local propagation. The amplifier also remains active.
+The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections and all Nether propagation tweaks are disabled in this mode, including the local Nether Focus benefit. The amplifier remains active.
 
-With native cross-dimensional radio disabled, a focus provides the following behavior:
+With native cross-dimensional radio disabled and the matching addon preference enabled, a focus provides the following behavior:
 
 | Installed component and home world | Result |
 | --- | --- |
@@ -173,7 +205,7 @@ A projected site connects only to a physical receiver or relay in its target dim
 
 ### Nether propagation
 
-These rules apply to ordinary native wireless endpoints as well as relay routing:
+When `netherTweaks` is active and native dimensional radio is disabled, these rules apply to ordinary native wireless endpoints as well as relay routing. With tweaks off or native dimensional radio on, all links use native distance and interference:
 
 | Link | Distance used for radio range | Additional interference |
 | --- | --- | --- |
@@ -383,13 +415,13 @@ The repeated source changes its native frequency medium to the selected output a
 
 ### RadioSpace and propagation policy
 
-`RadioSpace.sites` resolves existing ServerLevels without loading terrain. It returns each tower's physical site, marks a Nether-Focused Nether site for local propagation, and optionally adds the permitted Overworld→Nether or Overworld↔End projection. Native cross-dimension mode suppresses projections. Nether projection Y is minimum build height plus logical height; End projection Y is minimum build height. Reverse End projection retains clamped source Y.
+`RadioSpace.sites` resolves existing ServerLevels without loading terrain. It returns each tower's physical site, marks a Nether-Focused Nether site for local propagation, and optionally adds the permitted Overworld→Nether or Overworld↔End projection. Native cross-dimension mode suppresses projections and local Nether Focus bonuses. The independent bridge preference also suppresses projections when disabled. Nether projection Y is minimum build height plus logical height; End projection Y is minimum build height. Reverse End projection retains clamped source Y.
 
 `RadioPropagation` defines immutable numeric profiles shared by the native and virtual paths. Local Nether profiles adjust native eightfold distance to fourfold, or twofold when either physical Relay endpoint has a Nether Focus. Dimensional Nether profiles keep native distance and double the native modifier. Projected sites never qualify for the local bonus. This lookup performs no block/entity/chunk scan and introduces no per-packet configuration fingerprint.
 
 `RadioSpace.between` rejects projected/projected and disallowed foreign-world legs, computes native coordinate-scaled distance, and attaches the selected propagation profile. `NativeRadioAdapter` uses the same profile for travel loss and the baseline noise floor. Amplification multiplies only antenna-derived transmission and reception gain by 1.5; raw verified scores remain unchanged in saved records.
 
-`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance, Nether dimensional modifier and inherited baseline noise floor. Its hooks leave wire calculations alone. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
+`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance, Nether dimensional modifier and inherited baseline noise floor. Its hooks leave wire calculations alone and return unchanged native calculations whenever the Nether preference is off or native dimensional radio is on. Client-local settings never override server routing. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
 
 ## Build and validation
 
@@ -400,7 +432,7 @@ Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gra
 ./gradlew runGameTest
 ```
 
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.1 passes 51 unit tests and 54 addon Minecraft tests. Current results are recorded under `validation/0.4.1/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
+The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.2 passes 51 unit tests and 58 addon Minecraft tests. Current results are recorded under `validation/0.4.2/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
 
 Power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
 
@@ -416,3 +448,4 @@ The 0.4.0 native regressions exercise both dimension policies, native Y scaling 
 
 The 0.4 native client preview uses actual Minecraft meshes, textures, fonts and production renderers. It shows all three attachments, both Transponder modes and the unchanged six-card Bank. The temporary QA mod, source and log accompany validation and are absent from the release JAR. The existing 0.3.2 dedicated-server/client join, data-pack reload and reconnect evidence remains under its original version; it was not rerun as a 0.4 lifecycle claim. Real multiplayer microphone playback has not been exercised in this run.
 The 0.4.1 regressions additionally compare ordinary native Nether reach/travel with virtual legs, verify the moderate noise floor, exercise focused local reception and transmission without an Overworld projection, check the higher Nether dimensional penalty, test reverse End projection and return traffic, and verify the amplifier's additional receive/transmit antenna gain. Test packets are synthetic; live multiplayer microphone playback is still a separate check.
+The 0.4.2 regressions cover native-mode priority across both feature switches, restoring earlier switch combinations without stale cached geometry, live command persistence, correct-tool Transponder speed/loot, and a two-Transponder path whose intermediate native frequency remains absent. Transponder harvesting now uses the pickaxe and stone-tier block tags. Translated receiver delivery uses a nullable native frequency lookup after virtual graph traversal, avoiding empty channel allocation without dropping listener-free intermediate hops.

@@ -64,7 +64,9 @@ public final class RelayRouter {
         for (int port = 0; port < reachable.size(); port++) if (!reachable.get(port).isEmpty()) outputs.add(network.ports().get(port).output());
         for (ChannelKey output : outputs) {
             Frequency frequency = output.equals(input) ? transmitter.frequency : ServerSimpleRadioApi.getInstance().frequencies()
-                    .getOrCreate(output.frequency(), output.mode());
+                    .get(output.frequency(), output.mode());
+            // Traversal above is independent of native listener registration, including intermediate translations.
+            if (frequency == null) continue;
             for (var recipient : List.copyOf(frequency.getReceivers())) {
                 if (!(recipient instanceof RadioReceiver receiver) || !receiver.active || !receiver.valid || receiver.frequencingType == null
                         || receiver.getLocation() == null || original.willShort(receiver)) continue;

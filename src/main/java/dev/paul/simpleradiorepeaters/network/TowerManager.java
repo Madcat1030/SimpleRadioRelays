@@ -16,7 +16,8 @@ import java.util.*;
 
 public final class TowerManager {
     private static final Map<MinecraftServer, TowerManager> MANAGERS = new IdentityHashMap<>();
-    public record Scope(String dimension, ChannelKey channel, boolean nativeCrossDimensional) {}
+    public record Scope(String dimension, ChannelKey channel, boolean nativeCrossDimensional,
+                        boolean interdimensionalRelays, boolean netherTweaks) {}
     public record Network(List<TowerRecord> towers, List<List<RelayGraph.Edge>> edges, RelayGraph graph,
                           List<RelayPort> ports, boolean nativeCrossDimensional) {}
     private record ChunkKey(String dimension, long position) {}
@@ -210,8 +211,10 @@ public final class TowerManager {
     public TowerRecord snapshot(UUID id) { return data.towers.get(id); }
     public Network network(ServerLevel level, ChannelKey channel) {
         // One cheap policy flag makes mode changes immediate; full fingerprints stay off the packet path.
-        Scope scope = new Scope(level.dimension().location().toString(), channel,
-                com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional);
+        boolean nativeCrossDimensional = com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional;
+        Scope scope = new Scope(level.dimension().location().toString(), channel, nativeCrossDimensional,
+                RepeatersConfig.INSTANCE.interdimensionalRelaysActive(nativeCrossDimensional),
+                RepeatersConfig.INSTANCE.netherTweaksActive(nativeCrossDimensional));
         return networks.computeIfAbsent(scope, key -> buildNetwork(level, key));
     }
     private Network buildNetwork(ServerLevel sourceLevel, Scope scope) {

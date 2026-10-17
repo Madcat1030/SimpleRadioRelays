@@ -1,12 +1,12 @@
-# Simple Radio Repeaters 0.4.1
+# Simple Radio Repeaters 0.4.2
 
 A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. A Radio Relay attaches to an antenna core and carries voice through a persistent tower network. Put a six-card Repeater Bank on top to repeat selected channels, or use a three-card Radio Transponder to translate between channels.
 
-Version 0.4.1 improves local Nether range, differentiates local and dimensional interference, adds Nether-local focus benefits and Overworld↔End focus projection, and gives the Amplification Focus a 50% antenna bonus alongside its decay reset.
+Version 0.4.2 makes dimension bridges and Nether propagation independently optional. Native dimensional radio takes priority automatically. It also fixes Transponder harvesting and avoids creating empty translated frequencies.
 
 ## Install and existing worlds
 
-Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.1-prototype.jar`. Requirements:
+Replace the addon JAR on both server and clients with `simple-radio-repeaters-fabric-1.20.1-0.4.2-prototype.jar`. Requirements:
 
 - Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+ and Fabric API.
 - Simple Radio **1.20.1-4.5.7.9**, exactly, and its Lexiconfig dependency.
@@ -42,11 +42,43 @@ A Transponder has one card on the left and two on the right. It needs a tuned le
 
 The two right slots are not automatically connected to one another inside the same unit. Put the left channel in a right slot too if it should remain live while also feeding another frequency. AM and FM are distinct channels and can be translated. Transponders accept both ordinary wireless arrivals and relay-network arrivals, and can feed further Banks or Transponders. Encoded voice, owners, worst interference and traversal counts survive conversion.
 
+## Optional dimension features
+
+Simple Radio Repeaters optionally adds focus-assisted dimension bridges and local Nether radio adjustments. Both addon settings default to `true`, but they become active only while Simple Radio's `frequency.crossDimensional` is `false`. Enabling native dimensional radio restores Simple Radio's original Nether range, interference and dimensional calculations automatically. Foci are inert in native mode; ordinary relays, Transponders and amplifiers still work.
+
+| Simple Radio dimensional radio | Addon preference | Effective behavior |
+| --- | --- | --- |
+| Enabled | Either value | Native radio calculations; no focus projections or local Focus bonuses |
+| Disabled | `interdimensionalRelays: true` | Focus projections can bridge Overworld–Nether and Overworld–End |
+| Disabled | `interdimensionalRelays: false` | No addon dimension bridges |
+| Disabled | `netherTweaks: true` | Revised Nether distance/interference and local Nether Focus benefits |
+| Disabled | `netherTweaks: false` | Native Nether distance and interference, including on any enabled focus pockets |
+
+The two addon preferences are independent and remain saved when native dimensional radio temporarily takes priority. Disabling custom bridges does not block the base mod's own dimensional radio when that native feature is enabled.
+
+Edit the server's `config/simpleradio-repeaters.json` and restart, or use operator commands for an immediate, saved change:
+
+```text
+/radiorepeaters config netherTweaks false
+/radiorepeaters config interdimensionalRelays false
+```
+
+Use `true` instead of `false` to enable a preference again. `/radiorepeaters config` shows both preferences and whether native mode is overriding them; either command without its boolean shows that setting. Changing one leaves the other unchanged. Commands require operator permission level 2 and invalidate cached routes immediately. File settings are server-authoritative.
+
+```json
+{
+  "maxRelayHops": 64,
+  "persistentUnloadedTowers": true,
+  "interdimensionalRelays": true,
+  "netherTweaks": true
+}
+```
+
 ## Foci and dimensions
 
-The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections are disabled in this mode, while a Nether Focus installed on a Nether Relay still improves that Relay's local propagation. The amplifier also remains active.
+The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections, local Nether Focus benefits and all Nether tweaks are disabled in this mode. The amplifier remains active.
 
-With native cross-dimensional radio disabled, a focus provides the following behavior:
+With native cross-dimensional radio disabled and the matching addon setting enabled, a focus provides the following behavior:
 
 | Installed component and home world | Result |
 | --- | --- |
@@ -62,7 +94,7 @@ A projected site connects only to a physical receiver or relay in its target dim
 
 ### Nether propagation
 
-These rules apply to ordinary native wireless endpoints as well as relay routing:
+These rules apply to ordinary native wireless endpoints and relay routes only while `netherTweaks` is enabled and native dimensional radio is disabled:
 
 | Link | Distance used for radio range | Additional interference |
 | --- | --- | --- |
@@ -137,7 +169,7 @@ Ancient Debris is the vanilla material used for the requested netherite ore. The
 
 `/radiorepeaters status` shows tower and packet counts. Operator commands `/radiorepeaters list` and `/radiorepeaters refresh` show tower details and request loaded-component/antenna checks. The list includes catalyst strength, attachment and Bank/simplex/duplex mode.
 
-The addon config is `config/simpleradio-repeaters.json`: `maxRelayHops: 64`, `persistentUnloadedTowers: true`. Catalysts are mandatory. The focus policy follows the native dimensional switch; there is no separate End radius setting.
+The addon config is `config/simpleradio-repeaters.json`: `maxRelayHops: 64`, `persistentUnloadedTowers: true`, `interdimensionalRelays: true`, `netherTweaks: true`. Catalysts are mandatory. The focus policy follows the native dimensional switch; there is no separate End radius setting.
 
 Configuration fingerprints run at startup, explicit refresh, successful data-pack reload and every 100 server ticks. Packet lookups read the dimensional switch for their cache scope but do not fingerprint the full configuration or catalyst list. Component edits invalidate routes immediately. Successful reloads also refresh the connection-scoped client catalyst catalog.
 
@@ -145,12 +177,13 @@ Configuration fingerprints run at startup, explicit refresh, successful data-pac
 
 Routes use directed channel ports. At a given port, an arrival can discard another only when it uses no more total visits, no more decay and no worse audio. This retains useful amplifier detours while stopping redundant cycles. Numeric cache keys include entry, previous total visits, previous decay and routing mode. Limits remain 128 route entries/32,768 elements and 512 link rows/65,536 edges. Eviction only causes recomputation; packet/player/block-entity objects are not cached.
 
-Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.1/` and `validation/build-verification.json`.
+Use JDK 21 for Gradle/Loom; release bytecode targets Java 17. Run `./gradlew build`, `./gradlew runGameTest` and `./gradlew prototypeJar` for a test-free distribution. Current evidence is in `validation/0.4.2/` and `validation/build-verification.json`.
 
-Version 0.4.1 passes **51 unit tests and 54 addon Minecraft tests**. Separated addon/native reports are included with the source. New checks cover native/relay Nether parity, local Focus return range, stricter Nether crossings, reverse End projection and the amplifier's receive/transmit bonus. Coverage includes native dimensional math, focus return paths without chunk loads, End reception beyond 500 blocks, physical hubs between pockets, amplifier resets and budget limits, mixed catalysts, directed AM/FM conversion, conversion loops, socket controls, persistence and real copper-wire bridges. Randomized checks compare ordinary routing on 2,000 graphs and amplified routing on another 1,000 graphs against exhaustive references, with changed ingress on a second packet. Native client captures verify the production renderers, card labels and arrows.
+Version 0.4.2 passes **51 unit tests and 58 addon Minecraft tests**. Separated addon/native reports are included with the source. New checks cover native/relay Nether parity, local Focus return range, stricter Nether crossings, reverse End projection and the amplifier's receive/transmit bonus. Coverage includes native dimensional math, focus return paths without chunk loads, End reception beyond 500 blocks, physical hubs between pockets, amplifier resets and budget limits, mixed catalysts, directed AM/FM conversion, conversion loops, socket controls, persistence and real copper-wire bridges. Randomized checks compare ordinary routing on 2,000 graphs and amplified routing on another 1,000 graphs against exhaustive references, with changed ingress on a second packet. Native client captures verify the production renderers, card labels and arrows.
 
-The combined 0.4.1 run also contains seven native Simple Radio tests. Four match the failures in an earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. The standalone build succeeds. Tests use synthetic encoded bytes; actual multiplayer microphone playback was not exercised. The 0.3.2 dedicated-server/client catalog lifecycle evidence is retained as historical validation, rather than claimed as a new 0.4 session.
+The combined 0.4.2 run also contains seven native Simple Radio tests. Four match the failures in an earlier addon-disabled headless control: `shortCircuit`, `garbageCollection`, `openSystem` and `closedSystem`. Their cause is unresolved; they are not established live-server bugs. The standalone build succeeds. Tests use synthetic encoded bytes; actual multiplayer microphone playback was not exercised. The 0.3.2 dedicated-server/client catalog lifecycle evidence is retained as historical validation, rather than claimed as a new 0.4 session.
 
 See the [implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) and [model editing guide](art/Model-Editing-Guide.md). Existing Bank assets are unchanged. New meshes use the same 16px palette and native Minecraft component textures.
 
 Licensed GPL-3.0-only. Dependencies are distributed separately by their authors.
+Transponders now mine and drop normally with a stone-or-better pickaxe. Translated outputs skip missing native listener frequencies without creating empty registry entries; virtual relay hops still traverse those channels. New checks cover both fixes, all feature-switch/native-mode combinations, immediate cache changes and command persistence.

@@ -66,6 +66,8 @@ public final class NativeRadioAdapter {
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional,
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.interdimensionalRelays,
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.netherTweaks,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers);
     }
 }

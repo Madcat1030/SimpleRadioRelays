@@ -47,11 +47,13 @@ public class ExpansionGameTests implements FabricGameTest {
     }
     private static final class Fixture implements AutoCloseable {
         final GameTestHelper helper; final ServerLevel overworld, nether, end; final TowerManager manager;
-        final boolean oldNative; final List<TowerRecord> towers = new ArrayList<>(); final List<Tap> taps = new ArrayList<>();
+        final boolean oldNative, oldBridges, oldTweaks; final List<TowerRecord> towers = new ArrayList<>(); final List<Tap> taps = new ArrayList<>();
         Fixture(GameTestHelper helper) {
             this.helper = helper; overworld = helper.getLevel(); manager = TowerManager.get(overworld.getServer());
             nether = overworld.getServer().getLevel(Level.NETHER); end = overworld.getServer().getLevel(Level.END);
             oldNative = SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional;
+            oldBridges = RepeatersConfig.INSTANCE.interdimensionalRelays; oldTweaks = RepeatersConfig.INSTANCE.netherTweaks;
+            RepeatersConfig.INSTANCE.interdimensionalRelays = true; RepeatersConfig.INSTANCE.netherTweaks = true;
             SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional = false;
             check(nether != null && end != null, "Standard server dimensions must exist");
         }
@@ -93,6 +95,7 @@ public class ExpansionGameTests implements FabricGameTest {
             for (Tap tap : taps) tap.receiver.frequency.getReceivers().remove(tap.receiver);
             for (TowerRecord tower : towers) manager.removeAt(tower.dimension(), tower.position());
             SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional = oldNative;
+            RepeatersConfig.INSTANCE.interdimensionalRelays = oldBridges; RepeatersConfig.INSTANCE.netherTweaks = oldTweaks;
         }
     }
     private static float nativeArrival(Vec3 scaledOrigin, ServerLevel originLevel, Tap destination, ChannelKey key, float power) {
@@ -336,8 +339,8 @@ public class ExpansionGameTests implements FabricGameTest {
             f.manager.updateSnapshot(focused);
             for (boolean nativeMode : new boolean[]{false, true}) {
                 var sites = RadioSpace.sites(f.overworld.getServer(), focused, nativeMode);
-                check(sites.size() == 1 && sites.get(0).level() == f.nether && sites.get(0).focusedNether(),
-                        "A Nether focus in the Nether improves only the physical site, including when native mode is enabled");
+                check(sites.size() == 1 && sites.get(0).level() == f.nether && sites.get(0).focusedNether() == !nativeMode,
+                        "A Nether focus improves only the physical site, and becomes inert when native dimensional mode is enabled");
             }
             var site = RadioSpace.sites(f.overworld.getServer(), focused, false).get(0);
             var incoming = RadioSpace.between(RadioSpace.physical(f.nether, pos.getCenter()), site, false);
@@ -362,11 +365,21 @@ public class ExpansionGameTests implements FabricGameTest {
         try (Fixture f = new Fixture(helper)) {
             ChannelKey key = channel(436); Vec3 origin = new Vec3(160000, 512, 160000);
             Tap tap = f.tap(f.nether, new Vec3(20100, 64, 20000), key);
-            check(Math.abs(nativeArrival(origin, f.overworld, tap, key, 4000) - 1000) < .01,
-                    "An 800-unit AM crossing must lose 5 per effective unit instead of the native 3");
+            check(Math.abs(nativeArrival(origin, f.overworld, tap, key, 4000) - 2200) < .01,
+                    "Native mode must retain the native AM loss of 3 without the addon penalty");
             var leg = RadioSpace.between(RadioSpace.physical(f.overworld, origin), RadioSpace.physical(f.nether, new Vec3(tap.position)), true);
             var received = NativeRadioAdapter.receiveAtReceiver(leg, 4000, 4000, SimpleRadioFrequencing.TRANSMITTER, tap.receiver, key);
-            check(received != null && Math.abs(received.power() - 1000) < .01, "Virtual crossings must use the same high penalty");
+            check(received != null && Math.abs(received.power() - 2200) < .01, "Virtual native-mode crossings must also fall back exactly");
+            var pocket = new RadioSpace.Site(f.nether, new Vec3(20000, 64, 20000), true, false);
+            var focusedLeg = RadioSpace.between(pocket, RadioSpace.physical(f.nether, new Vec3(tap.position)), false);
+            var focusedArrival = NativeRadioAdapter.receiveAtReceiver(focusedLeg, 4000, 4000, SimpleRadioFrequencing.TRANSMITTER, tap.receiver, key);
+            check(focusedArrival != null && Math.abs(focusedArrival.power() - 1000) < .01,
+                    "With native mode off, a Nether projection must keep the stronger configured addon penalty");
+            RepeatersConfig.INSTANCE.netherTweaks = false;
+            var untweakedLeg = RadioSpace.between(pocket, RadioSpace.physical(f.nether, new Vec3(tap.position)), false);
+            var untweaked = NativeRadioAdapter.receiveAtReceiver(untweakedLeg, 4000, 4000, SimpleRadioFrequencing.TRANSMITTER, tap.receiver, key);
+            check(untweaked != null && Math.abs(untweaked.power() - 2200) < .01,
+                    "Disabling Nether tweaks must restore native dimensional attenuation for focus pockets too");
             f.noChunkLoads();
         }
         helper.succeed();
@@ -389,6 +402,69 @@ public class ExpansionGameTests implements FabricGameTest {
             TowerRecord misplaced = f.tower(f.nether, pos.offset(2000, 0, 0), 32, RelayAttachment.END_FOCUS, null, key);
             check(RadioSpace.sites(f.overworld.getServer(), misplaced, false).size() == 1,
                     "The End focus connects only Overworld and End, not an unintended Nether bridge");
+            f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void native_mode_and_feature_toggles_do_not_reuse_custom_Nether_routes(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey key = channel(480, Frequency.Modulation.FREQUENCY); BlockPos pos = new BlockPos(560000, 64, 560000);
+            TowerRecord tower = f.tower(f.nether, pos, 32, RelayAttachment.NETHER_FOCUS, null, key);
+            Vec3 destination = pos.getCenter().add(300, 0, 0);
+            Tap tap = f.tap(f.nether, destination, key);
+            for (boolean nativeMode : new boolean[]{false,true,false}) {
+                SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional = nativeMode;
+                for (boolean bridges : new boolean[]{true,false}) for (boolean tweaks : new boolean[]{true,false}) {
+                    RepeatersConfig.INSTANCE.interdimensionalRelays = bridges; RepeatersConfig.INSTANCE.netherTweaks = tweaks;
+                    boolean active = !nativeMode && tweaks;
+                    var site = RadioSpace.sites(f.overworld.getServer(), tower, nativeMode).get(0);
+                    var leg = RadioSpace.between(site, RadioSpace.physical(f.nether,destination),nativeMode);
+                    var ordinary = RadioSpace.nativePropagation(at(f.nether,pos.getCenter()),at(f.nether,destination));
+                    check(leg.distance() == (active ? 600 : 2400) && ordinary.distanceMultiplier() == (active ? .5 : 1),
+                            "Native fallback and local Nether settings must agree independently of the bridge setting");
+                    var network = f.manager.network(f.nether,key);
+                    check(network.ports().get(0).sites().get(0).focusedNether() == active,
+                            "A cached network must not retain a previous mode's local Focus boost");
+                    RadioTransmitter sender = new RadioTransmitter(frequency(key),at(f.nether,pos.getCenter())).frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+                    RadioSource source = new RadioSource(UUID.randomUUID(),at(f.nether,pos.getCenter()),new byte[]{1},1);
+                    source.frequencingType = SimpleRadioFrequencing.TRANSMITTER.id; source.transmissionCap = 4000; source.transmissionPower = 4000;
+                    check(sender.shouldRouteTo(source,tap.receiver),"The probe must remain within native reach in every mode");
+                    sender.prepareSource(source,tap.receiver);
+                    check(Math.abs(source.transmissionPower - (active ? 3000 : 1800)) < .01
+                                    && source.computeSeverity() == (active ? 12 : 2),
+                            "Actual native transmission must revert to original distance and noise with native mode on or tweaks off");
+                }
+            }
+            SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional = false;
+            TowerRecord endFocused = tower.settings(tower.channels(),true,tower.catalystItem(),null,RelayAttachment.END_FOCUS,null);
+            TowerRecord overworld = f.tower(f.overworld,pos.offset(10000,0,0),32,RelayAttachment.END_FOCUS,null,key);
+            RepeatersConfig.INSTANCE.netherTweaks = false; RepeatersConfig.INSTANCE.interdimensionalRelays = true;
+            check(RadioSpace.sites(f.overworld.getServer(),overworld,false).size()==2,
+                    "Turning Nether tweaks off must leave independently enabled End bridges available");
+            RepeatersConfig.INSTANCE.interdimensionalRelays = false; RepeatersConfig.INSTANCE.netherTweaks = true;
+            check(RadioSpace.sites(f.overworld.getServer(),overworld,false).size()==1
+                            && RadioSpace.sites(f.overworld.getServer(),endFocused,false).size()==1,
+                    "The bridge switch must remove focus projections independently of Nether tweaks");
+            f.noChunkLoads();
+        }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void missing_translated_listener_channels_are_not_created_but_virtual_routes_continue(GameTestHelper helper) {
+        try (Fixture f = new Fixture(helper)) {
+            ChannelKey input = channel(482), output = channel(484);
+            var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
+            ChannelKey middle = new ChannelKey(frequencies.incrementFrequency(frequencies.defaultFrequency(),483),"AM");
+            check(frequencies.get(middle.frequency(),middle.mode())==null,"Intermediate channel must start unregistered");
+            BlockPos pos = new BlockPos(580000,80,580000);
+            f.tower(f.overworld,pos,32,RelayAttachment.NONE,new TransponderChannels(input,middle,null,false),input,middle);
+            f.tower(f.overworld,pos.offset(1000,0,0),32,RelayAttachment.NONE,new TransponderChannels(middle,output,null,false),middle,output);
+            Tap target = f.tap(f.overworld,pos.getCenter().add(1001,0,0),output);
+            f.send(f.overworld,pos.getCenter(),input); f.send(f.overworld,pos.getCenter(),input);
+            check(target.count==2 && ((RelaySourceState)target.last).repeaters$getRelayCount()==2,
+                    "A native-listener-free intermediate channel must still carry both frames through the virtual graph");
+            check(frequencies.get(middle.frequency(),middle.mode())==null,"Routing must not allocate empty translated frequencies");
             f.noChunkLoads();
         }
         helper.succeed();

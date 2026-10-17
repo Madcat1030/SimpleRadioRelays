@@ -1,6 +1,8 @@
 package dev.paul.simpleradiorepeaters.radio;
 
 import com.codinglitch.simpleradio.central.WorldlyPosition;
+import com.codinglitch.simpleradio.SimpleRadioLibrary;
+import dev.paul.simpleradiorepeaters.RepeatersConfig;
 import dev.paul.simpleradiorepeaters.network.TowerRecord;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.*;
@@ -18,6 +20,9 @@ public final class RadioSpace {
     private RadioSpace() {}
     public static Site physical(ServerLevel level, Vec3 position) { return new Site(level, position, false, false); }
     public static RadioPropagation.Profile nativePropagation(WorldlyPosition from, WorldlyPosition to) {
+        // Wireless routing is server-authoritative. A client's local config never changes server range.
+        if (from.level.isClientSide || !RepeatersConfig.INSTANCE.netherTweaksActive(
+                SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional)) return RadioPropagation.NORMAL;
         return RadioPropagation.profile(from.level.dimension().equals(Level.NETHER), to.level.dimension().equals(Level.NETHER),
                 from.level.dimensionType() != to.level.dimensionType(), false);
     }
@@ -26,8 +31,9 @@ public final class RadioSpace {
         ServerLevel home = id == null ? null : server.getLevel(ResourceKey.create(Registries.DIMENSION, id));
         if (home == null) return List.of();
         Site physical = new Site(home, tower.position().getCenter(), false,
-                home.dimension().equals(Level.NETHER) && tower.attachment() == RelayAttachment.NETHER_FOCUS);
-        if (nativeCrossDimensional) return List.of(physical);
+                RepeatersConfig.INSTANCE.netherTweaksActive(nativeCrossDimensional)
+                        && home.dimension().equals(Level.NETHER) && tower.attachment() == RelayAttachment.NETHER_FOCUS);
+        if (!RepeatersConfig.INSTANCE.interdimensionalRelaysActive(nativeCrossDimensional)) return List.of(physical);
         ServerLevel target = null;
         if (home.dimension().equals(Level.OVERWORLD)) {
             if (tower.attachment() == RelayAttachment.NETHER_FOCUS) target = server.getLevel(Level.NETHER);
@@ -49,8 +55,10 @@ public final class RadioSpace {
         double distance = from.position().scale(from.level().dimensionType().coordinateScale())
                 .distanceTo(to.position().scale(to.level().dimensionType().coordinateScale()));
         boolean dimensional = from.projected() || to.projected() || from.level().dimensionType() != to.level().dimensionType();
-        var propagation = RadioPropagation.profile(from.level().dimension().equals(Level.NETHER),
-                to.level().dimension().equals(Level.NETHER), dimensional, from.focusedNether() || to.focusedNether());
+        var propagation = RepeatersConfig.INSTANCE.netherTweaksActive(nativeCrossDimensional)
+                ? RadioPropagation.profile(from.level().dimension().equals(Level.NETHER),
+                    to.level().dimension().equals(Level.NETHER), dimensional, from.focusedNether() || to.focusedNether())
+                : RadioPropagation.NORMAL;
         return new Leg(from, to, distance * propagation.distanceMultiplier(), dimensional, propagation);
     }
     public static List<Leg> between(List<Site> from, List<Site> to, boolean nativeCrossDimensional) {
