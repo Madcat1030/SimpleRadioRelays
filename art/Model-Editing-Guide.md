@@ -62,7 +62,7 @@ The inactive and active Relay models have identical geometry; only the front LED
 
 ## Where to put exported files
 
-The runtime resource root is `src/main/resources/assets/simpleradio_repeaters/`. Models go under `models/block/`, textures under `textures/block/`, and facing variants under `blockstates/`. Item models reference the empty housing, so inserted cards and the catalyst appear only on placed blocks.
+The runtime resource root is `core/src/main/resources/assets/simpleradio_repeaters/`. Models go under `models/block/`, textures under `textures/block/`, and facing variants under `blockstates/`. Item models reference the empty housing, so inserted cards and the catalyst appear only on placed blocks.
 
 `RepeatersClient` explicitly registers the six Bank and three Transponder partial models with Fabric's model loader. If you rename a partial JSON, update the matching resource ID in `RelayRenderer` or `ChannelBankRenderer` and its registration. The six physical slots and their serialized inventory size are defined in `ChannelBankBlockEntity`; changing the slot count also requires changing the renderer and cached card list.
 
@@ -98,3 +98,7 @@ The shared card-container base now accepts a slot count in its protected constru
 ## Socket lighting in 0.4.4
 
 The catalyst and attachment use packed sky/block light from the block immediately in front of the Relay (`position.relative(FACING)`). Light inside the solid housing can be zero, even in daylight. Keep this front-cell sample if you edit the insert transforms. Physical inserts remain subject to normal environmental lighting; only display text is full bright.
+
+## Module locations in 0.5
+
+The Nether/End focus item models and recipes now live under `foci/src/main/resources`. Their registry/model IDs stay in the established `simpleradio_repeaters` namespace. Core Relay, Bank, Transponder and amplifier assets live under `core/src/main/resources`. The original pre-0.5 generation scripts are historical; edit the current runtime JSON or update their output paths before rerunning them.

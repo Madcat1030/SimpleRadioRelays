@@ -1,0 +1,115 @@
+{
+  "version": "0.5.0",
+  "minecraft": "1.20.1",
+  "loader": "Fabric",
+  "simple_radio": "1.20.1-4.5.7.9",
+  "build": "passed",
+  "release_bytecode": "Java 17",
+  "build_jdk": "21",
+  "unit_tests": {
+    "core": {
+      "tests": 49,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "foci": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "gametests": [
+    {
+      "mode": "core",
+      "addon_tests": 41,
+      "addon_failures": [],
+      "native_tests": 7,
+      "native_failures": [
+        "SystemTest.garbageCollection",
+        "SystemTest.shortCircuit",
+        "SystemTest.closedSystem",
+        "SystemTest.openSystem"
+      ]
+    },
+    {
+      "mode": "foci",
+      "addon_tests": 64,
+      "addon_failures": [],
+      "native_tests": 7,
+      "native_failures": [
+        "SystemTest.shortCircuit",
+        "SystemTest.garbageCollection",
+        "SystemTest.closedSystem",
+        "SystemTest.openSystem"
+      ]
+    }
+  ],
+  "production_smoke": {
+    "passed": true,
+    "environment": "Production Fabric server, development=false, JVM -Xverify:all",
+    "modes": [
+      {
+        "mode": "core-and-foci",
+        "passed": true,
+        "exit_code": 0,
+        "result": "Production JARs load and shut down cleanly; components, config and saved state verified"
+      },
+      {
+        "mode": "core-after-removing-foci",
+        "passed": true,
+        "exit_code": 0,
+        "result": "Production JARs load and shut down cleanly; components, config and saved state verified"
+      },
+      {
+        "mode": "foci-without-core",
+        "passed": true,
+        "result": "Fabric rejects missing required core before game startup"
+      }
+    ],
+    "sha256": {
+      "simple-radio-repeaters-fabric-1.20.1-0.5.0-prototype.jar": "f8bc17d391a1b99469538e50e21ca8540edc1f729edba86fa88c68f491afd07c",
+      "simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.0-prototype.jar": "8b9bef2d20b52d8ef64575896f96b19dc22687429f49215e5f1376ca85a21bc1"
+    },
+    "limits": "No client join or live microphone playback in this run."
+  },
+  "prototypes": [
+    {
+      "module": "core",
+      "passed": true,
+      "jar": "simple-radio-repeaters-fabric-1.20.1-0.5.0-prototype.jar",
+      "bytes": 192744,
+      "sha256": "f8bc17d391a1b99469538e50e21ca8540edc1f729edba86fa88c68f491afd07c",
+      "classes": 72,
+      "retained_methods_identical": 619,
+      "removed_test_helpers": 13,
+      "no_obfuscation": true
+    },
+    {
+      "module": "foci",
+      "passed": true,
+      "jar": "simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.0-prototype.jar",
+      "bytes": 30984,
+      "sha256": "8b9bef2d20b52d8ef64575896f96b19dc22687429f49215e5f1376ca85a21bc1",
+      "classes": 7,
+      "retained_methods_identical": 33,
+      "removed_test_helpers": 0,
+      "no_obfuscation": true
+    }
+  ],
+  "boundary_checks": {
+    "core_no_foci_classes_items_recipes_models_or_dimensional_hooks": true,
+    "foci_requires_core_0_5_0": true,
+    "native_setting_unchanged": true,
+    "expansion_overrides_native_setting_on_and_off": true,
+    "core_alone_follows_native_setting": true,
+    "unknown_saved_attachment_resolves_none": true,
+    "runtime_test_fixtures_removed": true,
+    "retained_methods_byte_identical": true
+  },
+  "limits": [
+    "Four previously recorded native headless failures persist in both configurations; their causes remain unresolved.",
+    "No client join or live microphone playback performed in this run."
+  ]
+}

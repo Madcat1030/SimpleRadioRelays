@@ -30,7 +30,7 @@ public final class PrototypeJar {
         }
         Set<Method> removed = new LinkedHashSet<>();
         for (Method method : methods.keySet()) if (testOnlyOverload(method)) removed.add(method);
-        if (removed.size() != 11) throw new IllegalStateException("Expected 11 audited test-only methods, found " + removed.size());
+        if (removed.size() != (entries.containsKey(ROOT + "radio/RelayGraph.class") ? 11 : 0)) throw new IllegalStateException("Unexpected audited test-only helper count: " + removed.size());
         // Also remove synthetic lambda bodies whose only callers were the removed test constructors.
         boolean changed;
         do {
@@ -82,6 +82,7 @@ public final class PrototypeJar {
                 + Files.size(input) + " -> " + Files.size(output) + " bytes. Own names and debug information retained.");
     }
     private static boolean testOnlyOverload(Method m) {
+        if (!m.owner().startsWith(ROOT)) return false;
         int count = Type.getArgumentTypes(m.descriptor()).length;
         return switch (m.owner().substring(ROOT.length())) {
             case "radio/RelayGraph" -> (m.name().equals("<init>") && (count == 2 || count == 3))

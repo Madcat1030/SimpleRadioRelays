@@ -1,0 +1,67 @@
+plugins {
+    id 'fabric-loom' 
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+repositories {
+    maven { url = 'https://api.modrinth.com/maven' }
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.19.3'
+    // Provided at runtime by Fabric Loader; compile the composable expression hooks against its API.
+    compileOnly 'io.github.llamalad7:mixinextras-fabric:0.5.4'
+    annotationProcessor 'io.github.llamalad7:mixinextras-fabric:0.5.4'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.5+1.20.1'
+    modImplementation 'maven.modrinth:simple-radio:f9TIjf7X'
+    modImplementation 'maven.modrinth:lexiconfig:NfIErT11'
+    modImplementation 'maven.modrinth:simple-voice-chat:fabric-1.20.1-2.6.18'
+    // Loom's development classpath does not unpack Lexiconfig's bundled non-mod libraries.
+    runtimeOnly 'com.electronwill.night-config:core:3.6.6'
+    runtimeOnly 'com.electronwill.night-config:toml:3.6.6'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+loom {
+    mixin { useLegacyMixinAp = true; defaultRefmapName = 'simpleradio_repeaters.refmap.json' }
+    runs {
+        server { runDir 'run/server' }
+        gameTest {
+            server()
+            name 'Repeater Game Tests'
+            runDir 'run/gametest'
+            vmArg '-Dfabric-api.gametest'
+            vmArg '-Dfabric-api.gametest.report-file=reports/gametest-report.xml'
+        }
+        baseGameTest {
+            server()
+            name 'Simple Radio Baseline Game Tests'
+            runDir 'run/baseline'
+            vmArg '-Dfabric-api.gametest'
+            vmArg '-Dfabric-api.gametest.report-file=reports/gametest-report.xml'
+            vmArg '-Dfabric.debug.disableModIds=simpleradio_repeaters'
+        }
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; withSourcesJar() }
+test { useJUnitPlatform() }
+jar { from(rootProject.file('LICENSE')) { rename { "${it}_${project.base.archivesName.get()}" } } }
+
+// Optional distribution copy: ./gradlew prototypeJar
+apply from: rootProject.file('tools/prototype.gradle')

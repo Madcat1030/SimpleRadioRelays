@@ -1,0 +1,17 @@
+{
+  "itemGroup.simpleradio_repeaters": "Simple Radio Repeaters",
+  "block.simpleradio_repeaters.relay": "Radio Relay",
+  "block.simpleradio_repeaters.channel_bank": "Repeater Bank",
+  "item.simpleradio_repeaters.frequency_card": "Frequency Card",
+  "tooltip.simpleradio_repeaters.untuned": "Untuned",
+  "tooltip.simpleradio_repeaters.bank": "Plug into the top of a Relay attached to an antenna to allow inserted channels to be repeated.",
+  "tooltip.simpleradio_repeaters.card": "Tune in a radiosmithing station, then right-click a Repeater Bank to insert.",
+  "block.simpleradio_repeaters.transponder": "Radio Transponder",
+  "item.simpleradio_repeaters.relay_amplifier": "Ender Amplifier",
+  "tooltip.simpleradio_repeaters.transponder": "Plug into a Relay. Left card to right cards; click the display to toggle simplex/duplex.",
+  "tooltip.simpleradio_repeaters.amplifier": "Boosts Relay antenna power by 75% and resets relay decay. Inherited interference remains.",
+  "item.simpleradio_repeaters.copper_amplifier": "Copper Amplifier",
+  "item.simpleradio_repeaters.redstone_amplifier": "Redstone Amplifier",
+  "tooltip.simpleradio_repeaters.copper_amplifier": "Boosts Relay antenna power by 25%. Does not reset relay decay.",
+  "tooltip.simpleradio_repeaters.redstone_amplifier": "Boosts Relay antenna power by 50%. Does not reset relay decay."
+}

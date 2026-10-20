@@ -1,7 +1,7 @@
 // Development builds retain their tests. The separate classifier JAR contains runtime code only.
 def prototypeAsm = files(fileTree(new File(gradle.gradleHomeDir, 'lib')) { include 'asm-*.jar' })
 def compilePrototype = tasks.register('compilePrototypeTool', JavaCompile) {
-    source file('tools/PrototypeJar.java')
+    source rootProject.file('tools/PrototypeJar.java')
     classpath = prototypeAsm
     destinationDirectory = layout.buildDirectory.dir('prototype/tool')
     options.release = 17

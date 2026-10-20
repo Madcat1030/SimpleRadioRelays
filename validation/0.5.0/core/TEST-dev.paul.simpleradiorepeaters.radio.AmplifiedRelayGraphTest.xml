@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-20T21:13:05.534Z" hostname="c3ef272f988f" time="0.256">
+  <properties/>
+  <testcase name="anAmplifierDetourCanRestoreAReachableRouteWithoutResettingTheBudget()" classname="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" time="0.024"/>
+  <testcase name="warmRoutesRetainTheWorstIngressNoiseAfterAnAmplifier()" classname="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" time="0.002"/>
+  <testcase name="randomizedAmplifiedNetworksMatchAnExhaustiveIndependentReference()" classname="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" time="0.221"/>
+  <testcase name="dimensionalLossUsesNativeReachThenNativeTravelRatherThanASecondRangeGate()" classname="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" time="0.002"/>
+  <testcase name="amplifierCyclesStillConsumeTheTotalVisitBudget()" classname="dev.paul.simpleradiorepeaters.radio.AmplifiedRelayGraphTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

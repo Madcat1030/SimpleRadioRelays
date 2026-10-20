@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleradio_repeaters",
+  "version": "${version}",
+  "name": "Simple Radio Repeaters",
+  "description": "Persistent radio relays, channel banks, transponders, frequency cards and three amplifier tiers for Simple Radio.",
+  "authors": [
+    "Paul",
+    "OpenAI"
+  ],
+  "license": "GPL-3.0-only",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.paul.simpleradiorepeaters.SimpleRadioRepeaters"
+    ],
+    "client": [
+      "dev.paul.simpleradiorepeaters.client.RepeatersClient"
+    ],
+    "fabric-gametest": [
+      "dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.SplitBoundaryGameTests"
+    ]
+  },
+  "mixins": [
+    "simpleradio_repeaters.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "fabric-api": "*",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "simpleradio": "1.20.1-4.5.7.9",
+    "voicechat": ">=1.20.1-2.6.0"
+  }
+}

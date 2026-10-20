@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "dev.paul.simpleradiofoci.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "simpleradio_repeaters_foci.refmap.json",
+  "mixins": [
+    "NativeTransmissionMixin",
+    "NativeTravelMixin",
+    "DimensionalSpeakerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

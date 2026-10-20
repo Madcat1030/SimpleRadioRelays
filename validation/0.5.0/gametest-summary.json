@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "core",
+    "addon_tests": 41,
+    "addon_failures": [],
+    "native_tests": 7,
+    "native_failures": [
+      "SystemTest.garbageCollection",
+      "SystemTest.shortCircuit",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ]
+  },
+  {
+    "mode": "foci",
+    "addon_tests": 64,
+    "addon_failures": [],
+    "native_tests": 7,
+    "native_failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ]
+  }
+]

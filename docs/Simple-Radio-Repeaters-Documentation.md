@@ -1,467 +1,190 @@
-# Simple Radio Repeaters 0.4.4
+# Simple Radio Repeaters 0.5.0
 
-A Fabric Minecraft 1.20.1 addon for **Simple Radio 1.20.1-4.5.7.9**. Stationary relays amplify radio transmissions across an antenna network. A six-card Repeater Bank selects channels for ordinary repeating. A three-card Radio Transponder can take its place to convert channels in one or both directions. A second socket on the Relay accepts a Nether Focus, End Focus or Amplification Focus. Controls and status remain visible in the world.
+A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. The core provides persistent stationary relay networks. The optional Dimensional Foci addon replaces native dimensional radio with focus-equipped relay bridges.
 
-Version 0.4.4 corrects lighting for the Relay's catalyst and attachment. Both sample sky and block light immediately in front of the Relay, so its opaque housing no longer makes the inserts nearly black.
+## Installation and module ownership
 
-The network store remains `data/simpleradio_repeaters_relays_v3.dat`, shared with 0.3. Existing records read naturally with no attachment or transponder policy; no migration/reset layer is added. Earlier stores are not imported. When upgrading from 0.2, load each existing tower's chunk once to register it. Banks and Transponders must be directly above their Relays.
-
-## Installation and first tower
-
-Install the addon on the server and every client. Replace the previous addon JAR rather than keeping both versions. Required dependencies are Minecraft 1.20.1, Java 17 or later, Fabric Loader 0.19.0 or later, Fabric API, Simple Radio **1.20.1-4.5.7.9**, its Lexiconfig dependency, and Simple Voice Chat 1.20.1-2.6.0 or later. Development checks use Fabric API 0.92.5+1.20.1, Lexiconfig 1.4.21-epic and Voice Chat 2.6.18.
-
-1. Build a normal Simple Radio antenna on a solid core, or connect the core to an antenna through a native copper-wire extension.
-2. Place a **Radio Relay** against a horizontal side of the core. The Relay faces outward, with the core behind it.
-3. Put a **Repeater Bank**, or a **Radio Transponder**, directly above the Relay. It copies the Relay's facing when placed and plugs into the two top sockets.
-4. Tune a Frequency Card in the native radiosmithing station. Select the same frequency and AM/FM modulation as the radios, then press Apply.
-5. Right-click a front slot on the Bank with the card to insert it into that slot. A click elsewhere on the front fills the first available slot.
-6. Right-click anywhere on the Relay with **gilded blackstone or an amethyst block** to install its catalyst. The catalyst is retained during use.
-7. Wait for the screen to show a positive antenna score and `READY`. A Transponder needs a tuned left card and at least one tuned right card.
-8. Optionally right-click the Relay with a Nether Focus, End Focus or Amplification Focus. Only one attachment fits at a time; the catalyst stays in its separate socket.
-
-The Relay has no container, menu or inventory slots. Its catalyst and optional attachment are directly installed components. The Bank holds six physical cards and has no inventory screen. Blank cards can be inserted, but they do not activate a channel until tuned. Matching numeric frequencies on AM and FM are separate channels. Duplicate matching cards select the channel once; they do not increase range or duplicate audio.
-
-The Relay needs a registered catalyst with finite, positive strength, a solid core and at least one supported antenna producing a positive native score. A bare Relay and Bank cannot operate. A copper-wire extension can connect the core to a supported remote antenna. The Relay requires no additional microphone, speaker, receiver or transmitter block. Normal handhelds and wired stations participate through their existing radio endpoints.
-
-## Crafting recipes
-
-All seven recipes are shaped crafting-table recipes and produce one item. Copper wire is Simple Radio's `simpleradio:copper_wire`; glass means a full glass block. The Relay's catalyst is installed separately.
-
-### Radio Relay
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Iron ingot | Copper wire | Iron ingot |
-| Simple Radio receiver | Redstone dust | Simple Radio transmitter |
-| Iron ingot | Copper ingot | Iron ingot |
-
-Total: 4 iron ingots, 1 copper wire, 1 copper ingot, 1 redstone dust, 1 receiver and 1 transmitter. File: `src/main/resources/data/simpleradio_repeaters/recipes/relay.json`.
-
-### Repeater Bank
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Iron ingot | Copper ingot | Iron ingot |
-| Glass block | Redstone dust | Glass block |
-| Iron ingot | Copper wire | Iron ingot |
-
-Total: 4 iron ingots, 1 copper ingot, 1 copper wire, 2 glass blocks and 1 redstone dust. File: `src/main/resources/data/simpleradio_repeaters/recipes/channel_bank.json`.
-
-### Frequency Card
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Empty | Paper | Empty |
-| Copper ingot | Redstone dust | Copper ingot |
-| Empty | Copper wire | Empty |
-
-Total: 1 paper, 2 copper ingots, 1 redstone dust and 1 copper wire. The result is a blank card, which is tuned at the radiosmithing station. File: `src/main/resources/data/simpleradio_repeaters/recipes/frequency_card.json`.
-
-Version 0.2.3 replaces the Relay's top-center copper ingot, the Bank's bottom-center copper ingot and the Card's bottom-center paper with copper wire. Recipe IDs and result counts remain the same.
-
-### Nether Focus
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Empty | Obsidian | Empty |
-| Netherrack | Nether quartz | Netherrack |
-| Empty | Copper wire | Empty |
-
-File: `recipes/nether_focus.json`.
-
-### End Focus
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Empty | Ender pearl | Empty |
-| End stone | Chorus fruit | End stone |
-| Empty | Copper wire | Empty |
-
-File: `recipes/end_focus.json`.
-
-### Amplification Focus
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Empty | Ancient Debris | Empty |
-| End rod | Eye of ender | End rod |
-| Empty | Copper wire | Empty |
-
-Ancient Debris is the vanilla interpretation of netherite ore. File: `recipes/relay_amplifier.json`.
-
-### Radio Transponder
-
-| Left | Center | Right |
-| --- | --- | --- |
-| Iron ingot | Glass block | Iron ingot |
-| Receiving module | Amethyst block **or** gilded blackstone | Transmitting module |
-| Iron ingot | Copper wire | Iron ingot |
-
-The two modules are Simple Radio's `simpleradio:receiving_module` and `simpleradio:transmitting_module`, rather than complete receiver/transmitter blocks. The center alternative is one ingredient accepting either native catalyst block. This crafting ingredient does not fill the Relay's catalyst socket. File: `recipes/transponder.json`. All recipe paths above are beneath `src/main/resources/data/simpleradio_repeaters/`.
-
-## In-world controls
-
-| Block and action | Result |
+| Module | Contents |
 | --- | --- |
-| Bank: card click on a front slot | Insert into that slot; an occupied slot leaves the held card alone |
-| Bank: card click elsewhere on the front | Insert into the first available slot; a full Bank leaves the held card alone |
-| Bank: card click on any other face | No change |
-| Bank: empty-hand click on an occupied front card | Return that specific card to the player's inventory |
-| Bank: any other empty-hand click | No change |
-| Relay: right-click with a registered catalyst | Install one catalyst if the socket is empty |
-| Relay: focus/amplifier right-click | Install one in the empty attachment socket |
-| Relay: empty-hand click on the front attachment socket | Return that attachment, leaving the catalyst installed |
-| Relay: empty-hand click on the front catalyst socket | Return the installed catalyst, leaving the attachment installed |
-| Relay: other ordinary empty-hand click | No change |
-| Transponder: empty-hand click on the center display | Toggle simplex/duplex without touching cards |
-| Relay: sneak + empty-hand right-click | Toggle the Relay on or off without removing its catalyst |
-| Either block: click with an unsupported item | No configuration change |
+| `core` / `simpleradio_repeaters` | Relay, Bank, Transponder, Frequency Cards, three amplifier tiers, antenna scanner, saved tower records, route mapping/updating and delivery hooks |
+| `foci` / `simpleradio_repeaters_foci` | Nether and End focus items/recipes/models, projection policy, optional Nether propagation and native dimensional guards |
 
-Automatic insertion from a front click outside the slots uses top left, top right, middle left, middle right, bottom left, bottom right, skipping occupied slots. Direct slot clicks never replace a card or fall back to another slot. Survival insertion consumes one held card; creative insertion keeps the held card. Returned components go into the player's inventory, or drop nearby if it is full. Breaking the Bank drops its cards and disables its saved channel binding. Breaking either card module drops its cards and clears its binding. Breaking the Relay drops its catalyst and attachment and removes its network record; the separate Bank and its cards remain in place.
+Install core on server and clients. Install the matching Foci JAR on both sides to enable its rules. Foci declares a required dependency on core 0.5.0; Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
 
-In 0.2.7, each card is three model units tall. Its front-face click band includes the full card width and one additional model unit above it, for both inserting and removing. There is no padding below the card. The three vertical bands are Y=11–15, 6–10 and 1–5. A unit-wide gap between row bands prevents overlap; the code does not choose a nearest card outside these bounds. Existing background-click and non-front-face rules still apply.
+Replace the old 0.4.x addon JAR. Existing Relay/Bank/Transponder/card IDs are unchanged. The two focus IDs also remain `simpleradio_repeaters:nether_focus` and `simpleradio_repeaters:end_focus`, but the expansion now owns their registration and resources. Install both JARs to retain those items. Loading without the expansion follows normal missing-item handling; focus effects and saved projected sites do not remain active.
 
-One Bank belongs to the Relay immediately below it, and a Relay uses only the Bank immediately above it. Normal placement rejects other positions and copies that Relay's facing. Side and bottom connections are not supported. Removing a Relay leaves the Bank and cards intact but disconnected. A valid saved top binding is retained while entity data is pending; a saved reference to any other position is rejected before world lookup. The Bank and its Relay share the same terrain chunk because their X/Z coordinates are identical.
+## Building and using a tower
 
-The screen shows `ANT`, a status code and `LINK`. `ANT` is the effective antenna structure score, not a range in blocks. With an Amplification Focus it includes the 50% bonus, rounded for display; routing uses the exact value and saving retains the raw verified score. `LINK` counts distinct outgoing links to other eligible towers across the selected channels at relay count 1, using the installed catalyst. Later arrivals may reach fewer neighbors as departure power falls. It does not count players, handhelds or every tower reachable through a chain. Links are directed; one outgoing link does not establish a working return path.
+Build a native antenna on a supported solid core, optionally connected through native copper wire. Put a Relay on a horizontal side of the core, facing outward. A Repeater Bank or Transponder must be directly above the Relay and adopts its facing during placement. Side and bottom module bindings are rejected, including saved/copied bindings.
 
-| Status | Meaning |
+Tune Frequency Cards at the native radiosmithing station and insert them into the front slots. Install gilded blackstone or an amethyst block into the Relay. The server accepts any registered native catalyst with finite positive strength. A supported core, a positive verified antenna and a catalyst are mandatory. A bare Relay and module remain offline.
+
+The Bank repeats each selected frequency/modulation independently. Duplicates select the same channel once. Blank cards occupy slots but do not activate a frequency. AM and FM remain separate channels. A Relay does not require a microphone, speaker or separate native RX/TX to repeat traffic. Native radios and wired stations join through their existing endpoints.
+
+The Transponder replaces the Bank. Its single left slot is the input in simplex; both right slots are outputs. Duplex also converts either right input to the left output. A tuned left card and at least one tuned right card are required. Right outputs do not directly cross-connect. Matching cards on both sides intentionally preserve a channel alongside another translated output. Converted traffic can continue through further relays and Transponders.
+
+## In-world controls and display
+
+| Interaction | Result |
 | --- | --- |
-| `READY` | Verification finished; the Relay is configured and has a positive antenna score |
-| `NO ANT` | A completed, confirmed scan found no connected antenna |
-| `NO CAT` | The catalyst is missing or has no usable positive native strength |
-| `NO CARD` | A Bank has no tuned channel, or a Transponder lacks a tuned left/right pair |
-| `OFF` | The Relay is disabled |
-| `SCAN` | Antenna verification is pending without an eligible saved snapshot |
-| `CHECK` | The saved Relay remains available while its antenna is rechecked |
-| `NO BANK` | No Bank or Transponder is assigned |
-| `WAIT BANK` | The assigned card module's chunk or entity data is unavailable |
+| Card on front slot | Insert there if empty; never replace or fall back from an occupied slot |
+| Card elsewhere on module front | First available slot |
+| Card on other face | No change |
+| Empty hand on occupied front card | Return that card |
+| Empty hand elsewhere on Bank | No change |
+| Empty hand on Transponder center display | Toggle simplex/duplex |
+| Registered catalyst on Relay | Install in the empty catalyst socket |
+| Amplifier or focus on Relay | Install in the empty upgrade socket |
+| Empty hand on/near a front socket | Return that component only |
+| Other ordinary empty-hand Relay click | No change |
+| Sneak + empty hand on Relay | Toggle enabled state |
 
-The green Relay LED represents routing eligibility. It can remain green during `CHECK`, because the last verified antenna remains available. The Bank's indicator reports its current loaded connection. Text on occupied card backs shows the stored frequency and modulation; an untuned card reads `BLANK --`.
+Cards are three model units high with one unit of targeting padding above, none below. Bank fill order is top left to bottom right, row by row. Catalyst and upgrade ejection regions each include a one-unit margin; other faces/background do not eject components. Survival insertion consumes one item; creative insertion retains it. Returned items enter inventory or drop if full. Breaking a module drops its cards. Breaking a Relay drops its installed components and removes its saved network record.
 
-## Transponder operation
+The upgrade socket is shared: one amplifier OR one focus. The catalyst occupies its separate socket. Hoppers and other sided automation cannot move cards; unsided `Container` integrations remain usable. Quiet `removeItemNoUpdate` follows the vanilla contract. The loaded Relay polls its module each tick, so its routing recovers by the next tick; integrations still call `setChanged()` for inventory persistence and client synchronization.
 
-A Transponder occupies the same top connection as a Bank and uses the Relay's antenna, catalyst and optional attachment. There is one left slot and two right slots. It needs a tuned left card plus at least one tuned right card. Empty or blank cards do not create a port. Frequencies and AM/FM are matched exactly.
+`ANT` is effective antenna score, including an amplifier's bonus, rounded only for display. `LINK` counts outgoing neighboring towers for a fresh departure, not players or every reachable network node. Links are directed and do not prove a return path.
 
-| Mode | Left input | Either right input |
-| --- | --- | --- |
-| Simplex, one right arrow | Broadcast on every tuned right card | No conversion |
-| Duplex, opposite arrows | Broadcast on every tuned right card | Broadcast on the left card |
+`READY` means configured and verified. `NO ANT`, `NO CAT`, `NO CARD`, `NO BANK` and `OFF` identify missing requirements. `SCAN` means an initial antenna check is pending. `CHECK` retains an eligible saved antenna while rechecking. `WAIT BANK` means module data is pending. A checking display does not itself disable a previously verified network node.
 
-Incoming traffic can arrive from a handheld, wired station, ordinary Bank network or another Transponder. The converted output can reach local receivers and continue through towers tuned to its output channel. Two right slots are not internally cross-connected. Duplicate conversions collapse to one directed port. A matching card on both sides deliberately preserves the main frequency while another right card branches to a different network.
+## Amplifiers, catalysts and audio
 
-Card insertion/removal follows the Bank's front-face rules. Background insertion tries left, upper right, lower right in that order. Empty-hand background clicks do nothing except in the center display, which changes direction. Each card is five units wide and three high, with one unit of padding above only. Exact card boundaries take precedence over the display. Changing direction updates the live and saved routing policy immediately, without rescanning unchanged antenna geometry.
+| Upgrade | Antenna multiplier | Raw score 32 contributes | Decay reset |
+| --- | ---: | ---: | --- |
+| Copper Amplifier | 1.25 | 40 | No |
+| Redstone Amplifier | 1.50 | 48 | No |
+| Ender Amplifier | 1.75 | 56 | To 1 |
 
-Simplex describes the direction of channel conversion. It does not stop an ordinary radio's own direct transmission or another tower from operating on those same channels. A listen-only branch is a network design choice; it does not enforce player permissions.
+The existing `relay_amplifier` item is renamed Ender Amplifier and retains its recipe. All tiers boost the Relay's antenna-derived TX and RX contributions. Native transmitter/receiver base power and the saved raw antenna score are unchanged. A zero antenna stays zero.
 
-## Optional dimension features
+For a departure:
 
-Simple Radio Repeaters optionally adds focus-assisted dimension bridges and local Nether radio adjustments. Both addon settings default to `true`, but they become active only while Simple Radio's `frequency.crossDimensional` is `false`. Enabling native dimensional radio restores Simple Radio's original Nether range, interference and dimensional calculations automatically. Foci are inert in native mode; ordinary relays, Transponders and amplifiers still work.
+`nominal = native transmitter base + raw antenna score × upgrade multiplier × transmitter aptitude`
 
-| Simple Radio dimensional radio | Addon preference | Effective behavior |
-| --- | --- | --- |
-| Enabled | Either value | Native radio calculations; no focus projections or local Focus bonuses |
-| Disabled | `interdimensionalRelays: true` | Focus projections can bridge Overworld–Nether and Overworld–End |
-| Disabled | `interdimensionalRelays: false` | No addon dimension bridges |
-| Disabled | `netherTweaks: true` | Revised Nether distance/interference and local Nether Focus benefits |
-| Disabled | `netherTweaks: false` | Native Nether distance and interference, including on any enabled focus pockets |
+`departure = nominal × current tower catalyst strength × 0.9^(decay count − 1)`
 
-The two addon preferences are independent and remain saved when native dimensional radio temporarily takes priority. Disabling custom bridges does not block the base mod's own dimensional radio when that native feature is enabled.
+Fresh traffic starts at zero visits/decay. Each ordinary Relay increments both. Ender increments total visits but resets decay to 1. Copper and Redstone do not reset decay. Subsequent ordinary towers resume at counts 2, 3 and so on. The configured total-visit budget remains finite across amplifiers, channel conversions and re-entry. Native wires retain both counts.
 
-Edit the server's `config/simpleradio-repeaters.json` and restart, or use operator commands for an immediate, saved change:
+At count 1, gilded blackstone's 90% strength gives 90% of nominal; amethyst's 60% gives 60%. At counts 2 and 3 they give 81%/72.9% and 54%/48.6%. Each tower applies its own catalyst once. Strengths are not multiplied across the whole route. Custom strengths above 100% receive the same shared 10% retention, so cycles cannot grow output without limit. There is no arbitrary 1% cutoff; a weak carrier can still reach a very close receiver.
 
-```text
-/radiorepeaters config netherTweaks false
-/radiorepeaters config interdimensionalRelays false
-```
+Reception uses native receiver base plus effective antenna contribution. Catalyst strength limits departure, not receiver gain. Amplification restores RF reach and does not repair inherited audio noise. Every candidate preserves the worst interference on its route. Final selection admits candidates within one interference point of the cleanest viable candidate, then prefers the stronger remaining carrier, followed by cleaner audio/fewer visits.
 
-Use `true` instead of `false` to enable a preference again. `/radiorepeaters config` shows both preferences and whether native mode is overriding them; either command without its boolean shows that setting. Changing one leaves the other unchanged. Commands require operator permission level 2 and invalidate cached routes immediately. File settings are server-authoritative.
+A distant player hearing a tower does not establish a return link. Their handheld must still reach a physical or projected receiving site. Wired RX-to-TX bridges retain their incoming carrier and counts; native wiring alone does not reset an already-frequenced source to full antenna departure power.
+
+## Dimensional Foci rules
+
+Without the expansion, all dimensional access, coordinate scaling and Nether propagation follow Simple Radio's settings. Core adds no custom Nether range or interference.
+
+With Dimensional Foci installed, native direct wireless crossings are disallowed regardless of Simple Radio's `frequency.crossDimensional` value. Focus-equipped Relays create the permitted sites. Both native endpoint delivery and virtual relay routing follow that policy. The expansion does not edit the native config file or change its stored boolean.
+
+| Focus and physical home | Projected or local behavior |
+| --- | --- |
+| Nether Focus, Overworld | Bidirectional pocket at mapped Nether X/Z, at its roof: normally Y=128 |
+| Nether Focus, Nether | Improved physical local propagation while Nether tweaks are enabled; no Overworld projection |
+| End Focus, Overworld | Bidirectional pocket at matching End X/Z, at its bottom: normally Y=0 |
+| End Focus, End | Bidirectional pocket at matching Overworld X/Z, retaining source Y clamped to that world's build range |
+| Focus in an unsupported dimension | Physical local site only |
+
+Nether X/Z use the native dimension coordinate-scale ratio. End has no fixed 500-block cap and does not target the central island. Native dimensional attenuation still governs projected legs. The Nether roof pocket is intentionally weak at lower elevations.
+
+A pocket must connect to a physical receiver or Relay. Two projected pockets cannot link directly; a physical End/Nether hub can receive and rebroadcast between them. Every tower still needs its catalyst, supported antenna, selected channels and actual RF reach. Projection never force-loads terrain.
+
+A focus departure localizes the carrier origin to its exit dimension for the native speaker's origin gate. Audio bytes, owners, original owner, activity, worst interference and traversal counts remain intact. This is why focus output can play while ordinary foreign-origin sources are rejected.
+
+## Nether setting
+
+The expansion has one server setting, defaulting to true:
 
 ```json
-{
-  "maxRelayHops": 64,
-  "persistentUnloadedTowers": true,
-  "interdimensionalRelays": true,
-  "netherTweaks": true
-}
+{ "netherTweaks": true }
 ```
 
-## Dimensions and focus pockets
+File: `config/simpleradio-repeaters-foci.json`.
 
-The addon follows Simple Radio's `frequency.crossDimensional` switch for access between worlds. When enabled, physical endpoints can communicate across dimensions without a focus. Focus projections and all Nether propagation tweaks are disabled in this mode, including the local Nether Focus benefit. The amplifier remains active.
-
-With native cross-dimensional radio disabled and the matching addon preference enabled, a focus provides the following behavior:
-
-| Installed component and home world | Result |
+| Link with tweaks enabled | Distance and noise |
 | --- | --- |
-| Nether Focus, Overworld | A bidirectional transmit/receive pocket at Overworld X/Z divided by eight, at the Nether roof: default Y=128 |
-| Nether Focus, Nether | Improved local transmission and reception; no Overworld projection |
-| End Focus, Overworld | A bidirectional pocket at matching End X/Z, at the End bottom: default Y=0 |
-| End Focus, End | A bidirectional pocket at matching Overworld X/Z, at the End Relay's own Y clamped to the Overworld's build range |
-| Either focus in another world | No projection |
+| Local Overworld or End | Native calculation |
+| Ordinary local Nether | Physical distance ×4; native baseline interference +10 points |
+| Local Nether with a Nether-focused Relay endpoint | Physical distance ×2; native baseline interference |
+| Dimensional leg involving Nether, including projections | Native coordinate scaling including Y ×8; twice native dimensional attenuation modifier |
+| Overworld–End projected leg | Native coordinate scaling and native dimensional modifier |
 
-The End focus has no 500-block cap and does not target the center island. Nether users can reply through an existing Overworld tower's projected pocket; putting a Nether Focus into their own Nether tower does not create another route to the Overworld. Both Focus types retain the original tower's physical local antenna.
+All axes use the appropriate factor. A projected Nether pocket remains a dimensional leg and does not receive the cheaper local profile. With native additive loss 1 and dimensional modifier 4, a tweaked Nether crossing costs 9 per effective distance on FM or 5 on AM; an End crossing costs 5 or 3. Native baseline interference is 2% FM/15% AM, so ordinary tweaked Nether floors are 12%/25%.
 
-A projected site connects only to a physical receiver or relay in its target dimension. Projected-to-projected links are excluded. Two Overworld towers carrying End foci can use a physical End relay as a hub if both focus legs reach it. Installing a focus cannot replace the mandatory catalyst, core or supported antenna.
+Turning `netherTweaks` off restores native Nether range/interference, including on focus legs. It does not disable focus bridges or permit direct dimensional radio. A native global setting of ON does not suppress the expansion or its Nether setting.
 
-### Nether propagation
+Operators can save/apply a live change using `/radiofoci config netherTweaks false` or `true`. The command without a boolean reports the current setting. Commands require permission level 2 and invalidate cached routes. File edits take effect after restart. Client-local settings do not control server propagation.
 
-When `netherTweaks` is active and native dimensional radio is disabled, these rules apply to ordinary native wireless endpoints as well as relay routing. With tweaks off or native dimensional radio on, all links use native distance and interference:
+## Core configuration and commands
 
-| Link | Distance used for radio range | Additional interference |
-| --- | --- | --- |
-| Overworld local or End local | Native distance | Native baseline |
-| Nether local | Physical distance × 4: one-quarter equivalent Overworld range | Noise floor is native AM/FM baseline plus 10 percentage points |
-| Nether local, with a Nether Focus on either Relay endpoint | Physical distance × 2: one-half equivalent Overworld range | Native AM/FM baseline, with no extra Nether floor |
-| Cross-dimension leg involving the Nether, including a projection | Native coordinate-scaled distance, including Nether Y × 8 | Twice the native dimensional modifier |
-| Overworld–End leg, including a projection | Native coordinate-scaled distance | Native dimensional modifier |
-
-With default additive loss 1 and dimensional modifier 4, a Nether crossing loses 9 per effective distance unit on FM or 5 on AM. An Overworld–End crossing loses 5 on FM or 3 on AM. Ordinary local Nether links use loss 1 against their adjusted distance; their minimum interference is 12% FM or 25% AM. A local Nether Focus removes only the added floor, giving the ordinary native 2% FM or 15% AM baseline. It cannot repair noise already inherited earlier in a transmission.
-
-All three axes use the selected distance factor. A Focus projection is a dimensional link even though its projected antenna and receiving device share the target world, so it does not receive the cheaper local-Nether policy. Nether roof injection remains intentionally weak, especially at lower elevations. Actual range depends on reception gain, catalyst, antenna and prior decay; the ratios compare otherwise equivalent links.
-
-Native reach gates use the sender's base loss; dimensional modifiers apply during travel. Wires retain their existing native calculations. No focus adds a percentage cutoff or fixed End radius.
-
-A focus emits a locally regenerated carrier in its target world. The addon localizes carrier origin for the native speaker's same-dimension gate when global cross-dimensional radio is disabled. Voice bytes, owner, original owner, activity, worst interference and traversal counts remain intact. Native cross-dimension mode retains the original carrier origin.
-
-## Range and audio quality
-
-The addon uses Simple Radio's configured transmission power, reception power, reception floor and attenuation. A handheld must reach an entry tower using its own transmitter strength. Hearing a tower's stronger broadcast does not guarantee that the handheld can transmit back to it.
-
-Departure power is `nominal tower power × current catalyst strength × 0.9 ^ (decay count − 1)`. Decay count 1 is the first relay, or a Relay equipped with an amplifier. A 90% catalyst begins at 90%, then 81%, 72.9%; amethyst begins at 60%, then 54%, 48.6%. Nominal tower power is native transmitter base power plus effective antenna score times transmitter aptitude. An Amplification Focus gives 1.5 times the antenna score for both transmit and receive gain; it does not multiply the built-in transmitter/receiver base. The native registry still names the catalyst value `efficiency`; it serves as the first-relay strength ceiling here.
-
-| Decay count | 90% catalyst | 60% catalyst | Custom 200% catalyst |
-| ---: | ---: | ---: | ---: |
-| 1 | 90% | 60% | 200% |
-| 2 | 81% | 54% | 180% |
-| 3 | 72.9% | 48.6% | 162% |
-| 10 | 34.87% | 23.25% | 77.48% |
-
-Without an amplifier, decay count equals total visits. Each current tower supplies its own catalyst strength and maximum. A gilded → amethyst → gilded path emits at 90% → 54% → 72.9% of the respective maxima. The better catalyst can raise the current tower's RF ceiling, while the carried decay and worst audio remain. Native catalyst values are not multiplied along the path. Amethyst always retains two-thirds of blackstone's output at equal nominal power and count. A 200% strength starts at twice nominal power, then 180%, 162% and so on; no special case permits a growing cycle.
-
-The router checks actual reach and native attenuation at every reduced-power leg. Some paths stop before reaching their destination. There is no 1% cutoff: a very weak departure can still serve a nearby receiver. The same reduced departure is used for other relays and local receivers. A native receiver/wire/transmitter bridge preserves the count even when its frequency changes; entering another relay consumes the next visit. Fresh microphone/handheld sources begin with zero previous visits. The configured total-visit budget applies across re-entries.
-
-A Amplification Focus resets decay count to 1, allowing its tower to depart at its own catalyst-scaled maximum. It does not reset total visits or clear inherited audio interference. For example, a gilded tower reached after 20 visits normally emits at about 12.16% of nominal output. With an amplifier it emits at 90%, the next ordinary gilded tower at 81%, then 72.9%. A 60% catalyst on the amplified tower still limits that departure to 60%. The next tower always uses its own catalyst and nominal strength. Amplifiers can restore useful RF reach halfway through a chain, but a cycle still consumes the finite total budget.
-
-The audio retains the worst interference encountered on its chosen path. Regeneration increases RF reach relative to the received carrier without repairing audio. At a fixed directed channel port, an arrival is dominated only when another uses no more total visits, no more decay and no worse interference. A longer amplifier detour can therefore remain useful even with equal audio quality. Final delivery evaluates those useful alternatives, finds the lowest worst interference, admits candidates at most one point above that minimum, and chooses the strongest remaining carrier. Equal power prefers cleaner audio, then fewer visits. The selected source retains its actual interference.
-
-For additive attenuation, the native calculation first rejects a leg if transmission power plus reception power cannot cover distance times the loss factor. It then subtracts the effective distance from transmission power, accounting for the receiver's reception power and floor. Remaining power is compared with the sender's degradation threshold to calculate interference. A leg with no remaining power or complete interference is unavailable.
-
-The towers use native transmitter/receiver RF settings. Catalyst efficiency affects departure power through the formula above; it does not multiply receiver reception gain or directly change audio volume. Server acceptance and efficiency come from Simple Radio's catalyst registry, including data-pack values. Missing, unregistered, zero-strength, negative and non-finite entries cannot activate a Relay. Eligible towers keep the native receiver's full base reception bonus plus antenna gain; that base bonus does not bypass the positive-antenna requirement.
-
-Banks repeat matching frequency/modulation pairs independently. Transponders translate only along their configured directed ports. A receiver on one channel wired through a transmitter on another channel remains a native station that can bridge those channels. The existing A → B → C → B → A arrangement therefore works when C performs that wired bridge and the relevant Banks select both channels.
-
-## A/B/C bridge behavior and delivery selection
-
-A Relay is a routing node, rather than a physical receiver that intercepts every nearby packet first. C's native receiver can be fed by B directly if that is the chosen exit. In 0.2.0, equal audio quality favored fewer hops, so a nearly exhausted B-to-receiver carrier could win over an equally degraded but regenerated carrier from C. A subsequent native wire or the short entry leg into C's return Relay could then exhaust that remaining power. C's received-packet counter rose even though no return packet reached A.
-
-Version 0.2.1 keeps audio quality first, then chooses the stronger remaining carrier. This lets C's local Relay provide RF power for the wired bridge when that delivery sounds equally good. The inherited degradation remains unchanged. A regression reproduces the old failure near the RF cutoff, using real native receiver/transmitter block entities and a copper wire, then verifies successful return without improving the deliberately weak audio.
-
-Version 0.2.4 extends the carrier preference to near-ties. A receiver on C's near side can be slightly closer to B than C's Relay on the far side. Its direct carrier may therefore have marginally less interference but too little remaining RF power to survive the wire and return-network entry. A real native bridge regression reproduces this on 0.2.3, with roughly 2.37 power arriving at the receiver and no return packet. The one-point tolerance admits the slightly noisier local Relay route and verifies successful return without reducing that route's interference.
-
-The quality band is anchored to the cleanest valid delivery across all candidates. For example, if severities are 10, 10.8 and 11.6, the 11.6 route is excluded even though it is within one point of 10.8. This keeps the maximum tradeoff at one point per delivery and makes selection independent of tower iteration order. The constant is `RelayDeliverySelection.QUALITY_TOLERANCE`; it is not a server configuration field.
-
-The native transmitter on the second channel passes through the addon routing code again. It can enter through the local matching Relay at C or through another tower it can reach, such as B. An ordinary wireless C-to-B entry leg is possible; it does not prevent B from amplifying and continuing the relay route. Native receiver-to-transmitter wiring alone does not automatically reset an already-frequenced source to the new antenna's full departure power.
-
-A separate regression covers the normal two-channel A/B/C arrangement with a held transceiver, native C receiver/wire/transmitter and an owner-backed receiving radio. Removing C's cards provides a negative control for the weaker native bridge. Restoring the cards and recreating C's Relay entity confirms that packets still return while its screen reports `CHECK`.
-
-The global received counter records managed receiver-handler arrivals. A rising total may reflect only C's incoming receiver; it is not proof that the second channel returned to A or that a speaker played the packet.
-
-## Persistence and chunk restoration
-
-The server saves verified stationary Relay records independently of loaded block entities. A record includes the Relay identity, dimension, position, selected channels, enabled state, catalyst item identity, antenna score, verification state, antenna dependency footprint, the card module's position and identity, the attachment kind, and any ordered Transponder channels/mode. It can continue forwarding through unloaded towers when `persistentUnloadedTowers` is enabled. Routing and validation do not request missing chunks.
-
-On reload, a Relay restores the authoritative saved antenna score and adopts any Bank changes already observed by the server. Its local cache stores card configuration, not physical card items. The actual card ItemStacks exist only in the Bank or Transponder. A loaded card module can update saved channels and direction even while the Relay's entity is unloaded. An older Relay NBT cache cannot resurrect cards that were removed from the Bank.
-
-Antenna verification preserves the wired-core restoration behavior from 0.1.1. It waits for the previous dependency chunks and their entity data, checks that insulator routers and wire endpoints have restored, and gives the native network time to settle. Loaded, settled Relays also scan on the same `gameTime % 200 == 0` boundary used by native receivers and transmitters, recovering antenna changes whose notification was missed. Pending verification retries every 200 ticks, approximately ten seconds at normal tick rate. Replacing a verified antenna with zero strength requires two complete zero scans at least 200 ticks apart. A temporary zero or incomplete scan leaves the previous snapshot available. Repeated dirty notifications are coalesced while a check is already pending, so building does not keep restarting the 20-tick settling window. A real disconnection is eventually confirmed without an enable toggle.
-
-Ghost checks operate independently of antenna scans. At chunk load, startup and manual refresh, the manager checks saved component positions in already-loaded chunks. A missing Relay block or changed Relay identity removes its record. A missing Bank or changed Bank identity clears the Relay's channels and Bank binding while retaining the antenna metadata. Both results are persisted and invalidate cached routes. A matching block awaiting its entity data is retried rather than treated as absent.
-
-The Bank is directly above the Relay, so both positions share one terrain chunk. The manager still validates each component independently: a pending Relay entity does not prevent checking a missing/replaced Bank in that chunk. Unloaded antenna geometry remains a verified snapshot until its dependencies become available for a new scan.
-
-The 0.3/0.4 network is the overworld's `data/simpleradio_repeaters_relays_v3.dat`, schema 3. Earlier network files are not imported. New records store `CatalystItem` as an item identifier instead of a boolean. Relay NBT retains its catalyst/attachment ItemStacks; the Bank or Transponder owns the physical cards. Attachment and ordered Transponder policy are optional fields in the same schema.
-
-## Commands and configuration
-
-| Command | Purpose |
-| --- | --- |
-| `/radiorepeaters status` | Show configured, ready, loaded and saved Relay counts and packet counters |
-| `/radiorepeaters list` | Show positions, antenna scores and channels; requires operator level 2 |
-| `/radiorepeaters refresh` | Check saved components in loaded chunks and recheck loaded antennas; requires operator level 2 |
-
-The first server launch creates `config/simpleradio-repeaters.json`:
+`config/simpleradio-repeaters.json` contains:
 
 ```json
-{
-  "maxRelayHops": 64,
-  "persistentUnloadedTowers": true
-}
+{ "maxRelayHops": 64, "persistentUnloadedTowers": true }
 ```
 
-Restart after editing these settings. Disabling persistence makes unloaded towers unavailable. Catalysts are always required. The former `requireCatalyst` setting has been removed; obsolete copies are ignored and omitted when the config is rewritten. Native Simple Radio settings continue to control radio reach and degradation. Cross-dimension policy follows the native `frequency.crossDimensional` switch, with focus-assisted pockets when it is disabled. There is no independent focus-radius setting.
+The hop budget is clamped to 1–128. Disabling persistence makes unloaded towers unavailable. The former core dimensional switches are removed and omitted when this config is saved. Catalysts remain mandatory.
 
-For a voice check, start with two players who cannot reach each other's handhelds directly but can both reach one Relay. Test both directions. Add a second tower and repeat with the middle tower's chunk unloaded. For a wired core, unload and reload it and allow the verification retry interval before changing its configuration.
+`/radiorepeaters status` reports counts. Operator `/radiorepeaters list` reports tower positions, raw/effective antenna details, channels, catalyst and attachment/module mode. `/radiorepeaters refresh` reconciles loaded components, refreshes resource settings and requests antenna checks.
 
-## Implementation: the split hardware
+## Persistence and antenna verification
 
-### RelayBlock and RelayBlockEntity
+The saved network remains `data/simpleradio_repeaters_relays_v3.dat`. Immutable tower snapshots retain identity, dimension, position, channels, catalyst ID, attachment effect name, module identity/position, Transponder policy, verified antenna and dependency footprint. Existing 0.3/0.4 records read without a migration/reset layer; earlier stores are not imported.
 
-`RelayBlock` handles placement against the antenna core, facing, direct catalyst/attachment clicks, the sneak toggle, and component drops. It creates a `RelayBlockEntity` and has no menu factory. Its `onRemove` retires the network record; normal chunk unload leaves the verified record intact.
+Loaded Relay ownership resolves copied UUIDs before adopting/publishing controller state. Module bindings must point directly above the Relay. A moved/copied Relay cannot keep a distant wireless Bank. Ordinary removal retires the appropriate record/binding. Chunk-load reconciliation detects missing/replaced blocks and identities after external edits/restoration, including ghost relays.
 
-`RelayBlockEntity` owns the Relay UUID, enabled flag, direct native-catalyst and attachment ItemStacks, native antenna score, verification state, assigned `CardBankRef`, cached card configuration and display values. It implements native `Frequencing`, allowing antenna dirty notifications, but does not implement `Container` or a menu provider. Catalyst installation validates the native registry, copies one held item and consumes one in survival. Settings snapshots include item identity so switching between two valid catalysts is observable. An installed item remains removable/drop-safe if a data pack later stops recognizing it. Removal returns that same installed component.
+Antenna scans follow the native supported antenna/core/wire structure. They check chunk availability before reading terrain and defer incomplete scans. Audio routing never scans terrain or requests missing chunks. Settling/retry logic retains a verified wired-core antenna while native wires restore, confirms completed zero scores before publishing disconnection and uses the native 200-tick periodic boundary as a fallback. Wrong items, blank-slot clicks and equivalent settings writes do not repeatedly restart scanning.
 
-`refreshBank` rejects any saved binding outside the position immediately above the Relay before checking availability. It preserves a valid top binding while its entity data is pending, otherwise reads only that top position and copies its card configuration. Relay NBT loading also discards invalid bindings and their cached channels. `setChanged` compares settings snapshots before requesting antenna verification: actual card/configuration changes, catalyst insertion and enabling matter; equivalent writes do not. Removing a catalyst or disabling a Relay immediately updates routing eligibility. Reload adopts the saved controller/channel snapshot before publishing local settings, preventing stale local NBT from restoring a removed component or card.
+Unloaded verified towers can route from saved numeric snapshots. A physical native receiver/wire/transmitter station still needs its own chunk loaded. Absent focus registration resolves saved focus effects to NONE and creates no projected sites.
 
-The tick registers the loaded instance and resolves a copied UUID before adopting authoritative saved channels or publishing settings. Settings updates also require the saved dimension and position to match, protecting the original from pre-tick placement notifications. The tick restores the verified antenna cache, performs pending scans, schedules the 200-tick periodic fallback and refreshes display values. `markDirty` starts a settling window only when moving from a settled state to a pending check. A burst of antenna notifications shares that window. Periodic checks do not reset an ongoing zero-strength confirmation. Screen state and link count are checked once per second. A client update is sent when display values or installed components change, rather than every tick. Standard block-entity update packets and chunk update tags carry the same render data.
+## Implementation and module interface
 
-### ChannelBankBlock and ChannelBankBlockEntity
+`RelayBlock` and `RelayBlockEntity` own physical interaction, catalyst/upgrade stacks, identity, antenna verification, module binding and display state. `ChannelBankBlockEntity` owns six card stacks, inventory integration and cached display labels. `TransponderBlockEntity` uses three card stacks plus conversion direction. Client renderers remain entirely in core and render the installed item/model without referring to focus classes.
 
-`ChannelBankBlock` contains the horizontal facing and connected indicator properties. Its selection shape follows the shallow rack. Placement requires a Relay directly below and copies that Relay's facing. Its item tooltip explains the top plug connection. Its `use` handler rejects non-front hits before considering an item transfer. Front hits are transformed into the model's north-facing coordinates. With a card, a slot hit targets that slot; only hits outside the slot rectangles use `firstEmptySlot`. Occupied targets reject insertion without replacing the card or selecting another slot. With an empty hand, only an occupied slot hit removes a card. Unsupported items, empty slots and front background clicks leave configuration unchanged. Client prediction checks the same face and occupied/free conditions as the server, while the server owns every item transfer.
+`RelayAttachment` is a registry of immutable effects rather than a closed enum. Core registers NONE and its three amplifier effects; the expansion registers its own focus effects. Each effect specifies antenna multiplier and decay-reset behavior. `RelayAttachmentItem` handles generic socket recognition and optional addon tooltip text. Stable effect names are saved in `TowerRecord`; unknown effects resolve to NONE.
 
-`ChannelBankBlockEntity` is the shared card-container base. Its normal Bank constructor creates six one-item slots and a Bank UUID; a protected constructor accepts a type and slot count for the three-slot Transponder. Its owner position is computed directly below the Bank; obsolete saved owner-position hints are ignored. `insert(slot, held, creative)` validates the requested slot and card before copying one item and consuming it in survival. The Container interface supports ordinary item handling and drops; it does not create a GUI. `CardState` snapshots distinguish physical slot presence and channel tuning from no-op writes. A real card change saves and syncs the Bank, then informs the loaded Relay or updates its saved record if the Relay is unloaded.
+`RadioPolicy` is the small propagation extension interface. Core's default returns one physical site, normal propagation and the native dimensional permission. `RadioSpace.installPolicy` installs the expansion policy during initialization and rejects a second policy provider. `FocusPolicy` adds projection geometry, always disables unassisted native crossings and supplies optional Nether profiles. Its cheap setting fingerprint participates in network cache keys, so an old route cannot retain a previous profile after a live toggle.
 
-The Bank rechecks attachment every ten ticks or after a relevant neighbor change. It never searches side or upper positions for another Relay. Its update tag includes the actual card ItemStacks, so the client renderer can show occupied slots and the correct labels after insertion, retuning or chunk reload.
+`RadioSpace` calculates coordinate-scaled distances and directed legs using existing ServerLevels. It never reads blocks/chunks. A leg stores its dimensional state and numeric propagation profile. `NativeRadioAdapter` applies native RF configuration, registered catalyst strength, antenna gain and propagation to native-compatible reach/loss math.
 
-### TransponderBlock, TransponderBlockEntity and TransponderChannels
+The expansion alone owns `NativeTransmissionMixin`, `NativeTravelMixin` and `DimensionalSpeakerMixin`. Transmission guards reject foreign native destinations. Travel guards zero direct foreign wireless carriers even if another caller skips the reach check; native wires retain their ordinary behavior. Local wireless distance/noise hooks share the same profile as virtual routing. The speaker hook uses MixinExtras `ModifyExpressionValue` on the boxed dimensional setting, enforcing a local carrier origin without replacing the stored config. Distance hooks also use composable expression modification rather than redirects.
 
-`TransponderBlock` extends the Bank's placement, mounting, shape, rotations, item-transfer and drop behavior. It overrides the three card rectangles and intercepts empty-hand center-display hits. The strict display X bounds exclude the adjacent card edge; only the front face can toggle or transfer cards.
+`TowerManager` owns loaded instances, saved records, chunk/component indexes and immutable per-channel network caches on the server thread. Settings/resource changes invalidate graphs. Native configuration/catalyst fingerprints are checked at startup, explicit refresh, successful data-pack reload and periodic ticks, not rebuilt for every voice packet. `RelayGraph` caches useful total-visit/decay/noise alternatives with dominance pruning and bounded cache weights; amplifier detours remain possible but redundant cycles are pruned. Cached values contain no player, block entity or voice-packet objects.
 
-`TransponderBlockEntity` reuses the Container, identity and cached display machinery with three slots. It adds a persisted/synchronized `Duplex` flag and reports an immutable `TransponderChannels` policy. Its direction setter sends one configuration update only when the value changes. The shared `configurationChanged()` path notifies a loaded Relay or updates its saved record; a mode change does not wait for an inventory edit.
+`RelayRouter` evaluates current entrances and receiver exits, performs channel conversion through directed ports and materializes a native source for selected repeated delivery. `RelaySourceState`/`RadioSourceMixin` retain shared frame identity plus per-branch total visits, decay and inherited noise across copies and wires. Frame dedupe prevents replay. The one-point carrier preference compares paths for one transmitter; separate transmitters carrying the same source still have the previously documented first-accepted-copy limitation.
 
-`TransponderChannels` stores nullable left, upper-right and lower-right channel keys plus the duplex flag. `ready()` requires a complete input/output pair. `ports()` builds deduplicated directed input/output pairs, including an intentional identity port when the same channel is on both sides. Its serialization preserves slot roles rather than reducing them to an unordered channel set. `cards()` reconstructs the Relay's ordered configuration cache while a module entity is pending; physical card items remain in the module.
+## Models and lighting
 
-### RelayAttachment and RelayAttachmentItem
+Current resources are under `core/src/main/resources` and `foci/src/main/resources`. Existing Bank/card geometry and text placement are unchanged. Core houses the Relay and amplifier models; Foci houses the two focus item models. Focus models/recipes retain their established IDs. Expansion language entries use a separate resource namespace to avoid file collisions with core language resources.
 
-`RelayAttachment` identifies no attachment, Nether Focus, End Focus or Amplifier. `RelayAttachmentItem` gives each registered single-stack component its kind and tooltip. The Relay installs/removes these directly and saves the original ItemStack. Its settings snapshot includes the item ID, so an installed item becoming unsupported remains removable, visible and drop-safe. Changing an attachment invalidates network settings without restarting an unchanged antenna scan.
+Physical inserts use world sky/block light from the cell in front of the Relay, retaining the 0.4.4 darkness fix. Displays use full-bright text. Bank labels reuse immutable cached presence/strings; no server query or tuning-NBT parse occurs every frame. The model editing guide provides the existing coordinates and font controls; update paths to the relevant module. Runtime JSON remains authoritative for the current meshes.
 
-### BankConnection, CardState and CardBankRef
+## Crafting
 
-`BankConnection` provides loaded-chunk-only block and entity lookups. It uses `getChunkNow` and `EntityCreationType.CHECK`, and waits for entity data rather than forcing a chunk or manufacturing a new component identity. Its `isMounted` predicate requires the Bank to be exactly one block above the Relay, and `localHit` transforms world hit positions back into the model's NORTH-facing coordinate system. `slotX`, `slotY` and `cardAt` define the shared six-slot layout used by interaction and text placement.
+All recipes are shaped and produce one item. W is native `simpleradio:copper_wire`. Relay/catalyst installation remains separate from crafting.
 
-`CardState` is an immutable value containing card presence, frequency and modulation. Blank cards remain present with no active channel. It serializes the Relay's configuration cache without storing item inventory. `CardBankRef` pairs an immutable block position with the Bank UUID, allowing a replacement Bank at the same coordinates to be distinguished from the original.
+| Item | Grid, rows separated by / | Key |
+| --- | --- | --- |
+| Relay | IWI / RDT / ICI | I iron ingot; R native receiver; D redstone dust; T native transmitter; C copper ingot |
+| Bank | ICI / GDG / IWI | I iron ingot; C copper ingot; G glass block; D redstone dust |
+| Frequency Card | _P_ / CDC / _W_ | P paper; C copper ingot; D redstone dust |
+| Transponder | IGI / RCT / IWI | I iron ingot; G glass; R receiving module; C amethyst block OR gilded blackstone; T transmitting module |
+| Copper Amplifier | _C_ / CDC / _W_ | C copper ingot; D redstone dust |
+| Redstone Amplifier | _B_ / CDC / _W_ | B redstone block; C copper ingot; D redstone dust |
+| Ender Amplifier | _A_ / RER / _W_ | A Ancient Debris; R end rod; E eye of ender |
+| Nether Focus | _O_ / NQN / _W_ | O obsidian; N netherrack; Q quartz |
+| End Focus | _P_ / ECE / _W_ | P ender pearl; E end stone; C chorus fruit |
 
-### TowerManager, TowerRecord and TowerSavedData
+Recipe JSON lives in each module's `src/main/resources/data/simpleradio_repeaters/recipes/`. The Transponder recipe uses native subparts, and its center catalyst ingredient does not fill the Relay's catalyst socket.
 
-`TowerRecord` is the immutable routing snapshot. The catalyst item identifier, attachment kind, optional module reference and optional Transponder policy are persisted alongside the RF fields. `efficiency()` resolves the native registry without reading terrain and returns zero for a missing or unusable catalyst. Eligibility requires an enabled Relay, a usable catalyst, a verified positive antenna score and at least one tuned channel; a Transponder also requires its left/right pair. The record constructor clears a non-top Bank reference and its channels. This invariant applies to saved-data restoration, publication, reconciliation and controller edits without querying chunks. Changing cards or catalyst/settings creates a new record while retaining its verified antenna score and footprint.
+## Building, distribution and validation
 
-`TowerManager` owns the per-server loaded-instance map, saved records and per-channel graph cache. Updating a record marks saved data dirty, maintains the component-position index and clears cached graphs. Network construction expands immutable directed input/output ports, computes compatible physical/focus geometry without chunk reads, and caches numeric link rows by sending port and decay count. Ports on the same physical tower do not link directly to one another; local conversions happen once on entry. A native-dimensional-mode flag scopes the network cache so changing that switch does not reuse the opposite policy's paths. Radio/catalyst/config fingerprints run when the manager starts, on explicit refresh and every 100 server ticks as a fallback. Successful data-pack reloads invalidate networks immediately and update the fingerprint. Audio-packet network lookups do not scan or sort the catalyst registry to fingerprint it. Normal component edits still clear routes immediately. Pending chunk reconciliation checks Relay and Bank block types and UUIDs only in chunks already available. A pending Relay entity does not prevent checking the Bank block or identity in that same chunk. `controllerChanged` lets a loaded Bank or Transponder update its unloaded Relay's channel and direction snapshot. `controllerRemovedAt` clears the binding during an ordinary Bank break; the same clearing logic handles a chunk edit that bypasses block callbacks. Removing a loaded instance only publishes settings if that instance is still the registered owner, so an obsolete entity cannot overwrite a newer saved state.
+Use JDK 21 for Gradle/Loom. Release classes target Java 17. `./gradlew build prototypeJar` builds both modules, runs unit tests and creates the separate runtime distributions under their respective `build/libs/` directories.
 
-`TowerSavedData` stores the deterministic list of records in `simpleradio_repeaters_relays_v3`, with schema 3. It does not migrate earlier saved networks. Clearing an invalid saved binding marks the data dirty so the correction persists. Damaged individual records are skipped with a logged warning.
+`./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Evidence is recorded under `validation/0.5.0/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
 
-## Implementation: models and client rendering
+`tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
 
-In 0.4.4, `RelayRenderer` samples packed sky/block light from `relay position + facing` for both installed components. The housing is a solid block, so light at its own position can be zero even in daylight. The front cell is where the visible inserts protrude. The renderer retains ordinary environmental brightness, all existing transforms and the actual installed catalyst block/item. Detached preview entities fall back to the light supplied by the render caller.
+## 0.5.0 regression results
 
-All supplied block textures are 16×16, using the original placeholder palette. The imported main cubes retain the supplied whole-unit geometry and UVs. The dark strip is a flat overlay with a small depth offset to prevent flickering against the card face. The base Relay includes its housing, display bezel and recessed top sockets. The base Bank includes its rack, slot lips and connector pins. Inserted cards and the catalyst are absent from these base JSON models.
-
-`RepeatersClient` registers the Relay, Bank and Transponder renderers and nine conditional card models. `RelayRenderer` renders the installed native block into the original catalyst volume, X/Y=2–6 and Z=−2–1. Registered non-block items use the item renderer. Gilded blackstone and amethyst therefore use their actual native textures and honor resource packs. The obsolete fixed catalyst model/bitmap are removed. The renderer also draws the actual attachment item in the new left socket and writes the three live screen lines. `ChannelBankRenderer` draws occupied card models and one combined frequency/modulation label per card. The card geometry is based on the supplied Blockbench JSON, with its height restored to three units and its vertical UVs extended to match. The base export excludes all cards. Each conditional card model includes a four-unit dark strip centered in its middle row, using an existing dark texture pixel. Font fitting uses a 3.75-by-.8-unit area centered at X=12/4 and Y=12.5/7.5/2.5, keeping light text inside the strip even for long frequencies. `TransponderRenderer` uses the same cached display data for its three conditional models, fits labels into a 3-by-.8-unit area, and renders one arrow or opposite arrows on its central display. None of these renderers performs server routing or antenna lookups.
-
-In 0.2.5, `ChannelBankBlockEntity.displayCards()` lazily builds an immutable six-slot display snapshot containing presence and the finished labels. Version 0.2.6 also caches the combined single-line label, avoiding per-frame string concatenation. The renderer reuses it on later frames without reading ItemStack tags, creating temporary tuning tags or parsing channel validity again. Actual inventory changes and incoming chunk/update NBT invalidate it; no-op inventory notifications retain it. No-update extraction also invalidates local display data without changing its existing notification semantics. The cache is transient, belongs to the block entity and contains no font or model resources. It is not saved or sent over the network. Its plain-string labels need no special resource-reload invalidation; Minecraft still supplies the current baked models and font at draw time.
-
-`DeviceRendering` rotates the NORTH-facing partial models around the block center and places text on their front surfaces. Text uses Minecraft's font. The screen retains its existing placement. `centeredText` fits Bank labels to both width and height and centers them on both axes after scaling. Each label's width is calculated once per draw and reused for fitting and centering. A small depth offset keeps labels from flickering against their surfaces. Text is full bright; physical components receive normal world lighting. Inactive/active and disconnected/connected variants share geometry and change their indicator pixels.
-
-The existing Bank Blockbench master files retain `base`, `inserted_catalyst` and separate `inserted_card_1` … `inserted_card_6` groups. Export the base and each card group into its runtime model without recentering it. The catalyst group is now a socket placement reference; catalyst rendering uses Java transforms and the actual installed item. The [model editing guide](../art/Model-Editing-Guide.md) lists the exact coordinates, file mappings, hit regions and Java text positions to update when modifying the artwork. `art/make_assets.py` reproducibly generates the original supplied assets and will overwrite hand edits if rerun. `art/make_expansion_models.py` writes the 0.4 Transponder, component-item meshes, attachment-socket additions, recipes and new language entries using existing textures. It does not edit bitmaps or replace the six-card Bank artwork. The runtime Relay/Transponder JSON is authoritative for the new geometry; older `.bbmodel` files are historical masters.
-
-The optimization removes repeated parsing and allocation. Version 0.2.6 uses six model submissions and six text lines for a full visible Bank; the label strips are part of those baked card models. Dense-room FPS and the resulting performance benefit have not been benchmarked; the patch does not claim a particular FPS gain.
-
-## Implementation: existing radio and antenna modules
-
-The guarded antenna scanner also requires a sturdy upper face on the local core and the remote antenna core, when a copper-wire extension is used. Missing cores and floating mast snapshots return a complete zero score. Its loaded-chunk guards and restoration settling policy remain in place. Version 0.3 changes RF regeneration and traversal while preserving stream ownership, worst audio degradation and one-copy delivery.
-
-| Module | Responsibility |
-| --- | --- |
-| `SimpleRadioRepeaters` | Register the Relay, both card modules, cards, attachments, creative tab, lifecycle hooks and commands |
-| `RepeatersConfig` | Read and validate hop limit and unloaded-tower persistence |
-| `FrequencyCardItem` | Participate in native radiosmithing, preserve frequency/modulation tags and show tuning tooltips |
-| `ChannelKey` | Represent an exact frequency/modulation pair and keep AM/FM distinct |
-| `AntennaScanner` | Run native antenna/extension geometry through a guarded accessor, track dependency positions and detect pending wire/router data |
-| `AntennaVerification` | Enforce settling time, retry intervals and confirmation before replacing a verified antenna with zero |
-| `NativeRadioAdapter` | Read native power/reception settings, calculate counted departure power and evaluate each physical leg |
-| `RelayPower` | Apply catalyst strength and universal 90% retention using decay count, with no percentage cutoff |
-| `RadioSpace` | Build permitted physical/projected sites and propagation profiles without terrain lookups |
-| `RadioPropagation` | Select local Nether, focused Nether and dimensional distance/noise rules |
-| `NativeTransmissionMixin`, `NativeTravelMixin` | Apply the same Nether policy to ordinary native wireless endpoints |
-| `RelayPort` | Hold one tower's directed input/output channels and immutable antenna-site list |
-| `RelayCatalysts` | Resolve usable native catalysts, efficiencies, configuration fingerprints and the server-supplied client catalog |
-| `ClientSessionCatalog` | Keep an immutable, connection-scoped catalog with explicit readiness and stale-callback rejection |
-| `RadioLinkMath` | Compute wireless eligibility, remaining power and interference using the target native rules |
-| `RelayGraph` | Cache numeric entry routes and links; prune redundant count states before expansion while preserving strictly cleaner alternatives |
-| `RelayRouter` | Rank numeric delivery candidates, create the winning source, and preserve wired fan-out and custom routing callbacks |
-| `RelayDeliverySelection` | Anchor the one-point quality band to the cleanest candidate and select the strongest carrier without altering the signal |
-| `RelayFrame` | Share emitter/receiver deduplication sets across copies of one radio frame |
-| `RelaySourceState` | Expose frame identity, inherited worst interference and independent total/decay counts |
-| `RadioRouterMixin` | Enter addon routing from native transmitter dispatch when a usable relay network exists |
-| `RadioSourceMixin` | Carry frame, quality and independent count fields through source copies; include inherited interference in severity calculations |
-| `RadioReceiverMixin` | After native acceptance and power checks, mark successful delivery and reject duplicates before activity compilation and downstream routing |
-
-Encoded voice bytes, source ownership, original ownership and activity survive forwarding. The addon does not decode and re-encode each relay hop. The live receiver and speaker still use the native receiving pipeline. A rejected receiver copy does not reserve the frame or increment delivery statistics. The acceptance predicate is evaluated once by native code before the dedupe hook, which runs immediately before `compileActivity`. Frame deduplication prevents loops and repeated playback; directed graph edges handle antennas with unequal outgoing and incoming reach.
-
-## Implementation: catalyst state and counted routing
-
-`RelayCatalysts` resolves an installed item through the native `CatalystRegistry`. It rejects unknown item IDs and unregistered, nonpositive or non-finite efficiency data. The default registry entries are `minecraft:gilded_blackstone` at .9 and `minecraft:amethyst_block` at .6. At play-handler initialization, the client starts a pending catalog for that connection. Its JOIN callback requests the accepted item identifiers; the server replies only while that player and handler are still current. Successful data-pack reloads push a replacement catalog. Clients use the identifiers for right-click prediction, while numeric efficiencies remain server-owned.
-
-`ClientSessionCatalog` stores one immutable snapshot behind a volatile reference. Mutations synchronize the connection check and replacement. A pending catalog differs from a ready, empty catalog. Disconnect clears only its own connection; delayed packets or disconnect callbacks from a previous connection cannot alter a newer one. The client also checks that an incoming catalog's handler is still current before applying its scheduled task. While the catalog is pending, held-item use on a Relay consumes client prediction so that a catalyst block is not speculatively placed; the ordinary use packet still reaches the server, which authoritatively validates the item.
-
-`RelayPower.departure(maximum, efficiency, count)` is pure numeric code. It applies `maximum × efficiency × 0.9^(count−1)` with count 1 immediately. Positive results below 1% remain usable; invalid numeric inputs produce no power. Finite values above the native float range saturate to that range. The current tower's catalyst is applied once, including when its strength is 1 or greater. No cumulative catalyst product or extra native catalyst adjustment is inserted.
-
-`RelayGraph.alternatives(entrances, previousTotal, previousDecay, prune)` starts each entrance at total + 1. Ordinary entries also increment decay; amplifier entries set decay to 1. Search labels contain port, worst interference, total visits and decay. An outgoing link is evaluated with the sender's decay. Arrival at the next port increments total and either increments or resets decay.
-
-Ordinary dominance compares all three route dimensions. A label can discard another only if its total count and decay are no greater, and its audio severity is no worse. Lower total count leaves at least as much budget; lower decay leaves at least as much departure power at that port. Both remain ordered through subsequent ordinary and reset nodes. This preserves useful amplifier detours while eliminating equal-quality, equal-power loops. The final one-point delivery tolerance is not used during pruning. Custom callbacks can request the unpruned alternatives, retaining the best noise separately for each total/decay pair.
-
-Numeric route keys include entry port, previous total, previous decay and pruning mode. Direct entrances are seeded before cold searches. The early dominance bound accounts for the possibility of a future amplifier resetting decay to 1. Cached internal noise is neutral to the live packet; each emission reapplies its current ingress noise with `max` and merges entrances. Moving players therefore do not inherit stale ingress quality. Final receiver distance/reception are calculated live. Component/configuration invalidation replaces the entire graph.
-
-Cache limits remain 128 route entries with 32,768 route/row elements and 512 link rows with 65,536 edges. Eviction changes recomputation only, never the result. With resets, distinct total/decay pairs can both matter; there can be O(H²) count combinations per port before dominance. The old one-count O(V×H) description is not a bound for amplified routing. The total visit limit, dominance and cache weights bound traversal and retained cache size; there is no arbitrary cap on viable alternatives.
-
-`RelayRouter` evaluates source entrances only on matching input ports. It collects output frequencies reachable from those entrances, including conversions, and checks live native receivers on each. `Delivery` holds numeric departure cap, remaining carrier, worst noise, both counts, output frequency and departure site until selection. Ordinary repeated candidates allocate a native source only for the winner. Direct candidates still use native preparation. Custom predicates receive independent materialized candidates, and carrier ranking includes their power changes. Encoded packets, frames and player/block-entity objects are not stored in route caches.
-
-The repeated source changes its native frequency medium to the selected output and preserves bytes, owner/original owner, activity and inherited severity. Focus-mode foreign exits localize carrier origin for native speakers; native-dimensional mode does not. `RadioSourceMixin.copy` copies total and decay as primitive per-branch state alongside the shared frame identity. Wires and frequency changes retain both. The decay getter defaults to total visits until explicitly set, allowing an unamplified source to use the ordinary count. Frame deduplication prevents replay; counts do not live in that shared frame.
-
-### RadioSpace and propagation policy
-
-`RadioSpace.sites` resolves existing ServerLevels without loading terrain. It returns each tower's physical site, marks a Nether-Focused Nether site for local propagation, and optionally adds the permitted Overworld→Nether or Overworld↔End projection. Native cross-dimension mode suppresses projections and local Nether Focus bonuses. The independent bridge preference also suppresses projections when disabled. Nether projection Y is minimum build height plus logical height; End projection Y is minimum build height. Reverse End projection retains clamped source Y.
-
-`RadioPropagation` defines immutable numeric profiles shared by the native and virtual paths. Local Nether profiles adjust native eightfold distance to fourfold, or twofold when either physical Relay endpoint has a Nether Focus. Dimensional Nether profiles keep native distance and double the native modifier. Projected sites never qualify for the local bonus. This lookup performs no block/entity/chunk scan and introduces no per-packet configuration fingerprint.
-
-`RadioSpace.between` rejects projected/projected and disallowed foreign-world legs, computes native coordinate-scaled distance, and attaches the selected propagation profile. `NativeRadioAdapter` uses the same profile for travel loss and the baseline noise floor. Amplification multiplies only antenna-derived transmission and reception gain by 1.5; raw verified scores remain unchanged in saved records.
-
-`NativeTransmissionMixin` adjusts the ordinary transmitter's reach-gate distance. `NativeTravelMixin` applies the matching wireless travel distance and inherited baseline noise floor. Both distance hooks use MixinExtras `ModifyExpressionValue`: they multiply the supplied expression result and preserve other modifiers instead of replacing the distance call. The redundant dimensional-field redirect is removed, leaving native dimensional calculation untouched; projected-leg penalties remain in `NativeRadioAdapter`. Its hooks leave wire calculations alone and return unchanged native calculations whenever the Nether preference is off or native dimensional radio is on. Client-local settings never override server routing. The ordinary native path and virtual relay legs therefore agree, including when a packet never enters a relay network. All usable relay legs still require positive remaining carrier and less than complete interference.
-
-## Build and validation
-
-Use JDK 21 for Gradle/Loom; output bytecode targets Java 17. On Windows use `gradlew.bat`.
-
-```sh
-./gradlew build
-./gradlew runGameTest
-```
-
-The installable JAR is under `build/libs`; a `-sources.jar` is source code. Version 0.4.3 passes 51 unit tests and 60 addon Minecraft tests. Current results are recorded under `validation/0.4.3/`, with a summary at `validation/build-verification.json`. Build a distribution without test fixtures using `./gradlew prototypeJar`; the resulting `-prototype.jar` retains readable addon names and debugging information.
-
-Power coverage checks 60%, 90%, 100% and 200% strengths, shared 10% loss over the full visit budget and the constant amethyst/blackstone ratio. Actual native receivers verify cold and warm mixed three-tower routes in both catalyst orders, exact departure/final-leg power, sub-1% delivery and custom callback selection of a weaker higher-count copy. The callback regression also changes its candidate's power and checks that ranking uses the resulting carrier.
-
-The search is compared with an uncached, unpruned tower/count reference on 2,000 randomized directed networks, with changed ingress noise on a second packet. Separate checks cover cache reuse, bounded-entry eviction, immutable cached numeric values, count-aware re-entry, equal-noise cycle collapse and fractional-quality improvements. The recorded 0.3.1 synthetic dense graphs retain 5/25/100 ordinary options where the old search retained 315/1,575/6,300. The benchmark source, CSV and scope notes remain under `validation/0.3.1/`; timings are historical 0.3.1 graph-only measurements, not 0.4 performance measurements or server TPS/voice-playback guarantees. Another 1,000 randomized amplified graphs are checked against an exhaustive port/total/decay reference, twice per graph with changed ingress. Dedicated cases retain an amplifier detour, distinguish previous-decay cache keys and keep amplifier cycles within the total budget.
-
-Catalyst regressions cover missing/invalid/nonpositive/non-finite catalysts, saved eligibility, core-only and floating antennas, a minimum supported antenna, native receiver base gain, scheduled configuration checks and session-catalog ordering. Existing regressions cover top mounting, copy isolation, missing/replaced components, card controls, antenna restoration, catalyst identity/reload changes and client catalog filtering. The real copper-wire channel bridge verifies that neither the wire nor its frequency change resets the carried visit count.
-
-The near-tie carrier fixtures use a registered 100% test strength at A/B and 200% at C, with matched A/C masts. Their B-to-C distance is derived from B's actual count-2 departure. This preserves the deliberately exhausted direct carrier while supplying a viable return budget under universal decay. These fixtures still verify the complete native wire and return route. The ordinary A/B/C bridge uses gilded blackstone throughout.
-
-The combined run also contains seven native Simple Radio tests. The same four failures seen in the earlier addon-disabled headless control remain: `shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`. Their cause is unresolved and they are not established live-server bugs. Addon/native XML reports are separated. Game tests use synthetic encoded bytes, not captured microphones.
-
-The 0.4.0 native regressions exercise both dimension policies, native Y scaling and travel attenuation, foreign handheld returns, End reception beyond 500 blocks, no terrain loading, and a real hub between focus pockets. They pass a focus-localized source through the actual native speaker gate without decoding test bytes. Amplifier tests check catalyst ceilings, retained audio and independent source copies. Transponder tests cover simplex/duplex, AM/FM conversion, a main-frequency branch, multi-tower conversions, cycles, all-facing card/socket controls, complete-pair eligibility, recipes and restoring edited policies while a Relay/module entity is unavailable.
-
-The 0.4 native client preview uses actual Minecraft meshes, textures, fonts and production renderers. It shows all three attachments, both Transponder modes and the unchanged six-card Bank. The temporary QA mod, source and log accompany validation and are absent from the release JAR. The existing 0.3.2 dedicated-server/client join, data-pack reload and reconnect evidence remains under its original version; it was not rerun as a 0.4 lifecycle claim. Real multiplayer microphone playback has not been exercised in this run.
-The 0.4.1 regressions additionally compare ordinary native Nether reach/travel with virtual legs, verify the moderate noise floor, exercise focused local reception and transmission without an Overworld projection, check the higher Nether dimensional penalty, test reverse End projection and return traffic, and verify the amplifier's additional receive/transmit antenna gain. Test packets are synthetic; live multiplayer microphone playback is still a separate check.
-The 0.4.2 regressions cover native-mode priority across both feature switches, restoring earlier switch combinations without stale cached geometry, live command persistence, correct-tool Transponder speed/loot, and a two-Transponder path whose intermediate native frequency remains absent. Transponder harvesting now uses the pickaxe and stone-tier block tags. Translated receiver delivery uses a nullable native frequency lookup after virtual graph traversal, avoiding empty channel allocation without dropping listener-free intermediate hops.
-## Inventory and delivery details in 0.4.3
-
-The Bank and Transponder implement `WorldlyContainer` with no exposed sided slots and disallow sided insertion/extraction. Vanilla hoppers, including hopper-style extraction, cannot move their cards. Mods using the direct unsided `Container` API can still inspect and edit cards; integrations that obey the sided restrictions are blocked too. Direct manual card insertion/removal remains unchanged.
-
-`removeItemNoUpdate` deliberately follows the quiet inventory contract. The loaded Relay reads its mounted Bank every server tick, so a removed channel disappears from routing on the next tick even without a notification. Integrations must still call `setChanged()` after quiet batch edits for inventory persistence and client synchronization. A native regression verifies the existing next-tick recovery.
-
-The one-point audio tolerance chooses among direct and repeated paths for one transmitter. It does not compare separate transmitters fed copies of the same source. The first accepted managed copy at a receiver can still suppress a better copy from a later transmitter. Resolving that requires collecting competing deliveries before playback; this remains an open routing issue, distinct from the existing path tie-breaker.
-
-The Nether Focus tooltip now explicitly says that an Overworld Relay projects its weak signal high into the Nether. Native expression hooks compile against MixinExtras 0.5.4, supplied at runtime by the required Fabric Loader; the addon bundles no duplicate dependency. Native/relay mode regressions exercise the new hooks, socket controls test every horizontal facing and ignore other faces/background, and actual hopper transfer helpers verify the sided restrictions while direct inventory edits remain usable.
-
-## Socket lighting validation in 0.4.4
-
-The standalone build passes 51 unit tests. A native client joins a production-mode dedicated server running the exact prototype JAR, checks both native catalysts and all three upgrades, verifies that the front cell is lit while the housing cell is dark, and replaces blackstone with amethyst through ordinary socket interactions. The in-world capture uses the production renderer and normal environmental light. Evidence is under `validation/0.4.4/`. The full addon/native GameTest run remains the recorded 0.4.3 baseline; it was not repeated for this client rendering patch. Live microphone playback was not part of the visual check.
+The core-only Minecraft run passes all **41 addon tests**. The combined installation passes all **64 addon tests**, including focus return traffic, native ON/OFF precedence, direct-crossing rejection, the speaker origin gate and live Nether-setting cache changes. All **51 unit tests** pass (49 core, 2 expansion). Both Minecraft runs also execute seven native tests and retain the same four recorded native failures; separated reports are supplied. Test packets use synthetic encoded bytes rather than live microphone audio.

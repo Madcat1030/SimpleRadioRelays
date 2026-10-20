@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    " I ",
+    "CRC",
+    " W "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:redstone_block"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:redstone_amplifier",
+    "count": 1
+  }
+}

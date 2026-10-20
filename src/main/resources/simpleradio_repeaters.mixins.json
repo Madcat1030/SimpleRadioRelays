@@ -1,8 +1,0 @@
-{
-  "required": true,
-  "package": "dev.paul.simpleradiorepeaters.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "refmap": "simpleradio_repeaters.refmap.json",
-  "mixins": ["RadioSourceMixin", "RadioRouterMixin", "RadioReceiverMixin", "NativeTransmissionMixin", "NativeTravelMixin"],
-  "injectors": {"defaultRequire": 1}
-}
