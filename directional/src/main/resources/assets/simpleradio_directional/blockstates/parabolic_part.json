@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "simpleradio_directional:block/parabolic_part"
+    }
+  }
+}

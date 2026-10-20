@@ -1,5 +1,7 @@
 # Simple Radio Repeaters 0.5.0
 
+This workspace also includes the separate [Directional Antenna 0.1.0 prototype](directional/README.md). Core and Dimensional Foci remain at 0.5.0; the new directional runtime does not require either addon.
+
 Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. This release separates the relay network from the optional dimensional expansion.
 
 | JAR | What it adds | Requires |

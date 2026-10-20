@@ -1,0 +1,142 @@
+"""Build Java geometry and self-contained Blockbench references from pinned native assets.
+
+Usage: python3 directional/tools/make_model_kit.py /path/to/simple-radio-sources.jar
+No images are generated or altered. Native textures are copied and embedded losslessly.
+"""
+import base64
+import json
+import math
+from pathlib import Path
+import sys
+import uuid
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / 'src/main/resources/assets/simpleradio_directional'
+DATA = ROOT / 'src/main/resources/data'
+KIT = ROOT / 'art/model-kit'
+NATIVE = KIT / 'native-reference'
+
+def write(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + '\n')
+
+def uid(name):
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, 'simple-radio-directional/' + name))
+
+native_files = [
+    'assets/simpleradio/models/block/antenna/antenna_column.json',
+    'assets/simpleradio/models/block/antenna/antenna_vertical.json',
+    'assets/simpleradio/textures/block/antenna.png',
+    'assets/simpleradio/textures/block/antenna_column.png',
+    'LICENSE_Simple Radio'
+]
+with zipfile.ZipFile(sys.argv[1]) as source:
+    for name in native_files:
+        target = NATIVE / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read(name))
+
+textures = {
+    'mesh': 'simpleradio:block/antenna_column',
+    'metal': 'simpleradio:block/antenna_column',
+    'particle': 'simpleradio:block/antenna_column'
+}
+elements = []
+
+def cube(name, start, end, texture='metal', uv=None):
+    uv = uv or [2,0,3,1]
+    element = {'name': name, 'from': start, 'to': end,
+               'faces': {face: {'uv': uv, 'texture': '#' + texture} for face in ['north','south','west','east','up','down']}}
+    elements.append(element)
+
+# A stepped mesh bowl on the exact 48 x 48 model-pixel reservation footprint.
+for row in range(6):
+    for col in range(6):
+        x, y = -16 + col*8, -16 + row*8
+        radius = math.hypot(x+4-8, y+4-8)
+        if radius > 25: continue
+        depth = 12 - round(7 * (radius/25)**2)
+        cube(f'mesh_{row}_{col}', [x,y,depth], [x+8,y+8,depth+1], 'mesh', [0,0,8,8])
+cube('mast_clamp', [3,3,20], [13,13,23])
+cube('mounting_arm', [6,6,11], [10,10,24])
+cube('feed_horn', [6,6,0], [10,10,3])
+cube('feed_support_left', [-9,7,2], [7,9,4])
+cube('feed_support_right', [9,7,2], [25,9,4])
+cube('feed_support_vertical', [7,-9,2], [9,25,4])
+cube('feed_neck', [7,7,3], [9,9,8])
+
+model = {'credit': 'Simple Radio Directional Antenna placeholder; editable whole-pixel geometry',
+         'parent': 'minecraft:block/block', 'ambientocclusion': False, 'textures': textures, 'elements': elements,
+         'display': {
+             'gui': {'rotation':[30,225,0], 'translation':[0,0,0], 'scale':[0.25,0.25,0.25]},
+             'ground': {'translation':[0,3,0], 'scale':[0.125,0.125,0.125]},
+             'fixed': {'scale':[0.3,0.3,0.3]},
+             'thirdperson_righthand': {'rotation':[75,45,0], 'scale':[0.16,0.16,0.16]},
+             'firstperson_righthand': {'rotation':[0,45,0], 'scale':[0.25,0.25,0.25]}
+         }}
+write(ASSETS/'models/block/parabolic_receiver.json', model)
+write(ASSETS/'models/item/parabolic_receiver.json', {'parent':'simpleradio_directional:block/parabolic_receiver'})
+write(ASSETS/'blockstates/parabolic_receiver.json', {'variants': {
+    'facing='+f: {'model':'simpleradio_directional:block/parabolic_receiver', 'y':r}
+    for f,r in [('north',0),('east',90),('south',180),('west',270)]}})
+write(ASSETS/'models/block/parabolic_part.json', {'parent':'minecraft:block/block','textures':{'particle':'simpleradio:block/antenna_column'},'elements':[]})
+write(ASSETS/'blockstates/parabolic_part.json', {'variants': {'': {'model':'simpleradio_directional:block/parabolic_part'}}})
+write(ASSETS/'lang/en_us.json', {
+    'block.simpleradio_directional.parabolic_receiver':'Parabolic Receiver',
+    'block.simpleradio_directional.parabolic_part':'Parabolic Receiver Part',
+    'itemGroup.simpleradio_directional':'Simple Radio Directional Antenna',
+    'tooltip.simpleradio_directional.mount':'Attach to a vertical antenna with antenna above it. Requires a clear 3×3 area.',
+    'tooltip.simpleradio_directional.pattern':'Receive only: 90° full gain; fades to zero 30° beyond each edge.'
+})
+for block in ['parabolic_receiver','parabolic_part']:
+    write(DATA/f'simpleradio_directional/loot_tables/blocks/{block}.json', {
+        'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'simpleradio_directional:parabolic_receiver'}],
+        'conditions':[{'condition':'minecraft:survives_explosion'}]}]})
+for tag in ['mineable/pickaxe','needs_stone_tool']:
+    write(DATA/f'minecraft/tags/blocks/{tag}.json', {'replace':False,'values':['simpleradio_directional:parabolic_receiver','simpleradio_directional:parabolic_part']})
+write(DATA/'simpleradio_directional/recipes/parabolic_receiver.json', {
+    'type':'minecraft:crafting_shaped','pattern':['IQI','BCB',' W '],
+    'key':{'I':{'item':'minecraft:iron_ingot'},'Q':{'item':'minecraft:quartz'},'B':{'item':'minecraft:iron_bars'},
+           'C':{'item':'minecraft:copper_block'},'W':{'item':'simpleradio:copper_wire'}},
+    'result':{'item':'simpleradio_directional:parabolic_receiver','count':1}})
+
+def blockbench(name, source):
+    keys=[]
+    for value in source['textures'].values():
+        if not value.startswith('#') and value not in keys: keys.append(value)
+    def resolve(key):
+        while key.startswith('#'): key=source['textures'][key[1:]]
+        return keys.index(key)
+    cubes=[]
+    for i,element in enumerate(source['elements']):
+        rotation=[0,0,0]
+        if 'rotation' in element:
+            r=element['rotation']; rotation['xyz'.index(r['axis'])]=r['angle']
+        faces={face:{'uv':value.get('uv',[0,0,16,16]),'texture':resolve(value['texture']),
+                     'rotation':value.get('rotation',0)} for face,value in element['faces'].items()}
+        for face in ['north','south','east','west','up','down']:
+            faces.setdefault(face,{'uv':[0,0,0,0],'texture':None})
+        cubes.append({'name':element.get('name',f'native_{i}'),'uuid':uid(name+f'/cube/{i}'),'type':'cube',
+                      'from':element['from'],'to':element['to'],'origin':element.get('rotation',{}).get('origin',[8,8,8]),
+                      'rotation':rotation,'rescale':element.get('rotation',{}).get('rescale',False),
+                      'faces':faces,'autouv':0,'shade':element.get('shade',True),'export':True,'visibility':True})
+    images=[]
+    for i,key in enumerate(keys):
+        namespace,path=key.split(':',1)
+        raw=(NATIVE/f'assets/{namespace}/textures/{path}.png').read_bytes()
+        images.append({'name':Path(path).name+'.png','id':str(i),'uuid':uid(name+f'/texture/{i}'),
+                       'folder':str(Path(path).parent),'namespace':namespace,'width':16,'height':16,'uv_width':16,'uv_height':16,
+                       'source':'data:image/png;base64,'+base64.b64encode(raw).decode(),'mode':'bitmap','saved':False,
+                       'render_mode':'default','visible':True})
+    result={'meta':{'format_version':'4.10','model_format':'java_block','box_uv':False},'name':name,'model_identifier':name,
+            'visible_box':[4,4,1],'resolution':{'width':16,'height':16},'elements':cubes,
+            'outliner':[{'name':name,'uuid':uid(name+'/group'),'origin':[8,8,8],'export':True,'children':[c['uuid'] for c in cubes]}],
+            'textures':images,'display':source.get('display',{})}
+    write(KIT/(name+'.bbmodel'),result)
+
+blockbench('Parabolic-Receiver-Placeholder',model)
+for variant in ['column','vertical']:
+    source=json.loads((NATIVE/f'assets/simpleradio/models/block/antenna/antenna_{variant}.json').read_text())
+    blockbench('Native-Antenna-'+variant.title(),source)
+print('Generated runtime models, recipe/tags, two exact native reference projects and the placeholder project.')

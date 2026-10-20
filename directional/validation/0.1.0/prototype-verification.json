@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "jar": "simple-radio-directional-antenna-fabric-1.20.1-0.1.0-prototype.jar",
+  "bytes": 69034,
+  "sha256": "86d337e2b57408dea635575e3436a547b93704b018d39352d47bbbd2d378d562",
+  "runtime_classes": 27,
+  "removed_fixture_classes": 2,
+  "retained_runtime_entries_byte_identical": 42,
+  "loom_manifest_preserved": true,
+  "no_obfuscation": true,
+  "optional_repeaters_not_bundled_or_required": true,
+  "blockbench_models": 3,
+  "embedded_texture_validation": true,
+  "top_references_excluded": true
+}

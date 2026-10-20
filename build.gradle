@@ -3,3 +3,6 @@ allprojects { version = rootProject.mod_version; group = rootProject.maven_group
 
 tasks.named("build") { dependsOn ":core:build", ":foci:build" }
 tasks.register("prototypeJar") { dependsOn ":core:prototypeJar", ":foci:prototypeJar" }
+
+tasks.named('build') { dependsOn ':directional:build' }
+tasks.named('prototypeJar') { dependsOn ':directional:prototypeJar' }

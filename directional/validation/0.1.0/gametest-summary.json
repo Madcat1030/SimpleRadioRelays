@@ -1,0 +1,44 @@
+[
+  {
+    "mode": "base",
+    "directional_tests": 13,
+    "directional_failures": 0,
+    "all_addon_tests": 13,
+    "addon_failures": 0,
+    "native_tests": 7,
+    "native_failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ]
+  },
+  {
+    "mode": "repeaters",
+    "directional_tests": 13,
+    "directional_failures": 0,
+    "all_addon_tests": 54,
+    "addon_failures": 0,
+    "native_tests": 7,
+    "native_failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ]
+  },
+  {
+    "mode": "foci",
+    "directional_tests": 13,
+    "directional_failures": 0,
+    "all_addon_tests": 77,
+    "addon_failures": 0,
+    "native_tests": 7,
+    "native_failures": [
+      "SystemTest.shortCircuit",
+      "SystemTest.garbageCollection",
+      "SystemTest.closedSystem",
+      "SystemTest.openSystem"
+    ]
+  }
+]

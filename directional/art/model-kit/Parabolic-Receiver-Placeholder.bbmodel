@@ -1,0 +1,3741 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Parabolic-Receiver-Placeholder",
+  "model_identifier": "Parabolic-Receiver-Placeholder",
+  "visible_box": [
+    4,
+    4,
+    1
+  ],
+  "resolution": {
+    "width": 16,
+    "height": 16
+  },
+  "elements": [
+    {
+      "name": "mesh_0_1",
+      "uuid": "1233c23a-e9b8-5b4e-ac61-93c39d7957bb",
+      "type": "cube",
+      "from": [
+        -8,
+        -16,
+        6
+      ],
+      "to": [
+        0,
+        -8,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_0_2",
+      "uuid": "1c1f3024-b0e4-5807-bca2-e77952fd1ab9",
+      "type": "cube",
+      "from": [
+        0,
+        -16,
+        7
+      ],
+      "to": [
+        8,
+        -8,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_0_3",
+      "uuid": "b408da8a-2e9d-5873-908f-8dd3b7191ca4",
+      "type": "cube",
+      "from": [
+        8,
+        -16,
+        7
+      ],
+      "to": [
+        16,
+        -8,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_0_4",
+      "uuid": "f1f01b5d-0e46-5cee-84d4-9dc46fca7bd8",
+      "type": "cube",
+      "from": [
+        16,
+        -16,
+        6
+      ],
+      "to": [
+        24,
+        -8,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_0",
+      "uuid": "b8f2293d-cf8f-5352-bd43-6bf93c9fb604",
+      "type": "cube",
+      "from": [
+        -16,
+        -8,
+        6
+      ],
+      "to": [
+        -8,
+        0,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_1",
+      "uuid": "9821620e-4b60-5ef2-a35c-73892e71c069",
+      "type": "cube",
+      "from": [
+        -8,
+        -8,
+        9
+      ],
+      "to": [
+        0,
+        0,
+        10
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_2",
+      "uuid": "af10c7ad-6743-5ed1-9bda-eceb6b800df3",
+      "type": "cube",
+      "from": [
+        0,
+        -8,
+        10
+      ],
+      "to": [
+        8,
+        0,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_3",
+      "uuid": "7c60f7ad-79f7-5b60-8449-a3a0a4640aee",
+      "type": "cube",
+      "from": [
+        8,
+        -8,
+        10
+      ],
+      "to": [
+        16,
+        0,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_4",
+      "uuid": "329dab53-28e1-523f-926b-7d9c03e3c646",
+      "type": "cube",
+      "from": [
+        16,
+        -8,
+        9
+      ],
+      "to": [
+        24,
+        0,
+        10
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_1_5",
+      "uuid": "c08847e9-d2ab-5a40-93ea-1883948e74e5",
+      "type": "cube",
+      "from": [
+        24,
+        -8,
+        6
+      ],
+      "to": [
+        32,
+        0,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_0",
+      "uuid": "b970431f-03a6-5e9b-a971-1f3c55154bab",
+      "type": "cube",
+      "from": [
+        -16,
+        0,
+        7
+      ],
+      "to": [
+        -8,
+        8,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_1",
+      "uuid": "45ec5cd2-1cc3-50b6-820c-de0c489c93cd",
+      "type": "cube",
+      "from": [
+        -8,
+        0,
+        10
+      ],
+      "to": [
+        0,
+        8,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_2",
+      "uuid": "be9a2b72-1625-5db5-a44b-384769890d75",
+      "type": "cube",
+      "from": [
+        0,
+        0,
+        12
+      ],
+      "to": [
+        8,
+        8,
+        13
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_3",
+      "uuid": "befaf52b-f5e7-5e40-a413-1042f929ba76",
+      "type": "cube",
+      "from": [
+        8,
+        0,
+        12
+      ],
+      "to": [
+        16,
+        8,
+        13
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_4",
+      "uuid": "660255ee-f7d9-5189-a0ca-11d0a17e66b5",
+      "type": "cube",
+      "from": [
+        16,
+        0,
+        10
+      ],
+      "to": [
+        24,
+        8,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_2_5",
+      "uuid": "83047e6e-30a2-55d2-a3cd-d20efeb77331",
+      "type": "cube",
+      "from": [
+        24,
+        0,
+        7
+      ],
+      "to": [
+        32,
+        8,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_0",
+      "uuid": "1ac1ddde-d874-5840-8741-5710cecd1ff4",
+      "type": "cube",
+      "from": [
+        -16,
+        8,
+        7
+      ],
+      "to": [
+        -8,
+        16,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_1",
+      "uuid": "3719acf7-eeea-5b79-b9d5-98e28eb70ee7",
+      "type": "cube",
+      "from": [
+        -8,
+        8,
+        10
+      ],
+      "to": [
+        0,
+        16,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_2",
+      "uuid": "d9f28ae0-f2d5-5a10-ad80-4edb98e6637a",
+      "type": "cube",
+      "from": [
+        0,
+        8,
+        12
+      ],
+      "to": [
+        8,
+        16,
+        13
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_3",
+      "uuid": "81314dd8-d28b-5878-ad6a-9f5e46f4cf56",
+      "type": "cube",
+      "from": [
+        8,
+        8,
+        12
+      ],
+      "to": [
+        16,
+        16,
+        13
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_4",
+      "uuid": "2681a00b-5b43-5caf-8b08-45a73b3797e2",
+      "type": "cube",
+      "from": [
+        16,
+        8,
+        10
+      ],
+      "to": [
+        24,
+        16,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_3_5",
+      "uuid": "cff94ea9-70d3-55af-bddc-fef199cf1469",
+      "type": "cube",
+      "from": [
+        24,
+        8,
+        7
+      ],
+      "to": [
+        32,
+        16,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_0",
+      "uuid": "d2da5638-bdb3-5ff1-ad15-1b5bd7e9617b",
+      "type": "cube",
+      "from": [
+        -16,
+        16,
+        6
+      ],
+      "to": [
+        -8,
+        24,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_1",
+      "uuid": "6bab58cb-152a-5bce-9671-3e773005b47e",
+      "type": "cube",
+      "from": [
+        -8,
+        16,
+        9
+      ],
+      "to": [
+        0,
+        24,
+        10
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_2",
+      "uuid": "3bded9de-ddee-5c99-a833-2d7180c94baf",
+      "type": "cube",
+      "from": [
+        0,
+        16,
+        10
+      ],
+      "to": [
+        8,
+        24,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_3",
+      "uuid": "96e51ff8-b1fd-54ed-bcd7-62760c3dde6a",
+      "type": "cube",
+      "from": [
+        8,
+        16,
+        10
+      ],
+      "to": [
+        16,
+        24,
+        11
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_4",
+      "uuid": "1463a95e-a423-5693-b2b9-0329079829a0",
+      "type": "cube",
+      "from": [
+        16,
+        16,
+        9
+      ],
+      "to": [
+        24,
+        24,
+        10
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_4_5",
+      "uuid": "e55a5a25-9c59-5ec7-a8f0-c87e014dc035",
+      "type": "cube",
+      "from": [
+        24,
+        16,
+        6
+      ],
+      "to": [
+        32,
+        24,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_5_1",
+      "uuid": "b03422d9-78f4-5a30-b0ee-aa4b1cb639aa",
+      "type": "cube",
+      "from": [
+        -8,
+        24,
+        6
+      ],
+      "to": [
+        0,
+        32,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_5_2",
+      "uuid": "e2ac4700-b11d-5274-8b7b-1600ad311921",
+      "type": "cube",
+      "from": [
+        0,
+        24,
+        7
+      ],
+      "to": [
+        8,
+        32,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_5_3",
+      "uuid": "f2045ea1-5071-57a8-a298-3ba5e780d1a9",
+      "type": "cube",
+      "from": [
+        8,
+        24,
+        7
+      ],
+      "to": [
+        16,
+        32,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mesh_5_4",
+      "uuid": "9e9a1fc2-ecaa-5748-b60f-079f573d17c8",
+      "type": "cube",
+      "from": [
+        16,
+        24,
+        6
+      ],
+      "to": [
+        24,
+        32,
+        7
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mast_clamp",
+      "uuid": "c2bfe570-1415-5b95-980c-dbb96d1c067f",
+      "type": "cube",
+      "from": [
+        3,
+        3,
+        20
+      ],
+      "to": [
+        13,
+        13,
+        23
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "mounting_arm",
+      "uuid": "821f07e6-e20a-557e-b0dc-ecbaedd91d9b",
+      "type": "cube",
+      "from": [
+        6,
+        6,
+        11
+      ],
+      "to": [
+        10,
+        10,
+        24
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "feed_horn",
+      "uuid": "757befd1-6a89-5054-98c8-97e5567d5d56",
+      "type": "cube",
+      "from": [
+        6,
+        6,
+        0
+      ],
+      "to": [
+        10,
+        10,
+        3
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "feed_support_left",
+      "uuid": "13c005ce-7164-542a-962b-0a7432c3de39",
+      "type": "cube",
+      "from": [
+        -9,
+        7,
+        2
+      ],
+      "to": [
+        7,
+        9,
+        4
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "feed_support_right",
+      "uuid": "85dc5042-f09a-5efe-b74f-5b3ab107390e",
+      "type": "cube",
+      "from": [
+        9,
+        7,
+        2
+      ],
+      "to": [
+        25,
+        9,
+        4
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "feed_support_vertical",
+      "uuid": "6161c732-98b0-5ae3-b58f-9fd78932faf6",
+      "type": "cube",
+      "from": [
+        7,
+        -9,
+        2
+      ],
+      "to": [
+        9,
+        25,
+        4
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "feed_neck",
+      "uuid": "d961eff3-3dfa-5aff-9fd9-00d8662a2838",
+      "type": "cube",
+      "from": [
+        7,
+        7,
+        3
+      ],
+      "to": [
+        9,
+        9,
+        8
+      ],
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "south": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "west": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "east": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "up": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            3,
+            1
+          ],
+          "texture": 0,
+          "rotation": 0
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    }
+  ],
+  "outliner": [
+    {
+      "name": "Parabolic-Receiver-Placeholder",
+      "uuid": "4639afbb-ab5b-5e4a-ba4e-2cec7043c8e4",
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "export": true,
+      "children": [
+        "1233c23a-e9b8-5b4e-ac61-93c39d7957bb",
+        "1c1f3024-b0e4-5807-bca2-e77952fd1ab9",
+        "b408da8a-2e9d-5873-908f-8dd3b7191ca4",
+        "f1f01b5d-0e46-5cee-84d4-9dc46fca7bd8",
+        "b8f2293d-cf8f-5352-bd43-6bf93c9fb604",
+        "9821620e-4b60-5ef2-a35c-73892e71c069",
+        "af10c7ad-6743-5ed1-9bda-eceb6b800df3",
+        "7c60f7ad-79f7-5b60-8449-a3a0a4640aee",
+        "329dab53-28e1-523f-926b-7d9c03e3c646",
+        "c08847e9-d2ab-5a40-93ea-1883948e74e5",
+        "b970431f-03a6-5e9b-a971-1f3c55154bab",
+        "45ec5cd2-1cc3-50b6-820c-de0c489c93cd",
+        "be9a2b72-1625-5db5-a44b-384769890d75",
+        "befaf52b-f5e7-5e40-a413-1042f929ba76",
+        "660255ee-f7d9-5189-a0ca-11d0a17e66b5",
+        "83047e6e-30a2-55d2-a3cd-d20efeb77331",
+        "1ac1ddde-d874-5840-8741-5710cecd1ff4",
+        "3719acf7-eeea-5b79-b9d5-98e28eb70ee7",
+        "d9f28ae0-f2d5-5a10-ad80-4edb98e6637a",
+        "81314dd8-d28b-5878-ad6a-9f5e46f4cf56",
+        "2681a00b-5b43-5caf-8b08-45a73b3797e2",
+        "cff94ea9-70d3-55af-bddc-fef199cf1469",
+        "d2da5638-bdb3-5ff1-ad15-1b5bd7e9617b",
+        "6bab58cb-152a-5bce-9671-3e773005b47e",
+        "3bded9de-ddee-5c99-a833-2d7180c94baf",
+        "96e51ff8-b1fd-54ed-bcd7-62760c3dde6a",
+        "1463a95e-a423-5693-b2b9-0329079829a0",
+        "e55a5a25-9c59-5ec7-a8f0-c87e014dc035",
+        "b03422d9-78f4-5a30-b0ee-aa4b1cb639aa",
+        "e2ac4700-b11d-5274-8b7b-1600ad311921",
+        "f2045ea1-5071-57a8-a298-3ba5e780d1a9",
+        "9e9a1fc2-ecaa-5748-b60f-079f573d17c8",
+        "c2bfe570-1415-5b95-980c-dbb96d1c067f",
+        "821f07e6-e20a-557e-b0dc-ecbaedd91d9b",
+        "757befd1-6a89-5054-98c8-97e5567d5d56",
+        "13c005ce-7164-542a-962b-0a7432c3de39",
+        "85dc5042-f09a-5efe-b74f-5b3ab107390e",
+        "6161c732-98b0-5ae3-b58f-9fd78932faf6",
+        "d961eff3-3dfa-5aff-9fd9-00d8662a2838"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "antenna_column.png",
+      "id": "0",
+      "uuid": "b79c0a01-ca79-5c68-b689-924fe9f57a32",
+      "folder": "block",
+      "namespace": "simpleradio",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASZJREFUOI2FUzGOgzAQHBBP4AFgkJIG8YmjzT0jDV9J6nwDqkjOA3IlosESNjyAD0CzV+RsmVwwU3m9K+/s7BjzQlTVnJpWUlVzwh8u1xtVNSedxxaaVtLleiMAmBcyhfq890BwPDA8+CvohEJVc+p7iU4oc9f3cpNAYAd5lnjzQtQJhjxLPACwG3yC3wmFaZrMRScUxkGtYhd8u3heiMbhRVlrMA7rBv9GiGJmZuyEwvep8ADgqygIAKKY4fn82WZwPDCkaWK6a4yDMizCMHRroFW31bY34dRAH/Is8crybBJleTabcCF4V/zdB7siAjAFn3zgMtFqBJuFzWoPPiyVbR80rSQASNPE+cDKyrYP7A/kWmMQxcx0v98fJtH3ElXNSee38AvDXN1PYKObsAAAAABJRU5ErkJggg==",
+      "mode": "bitmap",
+      "saved": false,
+      "render_mode": "default",
+      "visible": true
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.125,
+        0.125,
+        0.125
+      ]
+    },
+    "fixed": {
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "scale": [
+        0.16,
+        0.16,
+        0.16
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    }
+  }
+}

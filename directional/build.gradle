@@ -1,0 +1,80 @@
+plugins { id 'fabric-loom' }
+
+evaluationDependsOn(':core')
+if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
+
+version = '0.1.0'
+group = project.maven_group
+base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
+
+repositories {
+    maven { url = 'https://api.modrinth.com/maven' }
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    mavenCentral()
+}
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.19.3'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.5+1.20.1'
+    modImplementation 'maven.modrinth:simple-radio:f9TIjf7X'
+    modImplementation 'maven.modrinth:lexiconfig:NfIErT11'
+    modImplementation 'maven.modrinth:simple-voice-chat:fabric-1.20.1-2.6.18'
+    compileOnly 'io.github.llamalad7:mixinextras-fabric:0.5.4'
+    annotationProcessor 'io.github.llamalad7:mixinextras-fabric:0.5.4'
+    // Optional integration is compiled against the API, never bundled or required at runtime.
+    compileOnly project(path: ':core', configuration: 'namedElements')
+    if (project.hasProperty('withRepeaters') || project.hasProperty('withFoci'))
+        runtimeOnly project(path: ':core', configuration: 'namedElements')
+    if (project.hasProperty('withFoci'))
+        runtimeOnly project(path: ':foci', configuration: 'namedElements')
+    runtimeOnly 'com.electronwill.night-config:core:3.6.6'
+    runtimeOnly 'com.electronwill.night-config:toml:3.6.6'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+loom {
+    mods {
+        simpleradio_directional { sourceSet sourceSets.main }
+        if (project.hasProperty('withRepeaters') || project.hasProperty('withFoci'))
+            simpleradio_repeaters { sourceSet project(':core').sourceSets.main }
+        if (project.hasProperty('withFoci'))
+            simpleradio_repeaters_foci { sourceSet project(':foci').sourceSets.main }
+    }
+    mixin { useLegacyMixinAp = true; defaultRefmapName = 'simpleradio_directional.refmap.json' }
+    runs {
+        gameTest {
+            server()
+            name 'Directional Antenna Game Tests'
+            runDir 'run/gametest'
+            vmArg '-Dfabric-api.gametest'
+            vmArg '-Dfabric-api.gametest.report-file=reports/gametest-report.xml'
+        }
+    }
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; withSourcesJar() }
+test { useJUnitPlatform() }
+jar { from(rootProject.file('LICENSE')) { rename { "${it}_${project.base.archivesName.get()}" } } }
+
+// Runtime copy excludes this module's GameTest fixtures. No shrinking or obfuscation.
+tasks.register('prototypeJar', Zip) {
+    dependsOn tasks.named('remapJar')
+    archiveFileName = "${base.archivesName.get()}-${project.version}-prototype.jar"
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    from({ zipTree(tasks.named('remapJar').get().archiveFile.get().asFile) }) {
+        exclude 'dev/paul/simpleradiodirectional/gametest/**', 'fabric.mod.json'
+    }
+    doFirst {
+        def descriptor = new groovy.json.JsonSlurper().parse(file("$buildDir/resources/main/fabric.mod.json"))
+        descriptor.entrypoints.remove('fabric-gametest')
+        def output = file("$buildDir/prototype/fabric.mod.json")
+        output.parentFile.mkdirs()
+        output.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descriptor)) + '\n'
+    }
+    from(layout.buildDirectory.file('prototype/fabric.mod.json'))
+}

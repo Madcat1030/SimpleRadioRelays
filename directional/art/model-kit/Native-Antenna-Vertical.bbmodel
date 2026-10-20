@@ -1,0 +1,587 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "java_block",
+    "box_uv": false
+  },
+  "name": "Native-Antenna-Vertical",
+  "model_identifier": "Native-Antenna-Vertical",
+  "visible_box": [
+    4,
+    4,
+    1
+  ],
+  "resolution": {
+    "width": 16,
+    "height": 16
+  },
+  "elements": [
+    {
+      "name": "native_0",
+      "uuid": "f5ba6744-6f7d-5876-940b-785d04abb566",
+      "type": "cube",
+      "from": [
+        9.26777,
+        0,
+        10.06066
+      ],
+      "to": [
+        14.26777,
+        16,
+        10.06066
+      ],
+      "origin": [
+        11.76777,
+        8,
+        10.06066
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "south": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "native_1",
+      "uuid": "091f7c06-a9cc-5038-86c3-65455752e114",
+      "type": "cube",
+      "from": [
+        11.76777,
+        0,
+        7.56066
+      ],
+      "to": [
+        11.76777,
+        16,
+        12.56066
+      ],
+      "origin": [
+        11.76777,
+        8,
+        10.06066
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "west": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "native_2",
+      "uuid": "d1511f3e-8703-58ea-9b4a-e185498d14cb",
+      "type": "cube",
+      "from": [
+        4.5,
+        0,
+        4
+      ],
+      "to": [
+        10.5,
+        16,
+        4
+      ],
+      "origin": [
+        7.5,
+        0,
+        6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "south": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "native_3",
+      "uuid": "ac9d087a-eb34-5623-8aa9-3bb52592eed5",
+      "type": "cube",
+      "from": [
+        7.5,
+        0,
+        1
+      ],
+      "to": [
+        7.5,
+        16,
+        7
+      ],
+      "origin": [
+        7.5,
+        0,
+        3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "west": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "native_4",
+      "uuid": "42c2ecd3-e339-50e8-a1ad-95e1e24c2e67",
+      "type": "cube",
+      "from": [
+        5.5,
+        0,
+        6
+      ],
+      "to": [
+        5.5,
+        16,
+        12
+      ],
+      "origin": [
+        5.5,
+        0,
+        8.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "west": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    },
+    {
+      "name": "native_5",
+      "uuid": "97b36eb1-abd5-5875-8e1f-e892fcca8395",
+      "type": "cube",
+      "from": [
+        2.5,
+        0,
+        9
+      ],
+      "to": [
+        8.5,
+        16,
+        9
+      ],
+      "origin": [
+        5.5,
+        0,
+        11
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "rescale": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            13,
+            16,
+            7
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "south": {
+          "uv": [
+            0,
+            7,
+            16,
+            13
+          ],
+          "texture": 0,
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "texture": null
+        }
+      },
+      "autouv": 0,
+      "shade": true,
+      "export": true,
+      "visibility": true
+    }
+  ],
+  "outliner": [
+    {
+      "name": "Native-Antenna-Vertical",
+      "uuid": "301cc725-3bb5-52c5-9cc5-af38cb273839",
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "export": true,
+      "children": [
+        "f5ba6744-6f7d-5876-940b-785d04abb566",
+        "091f7c06-a9cc-5038-86c3-65455752e114",
+        "d1511f3e-8703-58ea-9b4a-e185498d14cb",
+        "ac9d087a-eb34-5623-8aa9-3bb52592eed5",
+        "42c2ecd3-e339-50e8-a1ad-95e1e24c2e67",
+        "97b36eb1-abd5-5875-8e1f-e892fcca8395"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "antenna.png",
+      "id": "0",
+      "uuid": "24cee1ef-222a-5ea9-aa25-073748eceb08",
+      "folder": "block",
+      "namespace": "simpleradio",
+      "width": 16,
+      "height": 16,
+      "uv_width": 16,
+      "uv_height": 16,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAJ5JREFUOI3VkbEVwjAMRL8zgwcA9oWaNaBlCh4NFDgZwAtAYyrnXRxFwKNCjX130j3ZB049nqV4OkD3aeOSeQdwvSUAzpf7xKjynhYOx1MBWK03ozj0acR6tzAA292+AFSz9tQNKtduRDugxpbW4tnAu/qmF5yk3BiV10RUC/Uzhj7NDDQJiwcI1ltyzsQYJ1hLNXA+ZIk3E/ip8b/rBXYlfsCCmIaLAAAAAElFTkSuQmCC",
+      "mode": "bitmap",
+      "saved": false,
+      "render_mode": "default",
+      "visible": true
+    }
+  ],
+  "display": {}
+}

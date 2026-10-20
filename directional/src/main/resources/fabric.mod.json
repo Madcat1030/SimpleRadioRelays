@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleradio_directional",
+  "version": "${version}",
+  "name": "Simple Radio Directional Antenna",
+  "description": "Mast-mounted parabolic receivers with a 90-degree reception wedge and soft angular falloff.",
+  "authors": ["Paul", "OpenAI"],
+  "license": "GPL-3.0-only",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.paul.simpleradiodirectional.DirectionalAntenna"],
+    "client": ["dev.paul.simpleradiodirectional.client.DirectionalClient"],
+    "fabric-gametest": ["dev.paul.simpleradiodirectional.gametest.DirectionalGameTests"]
+  },
+  "mixins": ["simpleradio_directional.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0", "fabric-api": "*", "minecraft": "1.20.1", "java": ">=17",
+    "simpleradio": "1.20.1-4.5.7.9"
+  },
+  "suggests": { "simpleradio_repeaters": "0.5.0" }
+}

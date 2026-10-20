@@ -1,0 +1,7 @@
+{
+  "block.simpleradio_directional.parabolic_receiver": "Parabolic Receiver",
+  "block.simpleradio_directional.parabolic_part": "Parabolic Receiver Part",
+  "itemGroup.simpleradio_directional": "Simple Radio Directional Antenna",
+  "tooltip.simpleradio_directional.mount": "Attach to a vertical antenna with antenna above it. Requires a clear 3\u00d73 area.",
+  "tooltip.simpleradio_directional.pattern": "Receive only: 90\u00b0 full gain; fades to zero 30\u00b0 beyond each edge."
+}

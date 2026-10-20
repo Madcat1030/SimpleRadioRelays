@@ -1,0 +1,31 @@
+{
+  "source": "Simple Radio 1.20.1-4.5.7.9 sources",
+  "copied_without_modification": true,
+  "files": [
+    {
+      "path": "native-reference/LICENSE_Simple Radio",
+      "bytes": 35148,
+      "sha256": "8b1ba204bb69a0ade2bfcf65ef294a920f6bb361b317dba43c7ef29d96332b9b"
+    },
+    {
+      "path": "native-reference/assets/simpleradio/models/block/antenna/antenna_column.json",
+      "bytes": 2649,
+      "sha256": "dd5146698d4c89ec2a7c99a4f89e4c3facff2544096d736c330368c53d484372"
+    },
+    {
+      "path": "native-reference/assets/simpleradio/models/block/antenna/antenna_vertical.json",
+      "bytes": 2096,
+      "sha256": "eb694d992f33dfac7adb164e9761c40205bda36ba30735e1b9b702bbc736da39"
+    },
+    {
+      "path": "native-reference/assets/simpleradio/textures/block/antenna.png",
+      "bytes": 228,
+      "sha256": "bf5acd41d66001957c24c2802bd41caa9c2de3d968b3f45e00ffbe07a4136678"
+    },
+    {
+      "path": "native-reference/assets/simpleradio/textures/block/antenna_column.png",
+      "bytes": 364,
+      "sha256": "dab6cb8556746dc3568ab10383172d064c0d6f2c0a6d71bc6b71d00ad3be99e0"
+    }
+  ]
+}
