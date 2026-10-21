@@ -3,7 +3,7 @@ plugins { id 'fabric-loom' }
 evaluationDependsOn(':core')
 if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
 
-version = '0.1.0'
+version = '0.1.1'
 group = project.maven_group
 base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
 
@@ -52,12 +52,44 @@ loom {
         }
     }
 }
+// Keep the editable whole-dish JSON authoritative. Fixed mounting cubes are split at build time.
+def generatedDishModels = layout.buildDirectory.dir('generated/dish-models')
+tasks.register('generateDishModels') {
+    inputs.file('src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json')
+    outputs.dir(generatedDishModels)
+    doLast {
+        def model = new groovy.json.JsonSlurper().parse(inputs.files.singleFile)
+        def fixed = { element -> element.name in ['mast_clamp', 'mounting_arm'] || element.name?.startsWith('mount_') }
+        def mount = model.elements.findAll(fixed)
+        def head = model.elements.findAll { !fixed(it) }
+        if (mount.isEmpty() || head.isEmpty()) throw new GradleException('Dish model needs fixed mounting cubes (mount_ prefix) and a separate reflector.')
+        def output = generatedDishModels.get().asFile
+        def writeJson = { String name, Object value ->
+            def file = new File(output, 'assets/simpleradio_directional/' + name)
+            file.parentFile.mkdirs()
+            file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(value)) + '\n'
+        }
+        writeJson('models/block/parabolic_receiver_mount.json', model + [elements: mount])
+        writeJson('models/block/parabolic_receiver_head.json', model + [elements: head])
+        (0..6).each { aim -> writeJson("models/block/parabolic_receiver_aim_${aim}.json", [parent: 'simpleradio_directional:block/parabolic_receiver_head']) }
+        def parts = []
+        [north: 0, east: 90, south: 180, west: 270].each { facing, yaw ->
+            parts.add([when: [facing: facing], apply: [model: 'simpleradio_directional:block/parabolic_receiver_mount', y: yaw]])
+            (0..6).each { aim -> parts.add([when: [facing: facing, aim: aim.toString()],
+                    apply: [model: "simpleradio_directional:block/parabolic_receiver_aim_${aim}", y: yaw]]) }
+        }
+        writeJson('blockstates/parabolic_receiver.json', [multipart: parts])
+    }
+}
+sourceSets.main.resources.srcDir(generatedDishModels)
 processResources {
+    dependsOn tasks.named('generateDishModels')
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') { expand 'version': project.version }
 }
 tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
 java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; withSourcesJar() }
+tasks.named('sourcesJar') { dependsOn tasks.named('generateDishModels') }
 test { useJUnitPlatform() }
 jar { from(rootProject.file('LICENSE')) { rename { "${it}_${project.base.archivesName.get()}" } } }
 

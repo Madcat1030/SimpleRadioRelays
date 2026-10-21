@@ -17,7 +17,13 @@ import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -180,6 +186,69 @@ public final class DirectionalGameTests implements FabricGameTest {
         helper.succeed();
     }
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
+    public void seven_aims_rotate_native_reception_and_keep_the_mast_binding(GameTestHelper helper) {
+        var tower=mast(helper,Direction.NORTH); dish(tower); var receiver=receiver(tower);
+        var east=sender(tower,receiver,90,2500);
+        check(!east.shouldRouteTo(packet(east,1000),receiver),"Straight dish must not hear a distant sender to the side");
+        var player=helper.makeMockPlayer(); player.setShiftKeyDown(true);
+        var hit=new BlockHitResult(tower.center().getCenter(),Direction.NORTH,tower.center(),false);
+        for(int i=0;i<3;i++) DirectionalAntenna.DISH.use(tower.level().getBlockState(tower.center()),tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
+        player.setShiftKeyDown(false);
+        for(int aim=0;aim<=6;aim++) {
+            var state=tower.level().getBlockState(tower.center());
+            check(state.getValue(ParabolicReceiverBlock.AIM)==aim,"Every click must select exactly one of the seven aims");
+            check(state.getValue(ParabolicReceiverBlock.FACING)==Direction.NORTH,"Aiming must not move the mounting face");
+            var saved=DishManager.receivers(receiver).get(0);
+            check(saved.aim()==aim && saved.mast().equals(tower.mast()),"Packet snapshot must immediately retain the same mast and the new aim");
+            var aligned=sender(tower,receiver,DishAim.degrees(aim),2500);
+            check(aligned.shouldRouteTo(packet(aligned,1000),receiver),"Native routing must follow the new bearing");
+            if(aim<6) DirectionalAntenna.DISH.use(state,tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
+        }
+        check(east.shouldRouteTo(packet(east,1000),receiver),"A 45-degree swivel must bring the distant side sender into full gain");
+        helper.succeed();
+    }
+    @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
+    public void panel_clicks_aim_the_center_and_step_limits_do_not_publish_changes(GameTestHelper helper) {
+        var tower=mast(helper,Direction.NORTH); dish(tower); var player=helper.makeMockPlayer();
+        BlockPos panel=DishGeometry.cell(tower.center(),tower.facing(),0);
+        var hit=new BlockHitResult(panel.getCenter(),Direction.NORTH,panel,false);
+        var part=tower.level().getBlockState(panel);
+        player.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.IRON_INGOT));
+        check(DirectionalAntenna.PART.use(part,tower.level(),panel,player,InteractionHand.MAIN_HAND,hit)==InteractionResult.PASS,"Held items must not adjust aim");
+        player.setItemInHand(InteractionHand.MAIN_HAND,ItemStack.EMPTY);
+        for(int i=0;i<3;i++) DirectionalAntenna.PART.use(part,tower.level(),panel,player,InteractionHand.MAIN_HAND,hit);
+        check(tower.level().getBlockState(tower.center()).getValue(ParabolicReceiverBlock.AIM)==6,"Outer panel must target the center");
+        int revision=DishManager.revision();
+        DirectionalAntenna.PART.use(part,tower.level(),panel,player,InteractionHand.MAIN_HAND,hit);
+        check(DishManager.revision()==revision,"Clicking past the stop must not invalidate cached routes");
+        player.setShiftKeyDown(true);
+        for(int i=0;i<3;i++) DirectionalAntenna.PART.use(part,tower.level(),panel,player,InteractionHand.MAIN_HAND,hit);
+        check(tower.level().getBlockState(tower.center()).getValue(ParabolicReceiverBlock.AIM)==3,"Sneak-click must turn back toward straight");
+        check(DishGeometry.validate(tower.level(),tower.center(),tower.facing())==DishGeometry.Validity.VALID,"Aiming must preserve the physical assembly");
+        helper.succeed();
+    }
+    @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
+    public void aimed_saved_data_and_blockstate_roundtrip_and_mirror(GameTestHelper helper) {
+        var block=DirectionalAntenna.DISH;
+        for(var facing:Direction.Plane.HORIZONTAL) for(int aim=0;aim<=6;aim++) {
+            var dish=new Dish(helper.getLevel().dimension().location(),new BlockPos(5,80,9),facing,aim);
+            check(dish.equals(Dish.load(dish.save())),"Every mounting face and aim must survive saved-data reload");
+            var state=block.defaultBlockState().setValue(ParabolicReceiverBlock.FACING,facing).setValue(ParabolicReceiverBlock.AIM,aim);
+            var restored=NbtUtils.readBlockState(helper.getLevel().holderLookup(net.minecraft.core.registries.Registries.BLOCK),NbtUtils.writeBlockState(state));
+            check(restored==state,"Aim must survive normal chunk blockstate serialization");
+            for(var mirror:new Mirror[]{Mirror.LEFT_RIGHT,Mirror.FRONT_BACK}) {
+                var mirrored=block.mirror(state,mirror);
+                check(mirrored.getValue(ParabolicReceiverBlock.AIM)==6-aim,"Mirrors must reverse the relative swivel");
+                check(block.mirror(mirrored,mirror)==state,"Mirroring twice must restore the entire state");
+            }
+            check(block.rotate(state,Rotation.CLOCKWISE_90).getValue(ParabolicReceiverBlock.AIM)==aim,"Cardinal rotation must retain relative aim");
+        }
+        var old=new Dish(helper.getLevel().dimension().location(),BlockPos.ZERO,Direction.NORTH).save();old.remove("Aim");
+        check(Dish.load(old).aim()==DishAim.STRAIGHT,"Older dish records must point straight out");
+        old.putInt("Aim",7);check(Dish.load(old)==null,"Invalid saved aim must be rejected");
+        helper.succeed();
+    }
+    @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
     public void restored_chunk_without_saved_dish_is_reconciled(GameTestHelper helper) {
         var tower=mast(helper,Direction.NORTH);
         DishManager.verify(tower.level(),new Dish(tower.level().dimension().location(),tower.center(),Direction.NORTH));
@@ -210,6 +279,18 @@ public final class DirectionalGameTests implements FabricGameTest {
                 dev.paul.simpleradiorepeaters.radio.RadioSpace.physical(tower.level(),new Vec3(receiver.getLocation().x,receiver.getLocation().y,receiver.getLocation().z)),false);
         check(dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.receiveAtReceiver(toNative,1000,1000,SimpleRadioFrequencing.TRANSCEIVER,receiver,channel)!=null,"Relay-to-native-receiver delivery must use the dish too");
         int stamp=dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp();
+        var eastFrom=dev.paul.simpleradiorepeaters.radio.RadioSpace.physical(tower.level(),tower.mast().getCenter().add(2300,0,0));
+        var eastLeg=dev.paul.simpleradiorepeaters.radio.RadioSpace.between(eastFrom,to,false);
+        check(dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.receiveAtTower(eastLeg,1000,1000,SimpleRadioFrequencing.TRANSCEIVER,record,channel)==null,"Side tower must begin outside the original wedge");
+        var manager=dev.paul.simpleradiorepeaters.network.TowerManager.get(tower.level().getServer());
+        var cached=manager.network(tower.level(),channel);
+        check(cached==manager.network(tower.level(),channel),"Unchanged reception must reuse the existing network cache");
+        var player=helper.makeMockPlayer();var hit=new BlockHitResult(tower.center().getCenter(),Direction.NORTH,tower.center(),false);
+        for(int i=0;i<3;i++) DirectionalAntenna.DISH.use(tower.level().getBlockState(tower.center()),tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
+        check(stamp!=dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp(),"Aiming must immediately invalidate cached relay links");
+        check(cached!=manager.network(tower.level(),channel),"Actual cached relay routes must rebuild immediately, without waiting for a periodic configuration check");
+        check(dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.receiveAtTower(eastLeg,1000,1000,SimpleRadioFrequencing.TRANSCEIVER,record,channel)!=null,"Relay-to-relay gain must follow the aimed wedge");
+        stamp=dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp();
         tower.level().destroyBlock(tower.center(),false);
         check(stamp!=dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp(),"Dish changes must invalidate the graph fingerprint");
         check(dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.receiveAtTower(leg,1000,1000,SimpleRadioFrequencing.TRANSCEIVER,record,channel)==null,"Removing dish must immediately remove its receive bonus");

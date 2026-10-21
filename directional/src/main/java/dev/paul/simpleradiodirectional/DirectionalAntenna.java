@@ -37,6 +37,7 @@ public final class DirectionalAntenna implements ModInitializer {
             @Override public void appendHoverText(ItemStack stack, Level level, List<Component> lines, TooltipFlag flag) {
                 lines.add(Component.translatable("tooltip.simpleradio_directional.mount").withStyle(ChatFormatting.GRAY));
                 lines.add(Component.translatable("tooltip.simpleradio_directional.pattern").withStyle(ChatFormatting.DARK_GRAY));
+                lines.add(Component.translatable("tooltip.simpleradio_directional.aim").withStyle(ChatFormatting.GRAY));
             }
         });
         DISH_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("parabolic_receiver"),

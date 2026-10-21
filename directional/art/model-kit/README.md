@@ -8,4 +8,8 @@ One block is 16 model units. The dish faces North (negative Z), reserves a 48×4
 
 Export the **dish project only** as a Minecraft Java block/item model. Replace `directional/src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json` in the source workspace. Keep the origin and texture references. You can also supply the edited `.bbmodel` for integration.
 
-Visual edits do not change the 3×3 reservation or collision cells. The other three horizontal orientations use the same model with blockstate rotations. Reception stays full within 45° of facing, drops to 25% extra gain at 60°, and reaches zero extra gain at 75°.
+Visual edits do not change the 3×3 reservation or collision cells. The four mounting sides use blockstate rotations. The reflector also swivels in seven 15° steps from −45° to +45° relative to that mount. Reception stays full within 45° of the selected aim, drops to 25% extra gain at 60°, and reaches zero extra gain at 75°.
+
+The **Mount** group is stationary and the **Reflector** group swivels. Keep the existing fixed cubes named **mast_clamp** and **mounting_arm**, or name replacement fixed cubes with a **mount_** prefix. All other cubes rotate around the reflector pivot **[8, 8, 8]**. Keep both groups at 0° when exporting; runtime handles the aim angles. The build automatically splits the editable Java model into fixed mount and swivel layers, and caches angled quads when resources load. Keep the feed and reflector together when redesigning the dish. Leave room for the visual sweep; selection/collision retains the original fixed 3×3 plane.
+
+In game, right-click any dish part with an empty hand to aim clockwise; sneak-right-click to aim counterclockwise. The end stops do not wrap. Old dishes start straight out from the mast.

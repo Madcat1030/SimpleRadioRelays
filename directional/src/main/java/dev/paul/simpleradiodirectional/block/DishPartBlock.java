@@ -6,11 +6,15 @@ import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.*;
 import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.phys.shapes.*;
+import net.minecraft.world.phys.BlockHitResult;
 
 /** Invisible occupied cells retain selection, collision and a single whole-dish drop. */
 public final class DishPartBlock extends Block {
@@ -30,6 +34,14 @@ public final class DishPartBlock extends Block {
     }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return shape(state.getValue(FACING)); }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.INVISIBLE; }
+    @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                                           InteractionHand hand, BlockHitResult hit) {
+        BlockPos center = DishGeometry.center(pos, state.getValue(FACING), state.getValue(PART));
+        if (!level.hasChunkAt(center)) return InteractionResult.PASS;
+        var dish = level.getBlockState(center);
+        return dish.is(DirectionalAntenna.DISH) ? DirectionalAntenna.DISH.use(dish, level, center, player, hand,
+                new BlockHitResult(hit.getLocation(), hit.getDirection(), center, hit.isInside())) : InteractionResult.PASS;
+    }
     @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(DirectionalAntenna.DISH); }
     @Override public BlockState rotate(BlockState state, Rotation rotation) { return state.setValue(FACING, rotation.rotate(state.getValue(FACING))); }
     @Override public BlockState mirror(BlockState state, Mirror mirror) {

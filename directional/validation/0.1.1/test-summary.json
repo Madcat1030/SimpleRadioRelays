@@ -1,0 +1,63 @@
+{
+  "base": {
+    "total": 23,
+    "addon_passed": 16,
+    "native_failures": [
+      {
+        "name": "SystemTest.shortCircuit",
+        "messages": [
+          "Router not found at location at 14,-58,1 (relative: 0,2,1) (t=10)"
+        ]
+      },
+      {
+        "name": "SystemTest.garbageCollection",
+        "messages": [
+          "Listener found at location at 39,-58,0 (relative: 2,2,0) (t=50)"
+        ]
+      },
+      {
+        "name": "SystemTest.openSystem",
+        "messages": [
+          "Didn't succeed or fail within 100 ticks"
+        ]
+      },
+      {
+        "name": "SystemTest.closedSystem",
+        "messages": [
+          "Didn't succeed or fail within 100 ticks"
+        ]
+      }
+    ]
+  },
+  "combined": {
+    "total": 87,
+    "addon_passed": 80,
+    "native_failures": [
+      {
+        "name": "SystemTest.shortCircuit",
+        "messages": [
+          "Did not expect wire between  at 0,-59,131 (relative: 1,-57,132) (t=50)"
+        ]
+      },
+      {
+        "name": "SystemTest.garbageCollection",
+        "messages": [
+          "Listener found at location at 16,-58,130 (relative: 2,2,0) (t=50)"
+        ]
+      },
+      {
+        "name": "SystemTest.closedSystem",
+        "messages": [
+          "Didn't succeed or fail within 100 ticks"
+        ]
+      },
+      {
+        "name": "SystemTest.openSystem",
+        "messages": [
+          "Didn't succeed or fail within 100 ticks"
+        ]
+      }
+    ]
+  },
+  "unit_tests_passed": 15
+}

@@ -16,7 +16,8 @@ public final class DishBlockEntity extends BlockEntity {
         entity.checked = true;
         var facing = state.getValue(ParabolicReceiverBlock.FACING);
         switch (DishGeometry.validate(level, pos, facing)) {
-            case VALID -> DishManager.verify(level, new Dish(level.dimension().location(), pos, facing));
+            case VALID -> DishManager.verify(level, new Dish(level.dimension().location(), pos, facing,
+                    state.getValue(ParabolicReceiverBlock.AIM)));
             // A missing panel may already have dropped the item while this center's chunk was absent.
             case INVALID -> level.destroyBlock(pos, !DishGeometry.validMast(level, pos.relative(facing.getOpposite())));
             case INCOMPLETE -> { /* Preserve last verified state until adjacent chunks restore. */ }

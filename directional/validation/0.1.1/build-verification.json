@@ -1,0 +1,11 @@
+{
+  "runtime_classes": 30,
+  "java_class_version_max": 61,
+  "state_combinations_verified": 28,
+  "fixed_cubes": 2,
+  "swivel_cubes": 37,
+  "retained_bytes_match_remapped_build": true,
+  "game_test_entrypoint_removed": true,
+  "jar_sha256": "25133b2d51ce547c2acc9bc591d45a1db0b19387799234af37d8bd83e6d1cfdd",
+  "core_and_foci_source_unchanged": true
+}

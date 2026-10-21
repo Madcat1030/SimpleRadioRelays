@@ -10,6 +10,7 @@ import net.minecraft.resources.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.*;
+import net.fabricmc.loader.api.FabricLoader;
 import java.util.*;
 
 /** Mutable state belongs to the server thread; packet hooks read only the published immutable view. */
@@ -60,6 +61,7 @@ public final class DishManager {
         Map<DishSavedData.Key,List<Dish>> relayView = new HashMap<>();
         data.relays.forEach((key,hosts) -> relayView.put(key, connected(key.dimension(), hosts)));
         view = new View(view.revision() + 1, Map.copyOf(nativeView), Map.copyOf(relayView));
+        if (FabricLoader.getInstance().isModLoaded("simpleradio_repeaters")) RepeatersLinkCache.invalidate(server);
     }
     public static void refreshReceiver(ServerLevel level, ReceiverBlockEntity entity) {
         var manager = get(level);

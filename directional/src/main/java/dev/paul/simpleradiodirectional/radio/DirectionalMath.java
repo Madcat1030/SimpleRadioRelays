@@ -17,7 +17,7 @@ public final class DirectionalMath {
         return remaining * remaining;
     }
 
-    public static double weight(double dx, double dz, int facingX, int facingZ) {
+    public static double weight(double dx, double dz, double facingX, double facingZ) {
         double length = Math.hypot(dx, dz);
         if (!Double.isFinite(length) || length < 1.0e-9) return 0;
         double dot = Math.max(-1, Math.min(1, (dx * facingX + dz * facingZ) / length));
