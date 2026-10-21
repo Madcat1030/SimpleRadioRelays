@@ -43,10 +43,12 @@ assert len(list(kit.glob('Native-Antenna-*.bbmodel')))==2
 assert not list(kit.rglob('*top*.json'))
 assert (kit/'Wide-Angle-Receiver.bbmodel').is_file()
 assert (kit/'Parabolic-Receiver.bbmodel').is_file()
-assert len(list(kit.glob('*.bbmodel')))==4
+assert (kit/'Parabolic-Receiver-Refined.bbmodel').is_file()
+assert len(list(kit.glob('*.bbmodel')))==5
 model=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json').read_text())
+refined=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver_refined.json').read_text())
 assert all(-16<=v<=32 for e in model['elements'] for v in e['from']+e['to'])
-for element in model['elements']:
+for element in model['elements'] + refined['elements']:
     x,y,z=[b-a for a,b in zip(element['from'],element['to'])]
     dimensions={'north':(x,y),'south':(x,y),'east':(z,y),'west':(z,y),'up':(x,z),'down':(x,z)}
     assert not element.get('rotation',{}).get('rescale',False)
@@ -61,10 +63,20 @@ for texture in {v for v in model['textures'].values() if not v.startswith('#')}:
     raw=runtime[name]
     assert int.from_bytes(raw[16:20],'big')==16 and int.from_bytes(raw[20:24],'big')==16
 array=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json').read_text())
-assert [e for e in model['elements'] if e['name'].startswith('mount_')]==[e for e in array['elements'] if e['name'].startswith('mount_')]
+assert [e for e in refined['elements'] if e['name'].startswith('mount_')]==[e for e in array['elements'] if e['name'].startswith('mount_')]
+for e in model['elements']:
+    assert all(v==int(v) for v in e['from']+e['to'])
+    assert all(b-a>=1 for a,b in zip(e['from'],e['to']))
+    assert e.get('rotation',{}).get('angle',0) in [-45,0,45]
+    assert all(v==int(v) for v in e.get('rotation',{}).get('origin',[8,8,8]))
+pack='resourcepacks/refined_parabolic/'
+assert json.loads(runtime[pack+'pack.mcmeta'])['pack']['pack_format']==15
+assert json.loads(runtime[pack+'assets/simpleradio_directional/models/block/parabolic_receiver.json'])==refined
 for suffix,fixed in [('_mount',True),('_head',False)]:
     packaged=json.loads(runtime[f'assets/simpleradio_directional/models/block/parabolic_receiver{suffix}.json'])
     assert packaged['elements']==[e for e in model['elements'] if e['name'].startswith('mount_')==fixed]
+    alternate=json.loads(runtime[pack+f'assets/simpleradio_directional/models/block/parabolic_receiver{suffix}.json'])
+    assert alternate['elements']==[e for e in refined['elements'] if e['name'].startswith('mount_')==fixed]
 
 for tag in ['mineable/pickaxe','needs_stone_tool']:
     values=json.loads((ROOT/f'src/main/resources/data/minecraft/tags/blocks/{tag}.json').read_text())['values']
@@ -75,11 +87,14 @@ report={'passed':True,'jar':prototype.name,'bytes':prototype.stat().st_size,
         'runtime_classes':sum(n.endswith('.class') for n in runtime),'removed_fixture_classes':len(removed),
         'retained_runtime_entries_byte_identical':len(runtime)-1,'loom_manifest_preserved':True,
         'no_obfuscation':True,'optional_repeaters_not_bundled_or_required':True,
-        'blockbench_models':4,'embedded_texture_validation':True,'top_references_excluded':True,
+        'blockbench_models':5,'embedded_texture_validation':True,'top_references_excluded':True,
         'wide_array_mining_tags_valid':True,'capture_helpers_not_bundled':True,
         'dish_uv_pixels_per_model_unit':1,'dish_material_pixels_per_block':16,
         'dish_faces_checked':sum(len(e['faces']) for e in model['elements']),
-        'shared_mount_exact_match':True,'authored_dish_matches_packaged_layers':True}
+        'refined_faces_checked':sum(len(e['faces']) for e in refined['elements']),
+        'chunky_whole_unit_geometry':True,'chunky_only_0_or_45_degree_element_rotations':True,
+        'chunky_smallest_extent_at_least_one_unit':True,'refined_mount_matches_array':True,
+        'refined_builtin_pack_included':True,'authored_dish_matches_packaged_layers':True}
 output=ROOT/f'validation/{version}/prototype-verification.json'
 output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

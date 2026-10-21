@@ -1,0 +1,1245 @@
+{
+  "credit": "Simple Radio Directional Antenna / refined hand-authored parabolic receiver",
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "copper": "simpleradio_directional:block/array_copper",
+    "iron": "simpleradio_directional:block/array_iron",
+    "ceramic": "simpleradio_directional:block/array_ceramic",
+    "cable": "simpleradio_directional:block/array_cable",
+    "reflector": "simpleradio_directional:block/dish_reflector",
+    "particle": "simpleradio_directional:block/array_copper"
+  },
+  "elements": [
+    {
+      "name": "mount_arm_1.5",
+      "from": [
+        6.5,
+        1.5,
+        9
+      ],
+      "to": [
+        9.5,
+        3.0,
+        22
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            13,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            13,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_arm_13",
+      "from": [
+        6.5,
+        13,
+        9
+      ],
+      "to": [
+        9.5,
+        14.5,
+        22
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            13,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            13,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            3.0,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_1_front",
+      "from": [
+        2.5,
+        1,
+        19.5
+      ],
+      "to": [
+        13.5,
+        3.5,
+        21
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_1_back",
+      "from": [
+        2.5,
+        1,
+        27
+      ],
+      "to": [
+        13.5,
+        3.5,
+        28.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_1_left",
+      "from": [
+        2.5,
+        1,
+        21
+      ],
+      "to": [
+        4,
+        3.5,
+        27
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_1_right",
+      "from": [
+        12,
+        1,
+        21
+      ],
+      "to": [
+        13.5,
+        3.5,
+        27
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_bolt_2.5_1",
+      "from": [
+        2.5,
+        1.5,
+        19
+      ],
+      "to": [
+        4.5,
+        3,
+        19.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        },
+        "down": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_bolt_11.5_1",
+      "from": [
+        11.5,
+        1.5,
+        19
+      ],
+      "to": [
+        13.5,
+        3,
+        19.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        },
+        "down": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_12.5_front",
+      "from": [
+        2.5,
+        12.5,
+        19.5
+      ],
+      "to": [
+        13.5,
+        15.0,
+        21
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_12.5_back",
+      "from": [
+        2.5,
+        12.5,
+        27
+      ],
+      "to": [
+        13.5,
+        15.0,
+        28.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            11.0,
+            1.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_12.5_left",
+      "from": [
+        2.5,
+        12.5,
+        21
+      ],
+      "to": [
+        4,
+        15.0,
+        27
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_clamp_12.5_right",
+      "from": [
+        12,
+        12.5,
+        21
+      ],
+      "to": [
+        13.5,
+        15.0,
+        27
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            2.5
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            6,
+            2.5
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.5,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_bolt_2.5_12.5",
+      "from": [
+        2.5,
+        13.0,
+        19
+      ],
+      "to": [
+        4.5,
+        14.5,
+        19.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        },
+        "down": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_bolt_11.5_12.5",
+      "from": [
+        11.5,
+        13.0,
+        19
+      ],
+      "to": [
+        13.5,
+        14.5,
+        19.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "south": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            1.5
+          ]
+        },
+        "west": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "east": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            0.5,
+            1.5
+          ]
+        },
+        "up": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        },
+        "down": {
+          "texture": "#cable",
+          "uv": [
+            0,
+            0,
+            2.0,
+            0.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_lower",
+      "from": [
+        5.5,
+        0.5,
+        5.5
+      ],
+      "to": [
+        10.5,
+        2.5,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            5.0
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            5.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_upper",
+      "from": [
+        5.5,
+        14.5,
+        5.5
+      ],
+      "to": [
+        10.5,
+        16.5,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            2.0
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            5.0
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            5.0,
+            5.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin",
+      "from": [
+        7.5,
+        2.5,
+        7.5
+      ],
+      "to": [
+        8.5,
+        14.5,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            12.0
+          ]
+        },
+        "south": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            12.0
+          ]
+        },
+        "west": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            12.0
+          ]
+        },
+        "east": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            12.0
+          ]
+        },
+        "up": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            1.0
+          ]
+        },
+        "down": {
+          "texture": "#iron",
+          "uv": [
+            0,
+            0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        25,
+        225,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.125,
+        0.125,
+        0.125
+      ]
+    },
+    "fixed": {
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "scale": [
+        0.23,
+        0.23,
+        0.23
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "scale": [
+        0.17,
+        0.17,
+        0.17
+      ]
+    }
+  }
+}

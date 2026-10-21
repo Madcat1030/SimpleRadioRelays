@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "unit_tests_passed": 18,
+  "runtime_classes_unchanged": 30,
+  "changed_class": "DirectionalClient: registers optional resource pack",
+  "refined_model_preserved_byte_for_byte": true,
+  "array_recipe_tag_texture_entries_unchanged": 29,
+  "scope": "Client appearance only; no RF/placement/controller code changed. Functional Minecraft evidence remains under 0.2.0."
+}

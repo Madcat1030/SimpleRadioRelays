@@ -1,4 +1,4 @@
-"""Author a refined, native-cuboid dish and embedded-texture Blockbench project.
+"""Author the optional refined dish, built-in resource pack and Blockbench project.
 
 Does not change recipes, reception, aiming, or the wide-angle array. No rendered images.
 """
@@ -167,7 +167,14 @@ for element in elements:
 model = {'credit': 'Simple Radio Directional Antenna / refined hand-authored parabolic receiver',
          'parent': 'minecraft:block/block', 'ambientocclusion': False,
          'textures': textures, 'elements': elements, 'display': display}
-write(ASSETS / 'models/block/parabolic_receiver.json', model)
+write(ASSETS / 'models/block/parabolic_receiver_refined.json', model)
+pack = ROOT / 'src/main/resources/resourcepacks/refined_parabolic'
+write(pack / 'pack.mcmeta', {'pack': {'pack_format': 15, 'description': 'The finer round parabolic receiver, retained as a visual alternate.'}})
+pack_models = pack / 'assets/simpleradio_directional/models/block'
+write(pack_models / 'parabolic_receiver.json', model)
+for suffix, fixed in [('_mount', True), ('_head', False)]:
+    write(pack_models / ('parabolic_receiver' + suffix + '.json'), dict(model,
+          elements=[e for e in elements if e['name'].startswith('mount_') == fixed]))
 
 keys = [k for k in textures if k != 'particle']
 cubes = []
@@ -193,8 +200,8 @@ for index, key in enumerate(keys):
 groups = [{'name': name, 'uuid': uid(name), 'origin': [8, 8, 8], 'export': True,
            'children': [c['uuid'] for c in cubes if c['name'].startswith('mount_') == fixed]}
           for name, fixed in [('Fixed mount', True), ('Swivelling dish and feed', False)]]
-write(KIT / 'Parabolic-Receiver.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
+write(KIT / 'Parabolic-Receiver-Refined.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
       'name': 'Parabolic Receiver', 'resolution': {'width': 16, 'height': 16}, 'elements': cubes,
       'outliner': groups, 'textures': images, 'display': display})
 (KIT / 'Parabolic-Receiver-Placeholder.bbmodel').unlink(missing_ok=True)
-print(f'Authored {len(elements)} native cuboids, a 16x16 reflector material, shared clamps and an embedded-texture project.')
+print(f'Preserved the {len(elements)}-cuboid refined alternate and its optional resource pack.')

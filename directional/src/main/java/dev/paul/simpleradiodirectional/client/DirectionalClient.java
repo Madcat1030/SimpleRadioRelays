@@ -7,9 +7,16 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 import dev.paul.simpleradiodirectional.radio.DishAim;
 import net.minecraft.client.renderer.RenderType;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.ResourcePackActivationType;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.network.chat.Component;
 
 public final class DirectionalClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
+        ResourceManagerHelper.registerBuiltinResourcePack(DirectionalAntenna.id("refined_parabolic"),
+                FabricLoader.getInstance().getModContainer(DirectionalAntenna.ID).orElseThrow(),
+                Component.literal("Simple Radio: Refined Parabolic Receiver"), ResourcePackActivationType.NORMAL);
         BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.DISH, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.ARRAY, RenderType.cutout());
         ModelLoadingPlugin.register(plugin -> plugin.modifyModelAfterBake().register(ModelModifier.WRAP_PHASE, (model, context) -> {

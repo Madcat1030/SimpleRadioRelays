@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "parabolic_alternates_preview",
+  "version": "1.0.0",
+  "name": "Parabolic Alternates Native Capture (QA only)",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.paul.simpleradiodirectional.preview.DishAlternatesPreviewClient"]},
+  "depends": {"simpleradio_directional": "*"}
+}

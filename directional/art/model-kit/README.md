@@ -1,6 +1,8 @@
-# Directional Receiver model kit — 0.2.1
+# Directional Receiver model kit — 0.2.2
 
-Open **Parabolic-Receiver.bbmodel** for the refined dish or **Wide-Angle-Receiver.bbmodel** for the array. Both projects embed their pixel textures. The dish has a shallow galvanized bowl, copper rolled rim, silver inner bevel, compact feed on twin rails and the array's exact two-point mast clamp. Its five materials are 16×16; every face maps one pixel to one model unit, with no UV stretching, including the rotated hardware. Longer rails are subdivided to fit the texture without scaling. The wide-angle array uses four 16×16 materials and 52 native cuboids.
+Open **Parabolic-Receiver.bbmodel** for the chunky default, **Parabolic-Receiver-Refined.bbmodel** for the retained finer alternate, or **Wide-Angle-Receiver.bbmodel** for the array. Each project embeds its textures. Both dishes use five 16×16 materials at one texture pixel per model unit.
+
+The chunky dish has an octagonal copper rim, three broad bowl depths, a substantial feed arm and whole-unit wrap-around clamps. Its coordinates, dimensions, UVs and rotation origins are integral; no part is thinner than one model unit, and native element rotations are only 0° or ±45°. The refined alternate retains its original finer bowl, rim, feed rails and clamps. Both appearances are included in the mod: enable **Simple Radio: Refined Parabolic Receiver** in Options → Resource Packs to select the finer style, or leave it disabled for the chunky default. This changes client appearance for the same block.
 
 **Native-Antenna-Column.bbmodel** and **Native-Antenna-Vertical.bbmodel** are exact supported native mast references. Their original Java JSONs, PNGs and GPL license are under `native-reference/`. Top variants are excluded because a receiver requires another antenna section above its support. Keep the reference projects separate from the receiver export.
 
@@ -14,8 +16,9 @@ Export the receiver alone as a Minecraft Java block/item model. In the full sour
 
 - Array: `directional/src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json`
 - Dish: `directional/src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json`
+- Refined reference: `directional/src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver_refined.json`. The built-in alternate pack is under `directional/src/main/resources/resourcepacks/refined_parabolic/`; its full, `_mount` and `_head` model files must stay together when updating the alternate.
 
-Retain texture references and place edited PNGs in the corresponding `textures/block/` directory. The model-kit archive includes both current Java JSONs and the five PNGs under `assets/`. You can instead return an edited `.bbmodel` for integration. `directional/tools/make_parabolic_receiver.py` and `make_wide_array.py` reproduce the authored receivers, so do not rerun them over manual model edits unless you intend to restore this version. The reference extractor `make_model_kit.py` only rebuilds native mast references.
+Retain texture references and place edited PNGs in the corresponding `textures/block/` directory. The model-kit archive includes all three current Java JSONs and the five PNGs under `assets/`, plus the optional pack under `resourcepacks/`. You can instead return an edited `.bbmodel` for integration. `directional/tools/make_blocky_parabolic.py`, `make_parabolic_receiver.py` and `make_wide_array.py` reproduce these assets; do not run them over manual edits unless restoring this version. The reference extractor `make_model_kit.py` only rebuilds native mast references.
 
 In game, empty-hand right-click on any receiver part aims clockwise; sneak-right-click aims counterclockwise. Settings are −45°, −30°, −15°, 0°, +15°, +30° and +45°, without wrapping. Clamps remain fixed. Leave room for the visible sweep.
 
@@ -28,4 +31,4 @@ In game, empty-hand right-click on any receiver part aims clockwise; sneak-right
 
 The strongest applicable bonus wins; receivers do not stack. These patterns alter reception allowance, preserving ordinary reception and inherited audio quality. Geometry changes alone do not change the reception pattern.
 
-The preview PNGs are unretouched screenshots from the actual Minecraft 1.20.1 client renderer, with the real texture atlas and native mast. They are native model sheets, rather than placed-world scenes. Dish capture source and checks are included in the full source archive under `directional/validation/0.2.1/`; array captures remain under `0.2.0/`.
+The preview PNGs are unretouched screenshots from the actual Minecraft 1.20.1 client renderer, with the real texture atlas and native mast. They are native model sheets, rather than placed-world scenes. Both appearances are rendered together in the comparison sheet. Capture source and checks are in the full source archive under `directional/validation/0.2.2/`; earlier array captures remain under `0.2.0/`.
