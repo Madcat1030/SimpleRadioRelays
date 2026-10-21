@@ -1,5 +1,6 @@
 package dev.paul.simpleradiorepeaters.block;
 
+import com.codinglitch.simpleradio.core.registry.SimpleRadioBlocks;
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
@@ -86,6 +87,12 @@ public final class RelayBlock extends BaseEntityBlock {
         super.onRemove(old, level, pos, next, moved);
     }
     @Override public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos neighbour, boolean moved) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof RelayBlockEntity relay) { relay.bankChanged(); relay.markDirty(); }
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof RelayBlockEntity relay) {
+            // Native microphones/speakers poll redstone neighbors during audio activity. Those devices
+            // are not antenna hardware; still verify actual core changes and removal/replacement.
+            if ((block == SimpleRadioBlocks.MICROPHONE || block == SimpleRadioBlocks.SPEAKER)
+                    && !neighbour.equals(relay.corePos()) && level.getBlockState(neighbour).is(block)) return;
+            relay.bankChanged(); relay.markDirty();
+        }
     }
 }

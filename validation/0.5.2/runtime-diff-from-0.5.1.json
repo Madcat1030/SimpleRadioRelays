@@ -1,0 +1,20 @@
+{
+  "core": {
+    "added": [
+      "dev/paul/simpleradiorepeaters/mixin/FrequencyChannelLifecycleMixin.class"
+    ],
+    "removed": [],
+    "changed": [
+      "dev/paul/simpleradiorepeaters/block/RelayBlock.class",
+      "fabric.mod.json",
+      "simpleradio_repeaters.mixins.json"
+    ]
+  },
+  "foci": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "fabric.mod.json"
+    ]
+  }
+}

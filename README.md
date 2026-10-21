@@ -1,8 +1,8 @@
-# Simple Radio Repeaters 0.5.1
+# Simple Radio Repeaters 0.5.2
 
 This workspace also includes the separate [Directional Antenna 0.1.1 prototype](directional/README.md). Its runtime does not require either addon.
 
-0.5.1 fixes native radios and wired stations losing their live frequency registration after chunk reload. See [the reload fix and test instructions](docs/Release-Notes-0.5.1.md). Hold the transmitting radio and run `/radiorepeaters diagnose` to record saved/live tower state, RF paths and endpoint registrations in `logs/latest.log`.
+0.5.2 fixes client channel cleanup deleting a live server frequency after travel, and prevents microphone/speaker activity from repeatedly showing `CHECK`. See [the fixes and test instructions](docs/Release-Notes-0.5.2.md). The earlier activation-time repair remains. Hold the transmitting radio and run `/radiorepeaters diagnose` to record saved/live tower state, RF paths and endpoint registrations in `logs/latest.log`.
 
 Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. This release separates the relay network from the optional dimensional expansion.
 
@@ -92,7 +92,7 @@ One workspace builds two independent runtime JARs. Use JDK 21 for Gradle; releas
 
 Outputs are in `core/build/libs/` and `foci/build/libs/`. Install the `-prototype.jar` files for distributions without addon test fixtures. They retain readable addon names and debug data. Source and development builds retain the tests.
 
-The 0.5.0 baseline passes 51 unit tests, 41 core addon Minecraft tests and 64 combined addon tests. Current 0.5.1 evidence is under `validation/0.5.1/`; the release notes report the added reload and diagnostics checks. The four previously recorded native headless failures remain documented separately from addon regressions. Live microphone playback is outside the automated checks.
+Current validation passes 51 unit tests, 50 core addon Minecraft tests and 73 combined addon tests. Evidence is under `validation/0.5.2/`; older directories remain historical. The four previously recorded native headless failures remain documented separately from addon regressions. Live microphone playback is outside the automated checks.
 
 See [the implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) and [model editing guide](art/Model-Editing-Guide.md).
 

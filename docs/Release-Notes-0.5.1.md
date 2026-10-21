@@ -2,6 +2,8 @@
 
 Fabric Minecraft 1.20.1 · Simple Radio 1.20.1-4.5.7.9 · Java 17+
 
+Follow-up: the user's travel reproduction persisted in 0.5.1. The activation window below is covered, but still-loaded server receivers could lose their channel later during client cleanup. See [0.5.2](Release-Notes-0.5.2.md) for that separate fix and the broken-state evidence.
+
 ## Receiver reload fix
 
 This patch fixes a reproducible native frequency-registration failure after a radio or wired station reloads. Relay links can remain ready while the receiving endpoint is silent. Breaking and replacing the endpoint restores it; refreshing relay antennas does not.

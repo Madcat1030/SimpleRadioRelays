@@ -238,6 +238,35 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 130)
+    public void microphone_activity_does_not_recheck_an_unchanged_antenna(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        RelayBlockEntity relay = relay(level, core, channel(223), null);
+        BlockPos microphone = relay.getBlockPos().west();
+        level.setBlock(microphone, SimpleRadioBlocks.MICROPHONE.defaultBlockState(), 3);
+        helper.runAfterDelay(40, () -> {
+            TowerManager manager = TowerManager.get(level.getServer());
+            check(relay.displayStatus() == 0 && manager.isEligible(relay.relayId()), "Fixture must start ready");
+            TowerRecord snapshot = manager.snapshot(relay.relayId());
+            // MicrophoneBlockEntity.tick emits this exact notification while its audio activity is nonzero.
+            for (int pulse = 0; pulse < 4; pulse++) {
+                level.updateNeighborsAt(microphone, SimpleRadioBlocks.MICROPHONE);
+                RelayBlockEntity.tick(level, relay.getBlockPos(), relay.getBlockState(), relay);
+                check(relay.displayStatus() == 0 && snapshot.equals(manager.snapshot(relay.relayId()))
+                                && manager.isEligible(relay.relayId()),
+                        "Audio/redstone activity must preserve READY and the verified relay snapshot");
+            }
+            level.setBlock(core, Blocks.AIR.defaultBlockState(), 3);
+            RelayBlockEntity.tick(level, relay.getBlockPos(), relay.getBlockState(), relay);
+            check(relay.displayStatus() == 6, "Removing the actual core must still schedule antenna verification");
+            level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(microphone, Blocks.AIR.defaultBlockState(), 3);
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 130)
     public void repeated_build_notifications_do_not_keep_postponing_the_scan(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3); level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);

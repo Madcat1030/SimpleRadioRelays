@@ -1,0 +1,66 @@
+{
+  "core": {
+    "addon_passed": 50,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 0,-59,1 (relative: 1,-57,2) (t=50)"
+      },
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 16,-58,0 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ],
+    "unit_tests": 49,
+    "unit_failures": 0
+  },
+  "foci": {
+    "addon_passed": 73,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 2,-58,0 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 35,-59,1 (relative: 36,-57,2) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ],
+    "unit_tests": 2,
+    "unit_failures": 0
+  },
+  "regressions": {
+    "registry_cleanup": {
+      "before": "Both client RX and client TX cleanup delete the still-active server channel",
+      "after": "Placed radio and wired native receiver retain translated delivery across three unload cycles",
+      "evidence": "before-fix-reproduction.log"
+    },
+    "stale_generation": {
+      "after": "Cleaning an obsolete frequency preserves the replacement; ordinary last-endpoint cleanup still removes an empty canonical channel"
+    },
+    "audio_activity": {
+      "before": "Native microphone redstone notifications make an unchanged relay display CHECK",
+      "after": "Notifications preserve READY and its verified snapshot; actual core removal still schedules verification",
+      "evidence": "before-activity-fix.log"
+    },
+    "limits": "Separate native registries model integrated client/server cleanup; no graphical client or live microphone."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "environment": "Fabric production server; development=false; -Xverify:all",
+  "jar_sha256": "e6bcc0c6db8dbde6b4670d83be1ac9bc7b83690217c5fad96572ccdd9361b753",
+  "checks": [
+    "Exact core prototype loaded without Foci",
+    "Relay and bank verified",
+    "Native radio, wired receiver and transmitter activated with the new mixin",
+    "Clean shutdown"
+  ],
+  "limits": "No client or microphone; separate-registry cleanup, activity notifications and frequency-GC regressions use GameTest."
+}

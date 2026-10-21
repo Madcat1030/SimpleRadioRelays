@@ -60,6 +60,96 @@ public class TransponderRoutingGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void client_receiver_cleanup_preserves_live_server_radios(GameTestHelper helper) {
+        verifySeparateRegistryCleanup(helper, false, 621);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void client_transmitter_cleanup_preserves_live_server_radios(GameTestHelper helper) {
+        verifySeparateRegistryCleanup(helper, true, 623);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void stale_channel_cleanup_preserves_its_replacement(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
+        Frequency previous = frequency(625, Frequency.Modulation.FREQUENCY); ChannelKey key = ChannelKey.from(previous);
+        UUID reference = UUID.randomUUID();
+        var staleReceiver = new RadioReceiver(previous, WorldlyPosition.of(helper.absolutePos(BlockPos.ZERO), level), reference);
+        previous.getReceivers().add(staleReceiver);
+        frequencies.remove(previous);
+        Frequency current = frequencies.getOrCreate(key.frequency(), key.mode());
+        Tap radio = new Tap(level, helper.absolutePos(new BlockPos(2, 2, 2)), current);
+        try {
+            check(previous.removeReceiver(reference) == staleReceiver, "Old endpoint removal must still complete");
+            check(frequencies.get(key.frequency(), key.mode()) == current && current.getReceivers().contains(radio.receiver),
+                    "Cleaning an old channel must not remove the current frequency generation");
+            send(level, radio.block.getBlockPos().north(2), current);
+            check(radio.count == 1, "The replacement channel must retain native direct delivery");
+        } finally { radio.close(level); }
+        check(frequencies.get(key.frequency(), key.mode()) == null,
+                "Removing the last real server endpoint must still clean up its own empty channel");
+        helper.succeed();
+    }
+
+    private static void verifySeparateRegistryCleanup(GameTestHelper helper, boolean transmitter, int offset) {
+        ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
+        var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
+        Frequency input = frequency(offset, Frequency.Modulation.AMPLITUDE), output = frequency(offset + 1, Frequency.Modulation.AMPLITUDE);
+        ChannelKey in = ChannelKey.from(input), out = ChannelKey.from(output);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 2, 2)), receiverPos = origin.south(3);
+        TowerRecord relay = new TowerRecord(UUID.randomUUID(), level.dimension().location().toString(), origin,
+                Set.of(in, out), true, RelayCatalysts.GILDED, true, 32, Set.of(), null, RelayAttachment.NONE,
+                new TransponderChannels(in, out, null, false));
+        Tap radio = new Tap(level, origin.east(3), output);
+        level.setBlock(receiverPos, SimpleRadioBlocks.RECEIVER.defaultBlockState(), 3);
+        var block = (ReceiverBlockEntity) level.getBlockEntity(receiverPos);
+        block.frequency = output; block.activate();
+        RadioReceiver wiredReceiver = (RadioReceiver) block.receiver;
+        int[] count = {0};
+        RadioRouter capture = new RadioRouter(WorldlyPosition.of(receiverPos, level)) {
+            @Override public void take(Source source) { count[0]++; }
+        };
+        capture.identifier = ++nextId; wiredReceiver.routers.clear(); wiredReceiver.addRouter(capture);
+        manager.updateSnapshot(relay);
+        try {
+            send(level, origin.north(3), input);
+            check(radio.count == 1 && count[0] == 1, "Both native receivers must work before client-side cleanup");
+            for (int visit = 0; visit < 3; visit++) {
+                // The integrated client has a separate registry containing the same frequency numbers.
+                // Use that exact native registry/channel removal path without loading client-only classes.
+                var clientFrequencies = new FrequenciesImpl();
+                Frequency clientChannel = clientFrequencies.getOrCreate(out.frequency(), out.mode());
+                UUID reference = UUID.randomUUID();
+                if (transmitter) {
+                    var endpoint = new RadioTransmitter(clientChannel, WorldlyPosition.of(origin, level), reference);
+                    clientChannel.getTransmitters().add(endpoint);
+                    check(clientChannel.removeTransmitter(reference) == endpoint, "Client TX must be removed from its own channel");
+                } else {
+                    var endpoint = new RadioReceiver(clientChannel, WorldlyPosition.of(origin, level), reference);
+                    clientChannel.getReceivers().add(endpoint);
+                    check(clientChannel.removeReceiver(reference) == endpoint, "Client RX must be removed from its own channel");
+                }
+                check(frequencies.get(out.frequency(), out.mode()) == output,
+                        "Unloading the last client endpoint must not delete the live server channel");
+                check(clientFrequencies.get(out.frequency(), out.mode()) == null,
+                        "Empty-channel cleanup must remove the channel from its owning registry");
+                check(radio.block.active && block.active && output.getReceivers().contains(radio.receiver)
+                                && output.getReceivers().contains(wiredReceiver),
+                        "Server receivers must stay active and subscribed without reactivation");
+                send(level, origin.north(3), input);
+                check(radio.count == visit + 2 && count[0] == visit + 2,
+                        "Radio and wired RX must keep receiving converted packets after each client unload");
+            }
+            helper.succeed();
+        } finally {
+            // Restore the fixture if the pre-fix implementation deleted its live server channel.
+            if (frequencies.get(out.frequency(), out.mode()) == null) frequencies.add(output);
+            radio.close(level); level.setBlock(receiverPos, Blocks.AIR.defaultBlockState(), 3);
+            manager.removeAt(relay.dimension(), relay.position());
+        }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void delayed_ground_radio_activation_retains_a_reachable_native_frequency(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
         Frequency input = frequency(614, Frequency.Modulation.AMPLITUDE), output = frequency(615, Frequency.Modulation.AMPLITUDE);

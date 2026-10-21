@@ -1,4 +1,4 @@
-# Simple Radio Repeaters 0.5.1
+# Simple Radio Repeaters 0.5.2
 
 A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. The core provides persistent stationary relay networks. The optional Dimensional Foci addon replaces native dimensional radio with focus-equipped relay bridges.
 
@@ -135,7 +135,9 @@ Simple Radio 1.20.1-4.5.7.9 stores a frequency object when an auditory block des
 
 Core 0.5.1 injects at the start of `activate()` on native `RadioBlockEntity`, `ReceiverBlockEntity` and `TransmitterBlockEntity`. It resolves the canonical frequency for the stored frequency number and modulation immediately before native routers are created. A correction logs `[radio-reload]` once for that activation. The hook neither repairs audio quality nor changes RF math. It creates a native channel only for a device that is actually activating; translated routing still skips absent listener channels instead of creating empty frequencies per packet.
 
-The repair covers both an evicted channel and a different current generation of the same channel. It applies when the devices load with the addon installed. A relay refresh is not a native receiver reactivation and cannot repair an already orphaned device in an older build.
+The activation repair covers both an evicted channel and a different current generation of the same channel. It does not run on a server device that remains loaded while the client travels away. A relay refresh is not a native receiver reactivation and cannot repair an already orphaned device in an older build.
+
+Core 0.5.2 also fixes the native `FrequencyChannel` cleanup path: removing the last client receiver or transmitter previously deleted the server's channel with the same number. This strands still-active server endpoints, particularly in spawn chunks. `FrequencyChannelLifecycleMixin` records the creating `Frequencies` registry in the constructor and uses a composable MixinExtras `WrapOperation` for empty-channel removal. Cleanup targets that registry and checks that the registered object is still the same channel. Client cleanup cannot evict a server channel; stale cleanup cannot remove a replacement generation. No per-packet repair is needed.
 
 ## Persistence and antenna verification
 
@@ -143,7 +145,7 @@ The saved network remains `data/simpleradio_repeaters_relays_v3.dat`. Immutable 
 
 Loaded Relay ownership resolves copied UUIDs before adopting/publishing controller state. Module bindings must point directly above the Relay. A moved/copied Relay cannot keep a distant wireless Bank. Ordinary removal retires the appropriate record/binding. Chunk-load reconciliation detects missing/replaced blocks and identities after external edits/restoration, including ghost relays.
 
-Antenna scans follow the native supported antenna/core/wire structure. They check chunk availability before reading terrain and defer incomplete scans. Audio routing never scans terrain or requests missing chunks. Settling/retry logic retains a verified wired-core antenna while native wires restore, confirms completed zero scores before publishing disconnection and uses the native 200-tick periodic boundary as a fallback. Wrong items, blank-slot clicks and equivalent settings writes do not repeatedly restart scanning.
+Antenna scans follow the native supported antenna/core/wire structure. They check chunk availability before reading terrain and defer incomplete scans. Audio routing never scans terrain or requests missing chunks. Settling/retry logic retains a verified wired-core antenna while native wires restore, confirms completed zero scores before publishing disconnection and uses the native 200-tick periodic boundary as a fallback. Wrong items, blank-slot clicks and equivalent settings writes do not repeatedly restart scanning. Neighbor notifications from a still-present microphone or speaker beside the relay are ignored because native audio activity polls redstone neighbors. Actual core changes and removal/replacement still request verification. An eligible relay continues forwarding during legitimate `CHECK` states.
 
 Unloaded verified towers can route from saved numeric snapshots. A physical native receiver/wire/transmitter station still needs its own chunk loaded. Absent focus registration resolves saved focus effects to NONE and creates no projected sites.
 
@@ -193,7 +195,7 @@ Recipe JSON lives in each module's `src/main/resources/data/simpleradio_repeater
 
 Use JDK 21 for Gradle/Loom. Release classes target Java 17. `./gradlew build prototypeJar` builds both modules, runs unit tests and creates the separate runtime distributions under their respective `build/libs/` directories.
 
-`./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.1/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
+`./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.2/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
 
 `tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
 

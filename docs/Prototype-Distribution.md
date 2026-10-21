@@ -1,11 +1,11 @@
-# Simple Radio Repeaters 0.5.1 prototype distribution
+# Simple Radio Repeaters 0.5.2 prototype distribution
 
 This release ships two Fabric Minecraft 1.20.1 JARs for Simple Radio **1.20.1-4.5.7.9**:
 
 | Distribution | Purpose | Bytes |
 | --- | --- | ---: |
-| `simple-radio-repeaters-fabric-1.20.1-0.5.1-prototype.jar` | Core relay hardware, network, reload fix and diagnostics | 204,648 |
-| `simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.1-prototype.jar` | Optional dimensional expansion; requires core 0.5.1 | 30,986 |
+| `simple-radio-repeaters-fabric-1.20.1-0.5.2-prototype.jar` | Core relay hardware, network, lifecycle fixes and diagnostics | 206,269 |
+| `simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.2-prototype.jar` | Optional dimensional expansion; requires core 0.5.2 | 30,985 |
 
 Replace the old addon JAR on both server and clients. Install core alone for native dimensional behavior, or both JARs for focus-only dimensional communication. The expansion overrides Simple Radio's dimensional option whether it is on or off, without editing that configuration. It has one independent `netherTweaks` option, enabled by default.
 
@@ -13,15 +13,15 @@ The core JAR contains no focus items, assets, recipes or dimensional overrides. 
 
 ## Packaging
 
-The prototype filter removes twelve core and five expansion GameTest fixture classes, their `fabric-gametest` entrypoints, and twelve audited core test-only helper methods including synthetic bodies. Packaging rejects removals still referenced by retained code. `TowerManager.records()` now remains because runtime diagnostics uses it. Ordinary diagnostics, serialization and Minecraft hooks remain.
+The prototype filter removes thirteen core and five expansion GameTest fixture classes, their `fabric-gametest` entrypoints, and twelve audited core test-only helper methods including synthetic bodies. Packaging rejects removals still referenced by retained code. `TowerManager.records()` remains because runtime diagnostics uses it. Ordinary diagnostics, serialization and Minecraft hooks remain.
 
-All 642 retained methods in 75 core classes and 33 methods in seven expansion classes are byte-identical to the full builds, including debug data. No obfuscator or general optimizer is used. Addon names, source filenames and line numbers remain intact. Minecraft references retain Fabric's required intermediary mappings. Runtime resources and mixin configuration match the full builds.
+All 645 retained methods in 76 core classes and 33 methods in seven expansion classes are byte-identical to the full builds, including debug data. No obfuscator or general optimizer is used. Addon names, source filenames and line numbers remain intact. Minecraft references retain Fabric's required intermediary mappings. Runtime resources and mixin configuration match the full builds.
 
 ## Validation
 
-The packaging build and all 51 unit tests pass. Minecraft tests pass for all 46 core-only addon cases and all 69 combined addon cases. The same four previously recorded native headless test failures remain in both runs: `SystemTest.shortCircuit`, `SystemTest.garbageCollection`, `SystemTest.openSystem` and `SystemTest.closedSystem`. Their causes remain unresolved; this does not establish four live-server bugs.
+The packaging build and all 51 unit tests pass. Minecraft tests pass for all 50 core-only addon cases and all 73 combined addon cases. The same four previously recorded native headless test failures remain in both runs: `SystemTest.shortCircuit`, `SystemTest.garbageCollection`, `SystemTest.openSystem` and `SystemTest.closedSystem`. Their causes remain unresolved; this does not establish four live-server bugs.
 
-Production Fabric startup with the exact core prototype JAR, `development=false` and JVM `-Xverify:all` passed. Checks activated the native radio, wired receiver and transmitter with the new mixin and verified a ready Relay/Bank before clean shutdown. This run did not include a client join or live microphone playback. Current evidence is under `validation/0.5.1/`; earlier optional-module removal/startup checks remain historical under `validation/0.5.0/`.
+Production Fabric startup with the exact core prototype JAR, `development=false` and JVM `-Xverify:all` passed. Checks activated the native radio, wired receiver and transmitter with the lifecycle mixins and verified a ready Relay/Bank before clean shutdown. This run did not include a client join or live microphone playback. Current evidence is under `validation/0.5.2/`; earlier optional-module removal/startup checks remain historical under `validation/0.5.0/`.
 
 ## Rebuild
 
@@ -38,6 +38,6 @@ Outputs are under `core/build/libs/` and `foci/build/libs/`. Each module's `buil
 SHA-256:
 
 ```text
-24fa510a6e4d042f9551b71391ad3c2604b6df84c10787d14e3c2b650a79d6d7  simple-radio-repeaters-fabric-1.20.1-0.5.1-prototype.jar
-1aff77937113cecd527669d7350bf9ce4286c24c9f9bcbc103e19c77826ae9dc  simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.1-prototype.jar
+e6bcc0c6db8dbde6b4670d83be1ac9bc7b83690217c5fad96572ccdd9361b753  simple-radio-repeaters-fabric-1.20.1-0.5.2-prototype.jar
+8892ef1ea47288faa1b2291827a33124aa17dce92c5c748179308b22e539e1a6  simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.2-prototype.jar
 ```
