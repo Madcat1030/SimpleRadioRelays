@@ -1,11 +1,13 @@
 """Check that test-free packaging preserves every runtime entry, including Loom's manifest."""
 from pathlib import Path
 import base64
+from copy import deepcopy
 import hashlib
 import json
 import math
 import re
 import zipfile
+from PIL import Image
 
 ROOT=Path(__file__).resolve().parents[1]
 LIBS=ROOT/'build/libs'
@@ -45,12 +47,14 @@ assert (kit/'Wide-Angle-Receiver.bbmodel').is_file()
 assert (kit/'Parabolic-Receiver.bbmodel').is_file()
 assert (kit/'Parabolic-Receiver-Refined.bbmodel').is_file()
 assert (kit/'Parabolic-Receiver-Octagonal.bbmodel').is_file()
-assert len(list(kit.glob('*.bbmodel')))==6
+assert (kit/'Parabolic-Receiver-Mesh.bbmodel').is_file()
+assert len(list(kit.glob('*.bbmodel')))==7
 model=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json').read_text())
 refined=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver_refined.json').read_text())
 octagonal=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver_octagonal.json').read_text())
+mesh=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver_mesh.json').read_text())
 assert all(-16<=v<=32 for e in model['elements'] for v in e['from']+e['to'])
-for element in model['elements'] + refined['elements'] + octagonal['elements']:
+for element in model['elements'] + refined['elements'] + octagonal['elements'] + mesh['elements']:
     x,y,z=[b-a for a,b in zip(element['from'],element['to'])]
     dimensions={'north':(x,y),'south':(x,y),'east':(z,y),'west':(z,y),'up':(x,z),'down':(x,z)}
     assert not element.get('rotation',{}).get('rescale',False)
@@ -66,14 +70,23 @@ for texture in {v for v in model['textures'].values() if not v.startswith('#')}:
     assert int.from_bytes(raw[16:20],'big')==16 and int.from_bytes(raw[20:24],'big')==16
 array=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json').read_text())
 assert [e for e in refined['elements'] if e['name'].startswith('mount_')]==[e for e in array['elements'] if e['name'].startswith('mount_')]
-assert [e for e in model['elements'] if e['name'].startswith('mount_')]==[e for e in octagonal['elements'] if e['name'].startswith('mount_')]
+expected_hardware=deepcopy([e for e in mesh['elements'] if not e['name'].startswith('mesh_panel_')])
+for e in expected_hardware:
+    if e['name'] in {'mount_pivot_lower','mount_pivot_upper'}:
+        e['from'][2]=10
+        e['to'][2]+=4
+assert [e for e in model['elements'] if e['name'].startswith('mount_')]==[e for e in expected_hardware if e['name'].startswith('mount_')]
 for e in model['elements']:
     assert all(v==int(v) for v in e['from']+e['to'])
     assert all(b-a>=1 for a,b in zip(e['from'],e['to']))
     assert not e.get('rotation')
     assert all(v==int(v) for v in e.get('rotation',{}).get('origin',[8,8,8]))
-assert model['textures']['mesh']=='simpleradio:block/antenna_column'
-panels=[e for e in model['elements'] if e['name'].startswith('mesh_panel_')]
+assert mesh['textures']['mesh']=='simpleradio:block/antenna_column'
+assert all(v.startswith('simpleradio_directional:') for v in model['textures'].values())
+for name in ['solid_reflector','solid_backing','solid_frame']:
+    image=Image.open(ROOT/f'src/main/resources/assets/simpleradio_directional/textures/block/{name}.png')
+    assert image.size==(16,16) and image.getextrema()[3]==(255,255)
+panels=[e for e in mesh['elements'] if e['name'].startswith('mesh_panel_')]
 reference=json.loads((kit/'original-reference/Parabolic-Receiver-Original.json').read_text())
 original_panels=[e for e in reference['elements'] if e['name'].startswith('mesh_')]
 assert len(panels)==len(original_panels)==32
@@ -83,7 +96,18 @@ for panel in panels:
     original_panel=next(e for e in original_panels if shape(e)==shape(panel))
     assert panel['from'][2]==original_panel['from'][2]-6
     assert panel['faces']['north']['uv']==original_panel['faces']['north']['uv']
-for style,alternate in [('refined',refined),('octagonal',octagonal)]:
+solid_panels=[e for e in model['elements'] if e['name'].startswith('solid_panel_')]
+assert len(solid_panels)==32
+for solid_panel in solid_panels:
+    mesh_panel=next(e for e in panels if shape(e)==shape(solid_panel))
+    assert solid_panel['from']==mesh_panel['from']
+    assert solid_panel['to'][:2]==mesh_panel['to'][:2]
+    assert solid_panel['to'][2]-solid_panel['from'][2]==3
+    for adjacent in solid_panels:
+        if sum(abs(a-b) for a,b in zip(solid_panel['from'][:2],adjacent['from'][:2]))==8:
+            assert max(solid_panel['from'][2],adjacent['from'][2])<=min(solid_panel['to'][2],adjacent['to'][2])
+assert [e for e in model['elements'] if not e['name'].startswith('solid_panel_')]==expected_hardware
+for style,alternate in [('refined',refined),('octagonal',octagonal),('mesh',mesh)]:
     pack=f'resourcepacks/{style}_parabolic/'
     assert json.loads(runtime[pack+'pack.mcmeta'])['pack']['pack_format']==15
     assert json.loads(runtime[pack+'assets/simpleradio_directional/models/block/parabolic_receiver.json'])==alternate
@@ -103,15 +127,16 @@ report={'passed':True,'jar':prototype.name,'bytes':prototype.stat().st_size,
         'runtime_classes':sum(n.endswith('.class') for n in runtime),'removed_fixture_classes':len(removed),
         'retained_runtime_entries_byte_identical':len(runtime)-1,'loom_manifest_preserved':True,
         'no_obfuscation':True,'optional_repeaters_not_bundled_or_required':True,
-        'blockbench_models':6,'embedded_texture_validation':True,'top_references_excluded':True,
+        'blockbench_models':7,'embedded_texture_validation':True,'top_references_excluded':True,
         'wide_array_mining_tags_valid':True,'capture_helpers_not_bundled':True,
         'dish_uv_pixels_per_model_unit':1,'dish_material_pixels_per_block':16,
         'dish_faces_checked':sum(len(e['faces']) for e in model['elements']),
         'refined_faces_checked':sum(len(e['faces']) for e in refined['elements']),
-        'mesh_whole_unit_geometry':True,'mesh_orthogonal_only':True,
-        'smallest_mesh_extent_at_least_one_unit':True,'original_32_panel_outline_and_concavity_preserved':True,
-        'literal_native_antenna_mesh_texture':True,'refined_mount_matches_array':True,
-        'both_alternate_packs_included':True,'authored_dish_matches_packaged_layers':True}
+        'solid_whole_unit_geometry':True,'solid_orthogonal_only':True,
+        'smallest_extent_at_least_one_unit':True,'original_32_panel_outline_and_concavity_preserved':True,
+        'solid_shell_has_no_gaps_between_steps':True,'new_materials_fully_opaque':True,
+        'mesh_alternate_preserves_native_antenna_texture':True,'refined_mount_matches_array':True,
+        'all_three_alternate_packs_included':True,'authored_dish_matches_packaged_layers':True}
 output=ROOT/f'validation/{version}/prototype-verification.json'
 output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

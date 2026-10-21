@@ -14,6 +14,9 @@ import net.minecraft.network.chat.Component;
 
 public final class DirectionalClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
+        ResourceManagerHelper.registerBuiltinResourcePack(DirectionalAntenna.id("mesh_parabolic"),
+                FabricLoader.getInstance().getModContainer(DirectionalAntenna.ID).orElseThrow(),
+                Component.literal("Simple Radio: Stepped Mesh Receiver"), ResourcePackActivationType.NORMAL);
         ResourceManagerHelper.registerBuiltinResourcePack(DirectionalAntenna.id("refined_parabolic"),
                 FabricLoader.getInstance().getModContainer(DirectionalAntenna.ID).orElseThrow(),
                 Component.literal("Simple Radio: Refined Parabolic Receiver"), ResourcePackActivationType.NORMAL);

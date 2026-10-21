@@ -128,7 +128,14 @@ for e in elements:
         u0, v0, u1, v1 = f['uv']
         assert (abs(u1 - u0), abs(v1 - v0)) == sizes[face]
         assert all(0 <= v <= 16 for v in f['uv'])
-write(ASSETS / 'models/block/parabolic_receiver.json', model)
+write(ASSETS / 'models/block/parabolic_receiver_mesh.json', model)
+pack = ROOT / 'src/main/resources/resourcepacks/mesh_parabolic'
+write(pack / 'pack.mcmeta', {'pack': {'pack_format': 15, 'description': 'The 0.2.3 stepped mesh receiver, retained as a visual alternate.'}})
+pack_models = pack / 'assets/simpleradio_directional/models/block'
+write(pack_models / 'parabolic_receiver.json', model)
+for suffix, fixed in [('_mount', True), ('_head', False)]:
+    write(pack_models / ('parabolic_receiver' + suffix + '.json'), dict(model,
+          elements=[e for e in elements if e['name'].startswith('mount_') == fixed]))
 
 def uid(name):
     return str(uuid.uuid5(uuid.NAMESPACE_URL, 'simple-radio-directional/finished-mesh/' + name))
@@ -149,7 +156,7 @@ for i, key in enumerate(keys):
 groups = [{'name': name, 'uuid': uid(name), 'origin': [8, 8, 8], 'export': True,
            'children': [c['uuid'] for c in cubes if c['name'].startswith('mount_') == fixed]}
           for name, fixed in [('Fixed mount', True), ('Stepped mesh and feed', False)]]
-write(KIT / 'Parabolic-Receiver.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
+write(KIT / 'Parabolic-Receiver-Mesh.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
       'name': 'Finished Stepped Mesh Receiver', 'resolution': {'width': 16, 'height': 16},
       'elements': cubes, 'outliner': groups, 'textures': images, 'display': model['display']})
 print(f'Authored {len(elements)} whole-unit cuboids, including 32 original-shaped mesh panels and a continuous rim.')

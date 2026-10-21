@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "runtime_source_files_checked": 24,
+  "changed_runtime_sources": [
+    "src/main/java/dev/paul/simpleradiodirectional/client/DirectionalClient.java"
+  ],
+  "radio_and_server_sources_unchanged": true,
+  "core_and_foci_sources_unchanged": true,
+  "all_three_previous_dish_models_preserved_byte_identically": true,
+  "wide_angle_model_preserved_byte_identically": true,
+  "unit_tests_passed": 18
+}

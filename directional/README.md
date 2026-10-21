@@ -1,4 +1,4 @@
-# Simple Radio Directional Antenna 0.2.3 prototype
+# Simple Radio Directional Antenna 0.2.4 prototype
 
 Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
 
@@ -6,9 +6,9 @@ Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver A
 
 Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
 
-0.2.3 finishes the original square-stepped mesh receiver. Its 32 receiving panels preserve the original outline and bowl profile and use Simple Radio's actual `antenna_column` texture. A continuous galvanized frame, small copper binding straps, finished three-arm feed and paired mast clamps complete the model. The default uses whole-unit, orthogonal geometry and one texture pixel per model unit (16 pixels per block). Long braces are tiled instead of stretching a texture.
+0.2.4 makes a solid version of the original square-stepped receiver. Its 32 opaque reflector panels preserve the mesh design's outline and front bowl profile. Three-unit panels meet across the steps, forming a connected shell with pale metal fronts, darker backing, a steel perimeter and small copper binding straps. The feed, rear braces and paired mast clamps retain their existing geometry; two hidden hinge pieces move four units back to clear the solid surface. All default geometry uses whole units and one texture pixel per model unit (16 pixels per block).
 
-Both later solid dishes remain intact in the same JAR. In **Options → Resource Packs**, enable **Simple Radio: Octagonal Parabolic Receiver** or **Simple Radio: Refined Parabolic Receiver**, then press Done. Leave both disabled for the mesh default. These are client appearance choices for the same block; reception, aiming, recipes, saved data and reserved cells retain their existing behavior.
+Three earlier appearances remain in the same JAR. In **Options → Resource Packs**, choose **Simple Radio: Stepped Mesh Receiver**, **Simple Radio: Octagonal Parabolic Receiver** or **Simple Radio: Refined Parabolic Receiver**, then press Done. Leave all three disabled for the solid stepped default. These are client appearance choices for the same block. Normal pack priority applies if several are enabled.
 
 The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.2 source for integration checks. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
 
@@ -87,7 +87,8 @@ All scans and saved-data changes run on the main server thread. Audio hooks read
 
 Open the `.bbmodel` files directly in Blockbench. Their textures are embedded, so they do not depend on texture paths on this computer.
 
-- `art/model-kit/Parabolic-Receiver.bbmodel`: finished stepped mesh dish, with embedded native mesh and whole-unit geometry.
+- `art/model-kit/Parabolic-Receiver.bbmodel`: solid stepped dish, with embedded opaque textures and whole-unit geometry.
+- `art/model-kit/Parabolic-Receiver-Mesh.bbmodel`: preserved 0.2.3 mesh dish and native mesh texture.
 - `art/model-kit/Parabolic-Receiver-Octagonal.bbmodel`: retained eight-sided solid dish.
 - `art/model-kit/Parabolic-Receiver-Refined.bbmodel`: retained finer dish alternate.
 - `art/model-kit/Wide-Angle-Receiver.bbmodel`: the new receiver, with embedded textures and separate fixed-mount/swivel groups.
@@ -120,15 +121,17 @@ Recreate the native mast references from the pinned base-mod source archive with
 python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4.5.7.9-sources.jar
 ```
 
-The authored generators are `tools/make_wide_array.py`, `tools/make_parabolic_receiver.py` (refined alternate and pack), `tools/make_blocky_parabolic.py` (octagonal alternate and pack), and `tools/make_mesh_parabolic.py` (finished mesh default). Generate them in that order when recreating all assets. `art/model-kit/original-reference/` retains the unmodified original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
+The authored generators are `tools/make_wide_array.py`, `tools/make_parabolic_receiver.py` (refined alternate and pack), `tools/make_blocky_parabolic.py` (octagonal alternate and pack), `tools/make_mesh_parabolic.py` (mesh alternate and pack), and `tools/make_solid_parabolic.py` (solid stepped default). Generate them in that order when recreating all assets. `art/model-kit/original-reference/` retains the unmodified original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
 
-Full server/GameTest evidence is under `directional/validation/0.2.0/`; current appearance checks are under `0.2.3/`. Live microphone playback is outside automated checks.
+Full server/GameTest evidence is under `directional/validation/0.2.0/`; current appearance checks are under `0.2.4/`. Live microphone playback is outside automated checks.
 
 For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecraft tests**, and all **91 combined addon Minecraft tests** pass. The new physical-array checks cover placement on a native mast, aiming from an outer panel, saved pattern identity, complete removal with one correct drop, and actual reception with half the dish's additional gain. The same four native headless tests listed below still fail; no addon test fails. The complete GameTest task therefore exits nonzero in both installations.
 
 The graphical client capture resolves all seven aimed models and all four textures. Prototype verification confirms the two receiver types' mining tags, embedded Blockbench textures, readable runtime names and exclusion of test/capture helpers. No core or Foci code changes are included.
 
 ## Native model captures
+
+0.2.4 captures show the solid stepped default on a native mast, front and rear details, a comparison with the preserved mesh, all seven aims and all three earlier appearances after real resource-pack reloads. Reproduce with `./gradlew :directional:runClient -I directional/validation/0.2.4/client-preview.gradle`. Evidence is in `validation/0.2.4/`. Images are raw Minecraft framebuffer captures of native model-preview sheets. Asset checks cover opacity, connected panel steps, the preserved outline/profile, whole-unit geometry, 1:1 UVs and each packaged alternate. This appearance update uses the existing unit checks; full server GameTests are not repeated.
 
 0.2.3 captures show the finished mesh on the native mast, front and back details, the original mesh reference alongside the finished design, all seven aims, and each retained solid alternate after enabling its actual built-in pack. Reproduce with `./gradlew :directional:runClient -I directional/validation/0.2.3/client-preview.gradle`. Evidence is in `validation/0.2.3/`. These are unretouched native Minecraft model-preview sheets. Asset checks cover the original panel outline/profile, native mesh material, whole-unit geometry, 1:1 UVs and both packaged alternates. The build uses the existing 18 unit checks; full server GameTests are not repeated for this visual update.
 

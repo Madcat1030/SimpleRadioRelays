@@ -1,5 +1,5 @@
 {
-  "credit": "Simple Radio Directional Antenna / finished original stepped mesh receiver",
+  "credit": "Simple Radio Directional Antenna / solid original stepped receiver",
   "parent": "minecraft:block/block",
   "ambientocclusion": false,
   "textures": {
@@ -7,13 +7,14 @@
     "iron": "simpleradio_directional:block/array_iron",
     "ceramic": "simpleradio_directional:block/array_ceramic",
     "cable": "simpleradio_directional:block/array_cable",
-    "mesh": "simpleradio:block/antenna_column",
-    "frame": "simpleradio_directional:block/mesh_frame",
-    "particle": "simpleradio_directional:block/mesh_frame"
+    "frame": "simpleradio_directional:block/solid_frame",
+    "particle": "simpleradio_directional:block/solid_frame",
+    "reflector": "simpleradio_directional:block/solid_reflector",
+    "backing": "simpleradio_directional:block/solid_backing"
   },
   "elements": [
     {
-      "name": "mesh_panel_0_1",
+      "name": "solid_panel_0_1",
       "from": [
         -8,
         -16,
@@ -22,32 +23,32 @@
       "to": [
         0,
         -8,
-        1
+        3
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -56,7 +57,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -66,7 +67,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -75,14 +76,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_0_2",
+      "name": "solid_panel_0_2",
       "from": [
         0,
         -16,
@@ -91,32 +92,32 @@
       "to": [
         8,
         -8,
-        2
+        4
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            0,
             8,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
             8,
-            0,
-            0,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -125,7 +126,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -135,7 +136,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -144,14 +145,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_0_3",
+      "name": "solid_panel_0_3",
       "from": [
         8,
         -16,
@@ -160,32 +161,32 @@
       "to": [
         16,
         -8,
-        2
+        4
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -194,7 +195,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -204,7 +205,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -213,14 +214,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_0_4",
+      "name": "solid_panel_0_4",
       "from": [
         16,
         -16,
@@ -229,32 +230,32 @@
       "to": [
         24,
         -8,
-        1
+        3
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            0,
             8,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
             8,
-            0,
-            0,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -263,7 +264,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -273,7 +274,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -282,14 +283,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_1_0",
+      "name": "solid_panel_1_0",
       "from": [
         -16,
         -8,
@@ -298,7 +299,7 @@
       "to": [
         -8,
         0,
-        1
+        3
       ],
       "faces": {
         "north": {
@@ -308,22 +309,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -332,7 +333,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -342,7 +343,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -351,505 +352,91 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_1_1",
+      "name": "solid_panel_1_1",
       "from": [
         -8,
         -8,
         3
       ],
       "to": [
-        0,
-        0,
-        4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_1_2",
-      "from": [
-        0,
-        -8,
-        4
-      ],
-      "to": [
-        8,
-        0,
-        5
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_1_3",
-      "from": [
-        8,
-        -8,
-        4
-      ],
-      "to": [
-        16,
-        0,
-        5
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_1_4",
-      "from": [
-        16,
-        -8,
-        3
-      ],
-      "to": [
-        24,
-        0,
-        4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_1_5",
-      "from": [
-        24,
-        -8,
-        0
-      ],
-      "to": [
-        32,
-        0,
-        1
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_2_0",
-      "from": [
-        -16,
-        0,
-        1
-      ],
-      "to": [
-        -8,
-        8,
-        2
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_2_1",
-      "from": [
-        -8,
-        0,
-        4
-      ],
-      "to": [
-        0,
-        8,
-        5
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_2_2",
-      "from": [
         0,
         0,
         6
       ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_1_2",
+      "from": [
+        0,
+        -8,
+        4
+      ],
       "to": [
         8,
-        8,
+        0,
         7
       ],
       "faces": {
@@ -860,22 +447,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -884,7 +471,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -894,7 +481,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -903,14 +490,428 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_2_3",
+      "name": "solid_panel_1_3",
+      "from": [
+        8,
+        -8,
+        4
+      ],
+      "to": [
+        16,
+        0,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_1_4",
+      "from": [
+        16,
+        -8,
+        3
+      ],
+      "to": [
+        24,
+        0,
+        6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_1_5",
+      "from": [
+        24,
+        -8,
+        0
+      ],
+      "to": [
+        32,
+        0,
+        3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_2_0",
+      "from": [
+        -16,
+        0,
+        1
+      ],
+      "to": [
+        -8,
+        8,
+        4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_2_1",
+      "from": [
+        -8,
+        0,
+        4
+      ],
+      "to": [
+        0,
+        8,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_2_2",
+      "from": [
+        0,
+        0,
+        6
+      ],
+      "to": [
+        8,
+        8,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_2_3",
       "from": [
         8,
         0,
@@ -919,32 +920,32 @@
       "to": [
         16,
         8,
-        7
+        9
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -953,7 +954,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -963,7 +964,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -972,14 +973,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_2_4",
+      "name": "solid_panel_2_4",
       "from": [
         16,
         0,
@@ -988,32 +989,32 @@
       "to": [
         24,
         8,
-        5
+        7
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            0,
             8,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
             8,
-            0,
-            0,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1022,7 +1023,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1032,7 +1033,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1041,14 +1042,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_2_5",
+      "name": "solid_panel_2_5",
       "from": [
         24,
         0,
@@ -1057,32 +1058,32 @@
       "to": [
         32,
         8,
-        2
+        4
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1091,7 +1092,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1101,7 +1102,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1110,14 +1111,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_3_0",
+      "name": "solid_panel_3_0",
       "from": [
         -16,
         8,
@@ -1126,7 +1127,7 @@
       "to": [
         -8,
         16,
-        2
+        4
       ],
       "faces": {
         "north": {
@@ -1136,22 +1137,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1160,7 +1161,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1170,7 +1171,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1179,14 +1180,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_3_1",
+      "name": "solid_panel_3_1",
       "from": [
         -8,
         8,
@@ -1195,32 +1196,32 @@
       "to": [
         0,
         16,
-        5
+        7
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
+            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
             0,
-            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1229,7 +1230,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1239,7 +1240,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1248,14 +1249,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_3_2",
+      "name": "solid_panel_3_2",
       "from": [
         0,
         8,
@@ -1264,7 +1265,7 @@
       "to": [
         8,
         16,
-        7
+        9
       ],
       "faces": {
         "north": {
@@ -1274,22 +1275,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1298,7 +1299,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1308,7 +1309,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1317,14 +1318,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_3_3",
+      "name": "solid_panel_3_3",
       "from": [
         8,
         8,
@@ -1333,6 +1334,75 @@
       "to": [
         16,
         16,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_3_4",
+      "from": [
+        16,
+        8,
+        4
+      ],
+      "to": [
+        24,
+        16,
         7
       ],
       "faces": {
@@ -1343,22 +1413,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1367,7 +1437,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1377,7 +1447,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1386,83 +1456,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_3_4",
-      "from": [
-        16,
-        8,
-        4
-      ],
-      "to": [
-        24,
-        16,
-        5
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_3_5",
+      "name": "solid_panel_3_5",
       "from": [
         24,
         8,
@@ -1471,32 +1472,32 @@
       "to": [
         32,
         16,
-        2
+        4
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
+            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
             0,
-            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1505,7 +1506,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1515,7 +1516,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1524,14 +1525,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_0",
+      "name": "solid_panel_4_0",
       "from": [
         -16,
         16,
@@ -1540,32 +1541,32 @@
       "to": [
         -8,
         24,
-        1
+        3
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            0,
             8,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
             8,
-            0,
-            0,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1574,7 +1575,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1584,7 +1585,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1593,14 +1594,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_1",
+      "name": "solid_panel_4_1",
       "from": [
         -8,
         16,
@@ -1609,32 +1610,32 @@
       "to": [
         0,
         24,
-        4
+        6
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1643,7 +1644,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1653,7 +1654,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1662,14 +1663,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_2",
+      "name": "solid_panel_4_2",
       "from": [
         0,
         16,
@@ -1678,32 +1679,32 @@
       "to": [
         8,
         24,
-        5
+        7
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            0,
             8,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
             8,
-            0,
-            0,
-            8
+            8,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1712,7 +1713,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1722,7 +1723,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1731,14 +1732,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_3",
+      "name": "solid_panel_4_3",
       "from": [
         8,
         16,
@@ -1747,32 +1748,32 @@
       "to": [
         16,
         24,
-        5
+        7
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
-            0,
-            0,
-            8
+            8,
+            16,
+            16
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1781,7 +1782,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1791,7 +1792,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1800,14 +1801,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_4",
+      "name": "solid_panel_4_4",
       "from": [
         16,
         16,
@@ -1816,6 +1817,213 @@
       "to": [
         24,
         24,
+        6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_4_5",
+      "from": [
+        24,
+        16,
+        0
+      ],
+      "to": [
+        32,
+        24,
+        3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_5_1",
+      "from": [
+        -8,
+        24,
+        0
+      ],
+      "to": [
+        0,
+        32,
+        3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#reflector"
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": "#backing"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            3,
+            8
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            3
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "name": "solid_panel_5_2",
+      "from": [
+        0,
+        24,
+        1
+      ],
+      "to": [
+        8,
+        32,
         4
       ],
       "faces": {
@@ -1826,22 +2034,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1850,7 +2058,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -1860,7 +2068,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -1869,221 +2077,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_4_5",
-      "from": [
-        24,
-        16,
-        0
-      ],
-      "to": [
-        32,
-        24,
-        1
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_5_1",
-      "from": [
-        -8,
-        24,
-        0
-      ],
-      "to": [
-        0,
-        32,
-        1
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_5_2",
-      "from": [
-        0,
-        24,
-        1
-      ],
-      "to": [
-        8,
-        32,
-        2
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            8,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "south": {
-          "uv": [
-            8,
-            0,
-            0,
-            8
-          ],
-          "texture": "#mesh"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            8
-          ],
-          "texture": "#frame"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            8,
-            1
-          ],
-          "texture": "#frame"
-        }
-      }
-    },
-    {
-      "name": "mesh_panel_5_3",
+      "name": "solid_panel_5_3",
       "from": [
         8,
         24,
@@ -2092,32 +2093,32 @@
       "to": [
         16,
         32,
-        2
+        4
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
             8,
+            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
             8,
             0,
-            0,
+            16,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -2126,7 +2127,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -2136,7 +2137,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -2145,14 +2146,14 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
       }
     },
     {
-      "name": "mesh_panel_5_4",
+      "name": "solid_panel_5_4",
       "from": [
         16,
         24,
@@ -2161,7 +2162,7 @@
       "to": [
         24,
         32,
-        1
+        3
       ],
       "faces": {
         "north": {
@@ -2171,22 +2172,22 @@
             8,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#reflector"
         },
         "south": {
           "uv": [
+            0,
+            0,
             8,
-            0,
-            0,
             8
           ],
-          "texture": "#mesh"
+          "texture": "#backing"
         },
         "east": {
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -2195,7 +2196,7 @@
           "uv": [
             0,
             0,
-            1,
+            3,
             8
           ],
           "texture": "#frame"
@@ -2205,7 +2206,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         },
@@ -2214,7 +2215,7 @@
             0,
             0,
             8,
-            1
+            3
           ],
           "texture": "#frame"
         }
@@ -6365,12 +6366,12 @@
       "from": [
         5,
         0,
-        6
+        10
       ],
       "to": [
         11,
         2,
-        12
+        16
       ],
       "faces": {
         "north": {
@@ -6434,12 +6435,12 @@
       "from": [
         5,
         15,
-        6
+        10
       ],
       "to": [
         11,
         17,
-        12
+        16
       ],
       "faces": {
         "north": {
