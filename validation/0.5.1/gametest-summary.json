@@ -1,0 +1,55 @@
+{
+  "core": {
+    "addon_passed": 46,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 0,-59,1 (relative: 1,-57,2) (t=50)"
+      },
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 16,-58,0 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ],
+    "unit_tests": 49,
+    "unit_failures": 0
+  },
+  "foci": {
+    "addon_passed": 69,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 72,-59,66 (relative: 73,-57,67) (t=50)"
+      },
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 2,-58,78 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ],
+    "unit_tests": 2,
+    "unit_failures": 0
+  },
+  "regression": {
+    "before_fix": "delayed_ground_radio_activation_retains_a_reachable_native_frequency failed: channelRegistered=false, receiverRegistered=false",
+    "after_fix": "passes in core-only and core-plus-foci installations",
+    "evidence": "before-fix-reproduction.log"
+  }
+}

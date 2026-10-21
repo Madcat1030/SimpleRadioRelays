@@ -1,0 +1,52 @@
+{
+  "core": {
+    "addon_passed": 43,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 36,-59,66 (relative: 37,-57,67) (t=50)"
+      },
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 52,-58,65 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ]
+  },
+  "foci": {
+    "addon_passed": 66,
+    "addon_failed": 0,
+    "native_failures": [
+      {
+        "test": "SystemTest.shortCircuit",
+        "message": "Did not expect wire between  at 24,-59,105 (relative: 25,-57,106) (t=50)"
+      },
+      {
+        "test": "SystemTest.garbageCollection",
+        "message": "Listener found at location at 40,-58,104 (relative: 2,2,0) (t=50)"
+      },
+      {
+        "test": "SystemTest.closedSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      },
+      {
+        "test": "SystemTest.openSystem",
+        "message": "Didn't succeed or fail within 100 ticks"
+      }
+    ]
+  },
+  "runtime": {
+    "original_sha256": "f8bc17d391a1b99469538e50e21ca8540edc1f729edba86fa88c68f491afd07c",
+    "rebuilt_sha256": "f8bc17d391a1b99469538e50e21ca8540edc1f729edba86fa88c68f491afd07c",
+    "byte_identical": true,
+    "gameplay_changes": false
+  }
+}

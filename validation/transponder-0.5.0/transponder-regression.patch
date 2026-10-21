@@ -1,0 +1,151 @@
+--- /dev/null
++++ b/core/src/main/java/dev/paul/simpleradiorepeaters/gametest/TransponderRoutingGameTests.java
+@@ -0,0 +1,136 @@
++package dev.paul.simpleradiorepeaters.gametest;
++
++import com.codinglitch.simpleradio.ServerSimpleRadioApi;
++import com.codinglitch.simpleradio.central.*;
++import com.codinglitch.simpleradio.core.registry.*;
++import com.codinglitch.simpleradio.core.registry.blocks.RadioBlockEntity;
++import com.codinglitch.simpleradio.radio.*;
++import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
++import dev.paul.simpleradiorepeaters.block.*;
++import dev.paul.simpleradiorepeaters.network.*;
++import dev.paul.simpleradiorepeaters.radio.*;
++import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
++import net.minecraft.core.BlockPos;
++import net.minecraft.gametest.framework.*;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.item.*;
++import net.minecraft.world.level.block.Blocks;
++import java.util.*;
++
++/** Real placed-radio subscribers, plus the saved 4,000-block out-and-back conversion route. */
++public class TransponderRoutingGameTests implements FabricGameTest {
++    private static short nextId = 31800;
++    private static void check(boolean value, String message) { if (!value) throw new GameTestAssertException(message); }
++    private static Frequency frequency(int offset, Frequency.Modulation modulation) {
++        var frequencies = ServerSimpleRadioApi.getInstance().frequencies();
++        return frequencies.getOrCreate(frequencies.incrementFrequency(frequencies.defaultFrequency(), offset), modulation);
++    }
++    private static ItemStack card(Frequency frequency) {
++        ItemStack stack = new ItemStack(SimpleRadioRepeaters.CARD);
++        SimpleRadioRepeaters.CARD.setFrequency(stack, frequency.getFrequency(), frequency.getModulation());
++        return stack;
++    }
++    private static final class Tap extends RadioRouter {
++        final RadioBlockEntity block;
++        final RadioReceiver receiver;
++        int count;
++        RadioSource last;
++        Tap(ServerLevel level, BlockPos position, Frequency frequency) {
++            super(WorldlyPosition.of(position, level)); identifier = ++nextId;
++            level.setBlock(position, SimpleRadioBlocks.RADIO.defaultBlockState(), 3);
++            block = (RadioBlockEntity) level.getBlockEntity(position);
++            block.frequency = frequency; block.activate();
++            receiver = (RadioReceiver) block.receiver;
++            // Keep the actual native subscription; capture before decoding deliberately synthetic voice bytes.
++            receiver.routers.clear(); receiver.addRouter(this);
++        }
++        @Override public void take(Source source) { count++; last = (RadioSource) source; }
++        void close(ServerLevel level) { level.setBlock(block.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); }
++    }
++    private static RadioSource send(ServerLevel level, BlockPos position, Frequency frequency) {
++        var sender = new RadioTransmitter(frequency, WorldlyPosition.of(position, level))
++                .frequencingType(SimpleRadioFrequencing.WALKIE_TALKIE);
++        sender.identifier = ++nextId;
++        var source = new RadioSource(UUID.randomUUID(), WorldlyPosition.of(position, level), new byte[]{1, 2, 3}, 1);
++        source.originalOwner = UUID.randomUUID(); source.activity = 42;
++        sender.accept(source); return source;
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
++    public void physical_simplex_transponder_delivers_to_a_placed_radio(GameTestHelper helper) {
++        ServerLevel level = helper.getLevel();
++        Frequency input = frequency(610, Frequency.Modulation.AMPLITUDE), output = frequency(611, Frequency.Modulation.AMPLITUDE);
++        BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2)), relayPos = core.north();
++        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
++        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
++        level.setBlock(relayPos, SimpleRadioRepeaters.RELAY.defaultBlockState(), 3);
++        level.setBlock(relayPos.above(), SimpleRadioRepeaters.TRANSPONDER.defaultBlockState(), 3);
++        var relay = (RelayBlockEntity) level.getBlockEntity(relayPos);
++        var module = (TransponderBlockEntity) level.getBlockEntity(relayPos.above());
++        relay.installCatalyst(new ItemStack(Items.GILDED_BLACKSTONE), false);
++        module.setItem(0, card(input)); module.setItem(1, card(output));
++        Tap direct = new Tap(level, core.west(3), input), converted = new Tap(level, core.east(3), output);
++        TowerManager manager = TowerManager.get(level.getServer());
++        helper.runAfterDelay(40, () -> {
++            try {
++                check(manager.isEligible(relay.relayId()), "Physical transponder must have a verified ready Relay: " + manager.describe());
++                TowerRecord snapshot = manager.snapshot(relay.relayId());
++                check(snapshot.transponder() != null && snapshot.transponder().ports().equals(List.of(
++                        new TransponderChannels.Port(ChannelKey.from(input), ChannelKey.from(output)))),
++                        "The installed cards must publish a left-to-right port");
++                long deliveries = manager.receiverDeliveries;
++                RadioSource source = send(level, core.north(3), input);
++                check(direct.count == 1, "The input radio must receive the native direct transmission");
++                check(converted.count == 1 && converted.last.frequencyMedium == output,
++                        "A ready local transponder must convert to the native placed 0.02 radio; counters=" + manager.summary());
++                check(manager.receiverDeliveries == deliveries + 2 && converted.last.data == source.data
++                                && converted.last.activity == 42 && ((RelaySourceState) converted.last).repeaters$getRelayCount() == 1,
++                        "Conversion must record both actual deliveries and preserve encoded voice metadata");
++                helper.succeed();
++            } finally {
++                direct.close(level); converted.close(level);
++                level.setBlock(relayPos.above(), Blocks.AIR.defaultBlockState(), 3);
++                level.setBlock(relayPos, Blocks.AIR.defaultBlockState(), 3);
++            }
++        });
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
++    public void saved_am_transponder_returns_through_the_same_banks_with_ender_amplifiers(GameTestHelper helper) {
++        ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
++        Frequency input = frequency(612, Frequency.Modulation.AMPLITUDE), output = frequency(613, Frequency.Modulation.AMPLITUDE);
++        ChannelKey in = ChannelKey.from(input), out = ChannelKey.from(output);
++        BlockPos start = new BlockPos(760004, 80, 760004);
++        level.getChunkAt(start);
++        List<TowerRecord> records = new ArrayList<>();
++        // RT1 is represented by a loaded-chunk record for this synchronous packet. RT2 and RT3 remain saved only.
++        for (int i = 0; i < 3; i++) {
++            BlockPos position = start.offset(i * 4000, 0, 0);
++            if (i > 0) check(!level.hasChunkAt(position), "Remote Relay chunks must start unloaded");
++            TowerRecord record = new TowerRecord(UUID.randomUUID(), level.dimension().location().toString(), position,
++                    Set.of(in, out), true, RelayCatalysts.GILDED, true, 16, Set.of(position.asLong()), null,
++                    RelayAttachment.AMPLIFIER, i == 2 ? new TransponderChannels(in, out, null, false) : null);
++            records.add(TowerRecord.load(record.save()));
++        }
++        Tap converted = new Tap(level, start.east(3), output);
++        try {
++            for (TowerRecord record : records) manager.updateSnapshot(record);
++            RadioSource source = send(level, start.north(3), input);
++            check(converted.count == 1 && converted.last.frequencyMedium == output,
++                    "A 16-score AM chain with Ender amplifiers must return through RT3 conversion and the same RT2/RT1 banks; " + manager.summary());
++            check(((RelaySourceState) converted.last).repeaters$getRelayCount() == 5
++                            && ((RelaySourceState) converted.last).repeaters$getDecayCount() == 1
++                            && converted.last.data == source.data && converted.last.computeSeverity() < 100,
++                    "The out-and-back path must use five visits, resetting decay without dropping voice data");
++            for (int i = 1; i < 3; i++) check(!level.hasChunkAt(records.get(i).position()), "Routing must leave the remote chunks unloaded");
++            for (TowerRecord record : records) manager.updateSnapshot(record.settings(record.channels(), true,
++                    record.catalystItem(), null, RelayAttachment.NONE, record.transponder()));
++            send(level, start.north(3), input);
++            check(converted.count == 1, "Without amplifiers, 4,000-block AM spacing must fail on the decayed return leg");
++            helper.succeed();
++        } finally {
++            converted.close(level);
++            for (TowerRecord record : records) manager.removeAt(record.dimension(), record.position());
++        }
++    }
++}
+--- a/core/src/main/resources/fabric.mod.json
++++ b/core/src/main/resources/fabric.mod.json
+@@ -21,7 +21,8 @@
+       "dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests",
+-      "dev.paul.simpleradiorepeaters.gametest.SplitBoundaryGameTests"
++      "dev.paul.simpleradiorepeaters.gametest.SplitBoundaryGameTests",
++      "dev.paul.simpleradiorepeaters.gametest.TransponderRoutingGameTests"
+     ]
+   },
+   "mixins": [

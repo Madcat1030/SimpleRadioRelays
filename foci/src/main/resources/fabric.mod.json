@@ -29,6 +29,6 @@
     "java": ">=17",
     "simpleradio": "1.20.1-4.5.7.9",
     "voicechat": ">=1.20.1-2.6.0",
-    "simpleradio_repeaters": "0.5.0"
+    "simpleradio_repeaters": "${version}"
   }
 }

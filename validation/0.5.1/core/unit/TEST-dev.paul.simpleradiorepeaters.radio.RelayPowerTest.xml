@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-21T03:10:32.574Z" hostname="27582a0d0103" time="0.003">
+  <properties/>
+  <testcase name="invalidInputsNeverCreateUsablePower()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <testcase name="firstRelayAlreadyPaysItsCatalystEfficiency()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <testcase name="customCatalystsStartAtTheirStrengthAndAlwaysDecay()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.001"/>
+  <testcase name="mixedCatalystsUseTheCurrentTowersEfficiencyAndMaximum()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <testcase name="nativeCatalystRatioIsConstantAtEveryCount()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <testcase name="amethystDecaysAtEachRelayCount()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <testcase name="lessThanOnePercentCanStillReachANearbyReceiver()" classname="dev.paul.simpleradiorepeaters.radio.RelayPowerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

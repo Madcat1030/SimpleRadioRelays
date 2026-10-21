@@ -36,11 +36,12 @@ def inspect(data):
     return major,pool,fields,methods,attrs,cp
 
 p=Path(__file__).resolve().parents[1]
+version=next(line.split('=',1)[1].strip() for line in (p/'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
 results=[]
 for module in ['core','foci']:
     folder=p/module
-    originals=[f for f in (folder/'build/libs').glob('*.jar') if not any(t in f.name for t in ['prototype','sources'])]
-    outputs=list((folder/'build/libs').glob('*-prototype.jar'))
+    originals=[f for f in (folder/'build/libs').glob(f'*-{version}.jar') if not any(t in f.name for t in ['prototype','sources'])]
+    outputs=list((folder/'build/libs').glob(f'*-{version}-prototype.jar'))
     assert len(originals)==len(outputs)==1,(originals,outputs)
     original,output=originals[0],outputs[0]
     report=json.loads((folder/'build/prototype/packaging-report.json').read_text())
@@ -65,9 +66,9 @@ for module in ['core','foci']:
             assert not any('simpleradiofoci' in n for n in new.namelist())
             assert not any('NativeTravelMixin' in n or 'NativeTransmissionMixin' in n for n in new.namelist())
         else:
-            assert after['depends']['simpleradio_repeaters']=='0.5.0'
+            assert after['depends']['simpleradio_repeaters']==version
     results.append({'module':module,'passed':True,'jar':output.name,'bytes':output.stat().st_size,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
                     'classes':classes,'retained_methods_identical':checked,'removed_test_helpers':len(removed),'no_obfuscation':True})
-out=p/'validation/0.5.0';out.mkdir(parents=True,exist_ok=True)
+out=p/'validation'/version;out.mkdir(parents=True,exist_ok=True)
 (out/'prototype-verification.json').write_text(json.dumps(results,indent=2)+'\n')
 print(json.dumps(results,indent=2))

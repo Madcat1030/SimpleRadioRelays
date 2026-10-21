@@ -216,6 +216,13 @@ public final class TowerManager {
                 RadioSpace.policyFingerprint());
         return networks.computeIfAbsent(scope, key -> buildNetwork(level, key));
     }
+    public record Inspection(Network cached, Network fresh) {}
+    /** Builds an independent numeric graph for diagnostics without replacing the live cached graph. */
+    public Inspection inspectNetwork(ServerLevel level, ChannelKey channel) {
+        Scope scope = new Scope(level.dimension().location().toString(), channel, RadioSpace.nativeCrossDimensional(),
+                RadioSpace.policyFingerprint());
+        return new Inspection(networks.get(scope), buildNetwork(level, scope));
+    }
     private Network buildNetwork(ServerLevel sourceLevel, Scope scope) {
         List<RelayPort> all = new ArrayList<>(); Map<ChannelKey, List<RelayPort>> listeners = new HashMap<>();
         for (TowerRecord tower : data.towers.values().stream().filter(n -> n.eligible()

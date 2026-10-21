@@ -30,7 +30,7 @@ public final class PrototypeJar {
         }
         Set<Method> removed = new LinkedHashSet<>();
         for (Method method : methods.keySet()) if (testOnlyOverload(method)) removed.add(method);
-        if (removed.size() != (entries.containsKey(ROOT + "radio/RelayGraph.class") ? 11 : 0)) throw new IllegalStateException("Unexpected audited test-only helper count: " + removed.size());
+        if (removed.size() != (entries.containsKey(ROOT + "radio/RelayGraph.class") ? 10 : 0)) throw new IllegalStateException("Unexpected audited test-only helper count: " + removed.size());
         // Also remove synthetic lambda bodies whose only callers were the removed test constructors.
         boolean changed;
         do {
@@ -92,7 +92,6 @@ public final class PrototypeJar {
             case "radio/NativeRadioAdapter" -> (m.name().equals("receiveAtTower") || m.name().equals("receiveAtReceiver"))
                     && count == 6 && Type.getArgumentTypes(m.descriptor())[0].getSort() == Type.DOUBLE;
             case "radio/RadioLinkMath" -> m.name().equals("receive") && count == 9;
-            case "network/TowerManager" -> m.name().equals("records") && count == 0;
             default -> false;
         };
     }

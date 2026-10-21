@@ -1,4 +1,4 @@
-# Simple Radio Repeaters 0.5.0
+# Simple Radio Repeaters 0.5.1
 
 A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. The core provides persistent stationary relay networks. The optional Dimensional Foci addon replaces native dimensional radio with focus-equipped relay bridges.
 
@@ -9,7 +9,7 @@ A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. Th
 | `core` / `simpleradio_repeaters` | Relay, Bank, Transponder, Frequency Cards, three amplifier tiers, antenna scanner, saved tower records, route mapping/updating and delivery hooks |
 | `foci` / `simpleradio_repeaters_foci` | Nether and End focus items/recipes/models, projection policy, optional Nether propagation and native dimensional guards |
 
-Install core on server and clients. Install the matching Foci JAR on both sides to enable its rules. Foci declares a required dependency on core 0.5.0; Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
+Install core on server and clients. Install the matching Foci JAR on both sides to enable its rules. Foci declares a required dependency on the matching core version; Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
 
 Replace the old 0.4.x addon JAR. Existing Relay/Bank/Transponder/card IDs are unchanged. The two focus IDs also remain `simpleradio_repeaters:nether_focus` and `simpleradio_repeaters:end_focus`, but the expansion now owns their registration and resources. Install both JARs to retain those items. Loading without the expansion follows normal missing-item handling; focus effects and saved projected sites do not remain active.
 
@@ -127,6 +127,16 @@ The hop budget is clamped to 1–128. Disabling persistence makes unloaded tower
 
 `/radiorepeaters status` reports counts. Operator `/radiorepeaters list` reports tower positions, raw/effective antenna details, channels, catalyst and attachment/module mode. `/radiorepeaters refresh` reconciles loaded components, refreshes resource settings and requests antenna checks.
 
+Operator `/radiorepeaters diagnose` writes `[relay-diagnostic]` lines to `logs/latest.log`. Hold the transmitting walkie-talkie or transceiver in the main hand. The report includes installed versions, RF configuration, saved and loaded tower/module data, native endpoint activity/validity, canonical frequency registration and cached/fresh RF route probes from the player's position. The probe emits no audio, requests no missing chunks and does not replace the live cached graph. Its candidate strengths are RF-only; they do not imply actual delivery past registration, activity, custom accept criteria or deduplication.
+
+## Native receiver reload repair
+
+Simple Radio 1.20.1-4.5.7.9 stores a frequency object when an auditory block deserializes. Deserialization may precede entity ticking; native garbage collection can remove the empty channel before the block activates. Native activation then registers its receiver/transmitter on the stale object. A placed radio can become silent on a valid relay output even though routing and tower links remain healthy. Replacing the radio reacquires the live object, which explains that temporary workaround.
+
+Core 0.5.1 injects at the start of `activate()` on native `RadioBlockEntity`, `ReceiverBlockEntity` and `TransmitterBlockEntity`. It resolves the canonical frequency for the stored frequency number and modulation immediately before native routers are created. A correction logs `[radio-reload]` once for that activation. The hook neither repairs audio quality nor changes RF math. It creates a native channel only for a device that is actually activating; translated routing still skips absent listener channels instead of creating empty frequencies per packet.
+
+The repair covers both an evicted channel and a different current generation of the same channel. It applies when the devices load with the addon installed. A relay refresh is not a native receiver reactivation and cannot repair an already orphaned device in an older build.
+
 ## Persistence and antenna verification
 
 The saved network remains `data/simpleradio_repeaters_relays_v3.dat`. Immutable tower snapshots retain identity, dimension, position, channels, catalyst ID, attachment effect name, module identity/position, Transponder policy, verified antenna and dependency footprint. Existing 0.3/0.4 records read without a migration/reset layer; earlier stores are not imported.
@@ -152,6 +162,8 @@ The expansion alone owns `NativeTransmissionMixin`, `NativeTravelMixin` and `Dim
 `TowerManager` owns loaded instances, saved records, chunk/component indexes and immutable per-channel network caches on the server thread. Settings/resource changes invalidate graphs. Native configuration/catalyst fingerprints are checked at startup, explicit refresh, successful data-pack reload and periodic ticks, not rebuilt for every voice packet. `RelayGraph` caches useful total-visit/decay/noise alternatives with dominance pruning and bounded cache weights; amplifier detours remain possible but redundant cycles are pruned. Cached values contain no player, block entity or voice-packet objects.
 
 `RelayRouter` evaluates current entrances and receiver exits, performs channel conversion through directed ports and materializes a native source for selected repeated delivery. `RelaySourceState`/`RadioSourceMixin` retain shared frame identity plus per-branch total visits, decay and inherited noise across copies and wires. Frame dedupe prevents replay. The one-point carrier preference compares paths for one transmitter; separate transmitters carrying the same source still have the previously documented first-accepted-copy limitation.
+
+`RadioBlockActivationMixin` contains the native frequency lifecycle repair. `RelayDiagnostics` derives an operator-requested textual snapshot, including an independent numeric graph from `TowerManager.inspectNetwork`; this code does not run on each voice packet. `TowerManager.records()` remains in the runtime build because diagnostics now uses that immutable collection snapshot.
 
 ## Models and lighting
 
@@ -181,7 +193,7 @@ Recipe JSON lives in each module's `src/main/resources/data/simpleradio_repeater
 
 Use JDK 21 for Gradle/Loom. Release classes target Java 17. `./gradlew build prototypeJar` builds both modules, runs unit tests and creates the separate runtime distributions under their respective `build/libs/` directories.
 
-`./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Evidence is recorded under `validation/0.5.0/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
+`./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.1/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
 
 `tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
 

@@ -1,13 +1,15 @@
-# Simple Radio Repeaters 0.5.0
+# Simple Radio Repeaters 0.5.1
 
-This workspace also includes the separate [Directional Antenna 0.1.0 prototype](directional/README.md). Core and Dimensional Foci remain at 0.5.0; the new directional runtime does not require either addon.
+This workspace also includes the separate [Directional Antenna 0.1.1 prototype](directional/README.md). Its runtime does not require either addon.
+
+0.5.1 fixes native radios and wired stations losing their live frequency registration after chunk reload. See [the reload fix and test instructions](docs/Release-Notes-0.5.1.md). Hold the transmitting radio and run `/radiorepeaters diagnose` to record saved/live tower state, RF paths and endpoint registrations in `logs/latest.log`.
 
 Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. This release separates the relay network from the optional dimensional expansion.
 
 | JAR | What it adds | Requires |
 | --- | --- | --- |
 | Simple Radio Repeaters | Relay, six-card Repeater Bank, three-card Transponder, Frequency Cards, antenna scanning, persistent routing and three amplifiers | Simple Radio |
-| Dimensional Foci | Nether/End focus items, focus-only dimensional radio and optional Nether propagation adjustments | Simple Radio Repeaters 0.5.0 |
+| Dimensional Foci | Nether/End focus items, focus-only dimensional radio and optional Nether propagation adjustments | Matching Simple Radio Repeaters core |
 
 Install the core on server and clients. Add the Foci JAR on both sides if you want its dimensional rules. Replace the old 0.4.x addon JAR. Dependencies remain Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+, Fabric API, Simple Radio **1.20.1-4.5.7.9** and its Lexiconfig dependency, plus Simple Voice Chat 1.20.1-2.6.0+.
 
@@ -77,7 +79,7 @@ Core settings now contain only `maxRelayHops: 64` and `persistentUnloadedTowers:
 
 A Bank repeats selected channels. A Transponder converts its left channel to its right channels in simplex, or both directions in duplex. It needs one tuned card on each side. Put the main frequency on both sides if it should also be repeated unchanged.
 
-`/radiorepeaters status`, `/radiorepeaters list` and `/radiorepeaters refresh` retain their existing roles. List/refresh require operator level 2.
+`/radiorepeaters status`, `/radiorepeaters list` and `/radiorepeaters refresh` retain their existing roles. `/radiorepeaters diagnose` writes a read-only report to `logs/latest.log`; hold the transmitting walkie/transceiver in the main hand for its RF probe. List/refresh/diagnose require operator level 2.
 
 ## Builds and evidence
 
@@ -90,7 +92,7 @@ One workspace builds two independent runtime JARs. Use JDK 21 for Gradle; releas
 
 Outputs are in `core/build/libs/` and `foci/build/libs/`. Install the `-prototype.jar` files for distributions without addon test fixtures. They retain readable addon names and debug data. Source and development builds retain the tests.
 
-All 51 unit tests pass. Core alone passes 41 addon Minecraft tests; the combined installation passes 64. Current evidence is under `validation/0.5.0/`. The full guide explains the code boundary, crafting, persistence and propagation. The four previously recorded native headless failures remain documented separately from addon regressions; live microphone playback is outside the automated checks.
+The 0.5.0 baseline passes 51 unit tests, 41 core addon Minecraft tests and 64 combined addon tests. Current 0.5.1 evidence is under `validation/0.5.1/`; the release notes report the added reload and diagnostics checks. The four previously recorded native headless failures remain documented separately from addon regressions. Live microphone playback is outside the automated checks.
 
 See [the implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) and [model editing guide](art/Model-Editing-Guide.md).
 

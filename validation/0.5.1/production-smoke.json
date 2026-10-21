@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "environment": "Fabric production server; development=false; -Xverify:all",
+  "checks": [
+    "Exact core prototype loaded without Foci",
+    "Relay and bank verified",
+    "Native radio, wired receiver and transmitter activated with the new mixin",
+    "Clean shutdown"
+  ],
+  "limits": "No client or microphone; controlled frequency-GC regression is covered by GameTest."
+}

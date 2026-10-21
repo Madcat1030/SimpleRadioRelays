@@ -6,6 +6,7 @@ import dev.paul.simpleradiorepeaters.item.RelayAttachmentItem;
 import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
+import dev.paul.simpleradiorepeaters.radio.RelayDiagnostics;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -103,6 +104,12 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     if (manager != null) for (String line : manager.describe())
                         context.getSource().sendSuccess(() -> Component.literal(line), false);
+                    return 1;
+                }))
+                .then(literal("diagnose").requires(source -> source.hasPermission(2)).executes(context -> {
+                    for (String line : RelayDiagnostics.describe(context.getSource().getPlayerOrException()))
+                        LOGGER.info("[relay-diagnostic] {}", line);
+                    context.getSource().sendSuccess(() -> Component.literal("Relay diagnostics written to logs/latest.log. No radios or relay settings were changed."), false);
                     return 1;
                 }))
                 .then(literal("refresh").requires(source -> source.hasPermission(2)).executes(context -> {

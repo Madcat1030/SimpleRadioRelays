@@ -6,7 +6,8 @@
   "mixins": [
     "RadioSourceMixin",
     "RadioRouterMixin",
-    "RadioReceiverMixin"
+    "RadioReceiverMixin",
+    "RadioBlockActivationMixin"
   ],
   "injectors": {
     "defaultRequire": 1
