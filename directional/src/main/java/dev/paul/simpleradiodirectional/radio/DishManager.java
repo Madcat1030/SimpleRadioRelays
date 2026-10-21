@@ -113,7 +113,8 @@ public final class DishManager {
             if (level == null || !level.hasChunkAt(dish.position())
                     || !level.areEntitiesLoaded(ChunkPos.asLong(dish.position().getX() >> 4, dish.position().getZ() >> 4))) return false;
             var state = level.getBlockState(dish.position());
-            return !state.is(DirectionalAntenna.DISH) || state.getValue(ParabolicReceiverBlock.FACING) != dish.facing();
+            return !(state.getBlock() instanceof ParabolicReceiverBlock receiver) || receiver.pattern() != dish.pattern()
+                    || state.getValue(ParabolicReceiverBlock.FACING) != dish.facing();
         });
         dirty |= manager.data.relays.keySet().removeIf(key -> {
             var level = manager.level(ResourceLocation.tryParse(key.dimension())); var pos = BlockPos.of(key.position());

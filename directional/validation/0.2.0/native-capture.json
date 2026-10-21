@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "renderer": "Minecraft Java 1.20.1 native baked block renderer",
+  "capture": "Screenshot.grab of the real client framebuffer; PNGs are unretouched",
+  "checks": [
+    "All seven aimed models baked",
+    "All four real pixel textures resolved",
+    "Native mast rendered"
+  ],
+  "screenshots": [
+    {
+      "name": "Wide-Angle-Receiver-0.2.0-Native-Preview.png",
+      "sha256": "56e928da7e6528c3c5eb117d8fa16a0824ee178de568019c5cc9e1737bf476af",
+      "bytes": 107616
+    },
+    {
+      "name": "Wide-Angle-Receiver-0.2.0-Aiming.png",
+      "sha256": "151284527f8735cde44550661c762dd375ff27fca096161e1dc578211b6f3f3d",
+      "bytes": 109955
+    }
+  ],
+  "scope": "Native model sheet; no generated imagery and no live microphone playback"
+}

@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "simpleradio_directional:parabolic_receiver",
-    "simpleradio_directional:parabolic_part"
+    "simpleradio_directional:parabolic_part",
+    "simpleradio_directional:wide_angle_receiver",
+    "simpleradio_directional:wide_angle_part"
   ]
 }

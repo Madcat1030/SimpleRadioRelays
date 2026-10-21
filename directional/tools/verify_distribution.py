@@ -3,11 +3,13 @@ from pathlib import Path
 import base64
 import hashlib
 import json
+import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 LIBS=ROOT/'build/libs'
-prefix='simple-radio-directional-antenna-fabric-1.20.1-0.1.0'
+version=re.search(r"version = '([^']+)'", (ROOT/'build.gradle').read_text()).group(1)
+prefix='simple-radio-directional-antenna-fabric-1.20.1-'+version
 full=LIBS/(prefix+'.jar')
 prototype=LIBS/(prefix+'-prototype.jar')
 with zipfile.ZipFile(full) as a,zipfile.ZipFile(prototype) as b:
@@ -23,6 +25,7 @@ with zipfile.ZipFile(full) as a,zipfile.ZipFile(prototype) as b:
     assert json.loads(runtime['fabric.mod.json'])==metadata
     assert 'simpleradio_repeaters' not in metadata['depends']
     assert all(not n.startswith('dev/paul/simpleradiorepeaters/') for n in runtime)
+    assert not any('preview/' in n or 'NoUnixSockets' in n or 'task/buildhost' in n for n in runtime)
 
 kit=ROOT/'art/model-kit'
 for path in kit.glob('*.bbmodel'):
@@ -37,15 +40,22 @@ for path in kit.glob('*.bbmodel'):
             assert face['texture'] is None or 0<=face['texture']<len(model['textures'])
 assert len(list(kit.glob('Native-Antenna-*.bbmodel')))==2
 assert not list(kit.rglob('*top*.json'))
+assert (kit/'Wide-Angle-Receiver.bbmodel').is_file()
+assert len(list(kit.glob('*.bbmodel')))==4
 model=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json').read_text())
 assert all(-16<=v<=32 for e in model['elements'] for v in e['from']+e['to'])
+
+for tag in ['mineable/pickaxe','needs_stone_tool']:
+    values=json.loads((ROOT/f'src/main/resources/data/minecraft/tags/blocks/{tag}.json').read_text())['values']
+    assert 'simpleradio_directional:wide_angle_receiver' in values and 'simpleradio_directional:wide_angle_part' in values
 
 report={'passed':True,'jar':prototype.name,'bytes':prototype.stat().st_size,
         'sha256':hashlib.sha256(prototype.read_bytes()).hexdigest(),
         'runtime_classes':sum(n.endswith('.class') for n in runtime),'removed_fixture_classes':len(removed),
         'retained_runtime_entries_byte_identical':len(runtime)-1,'loom_manifest_preserved':True,
         'no_obfuscation':True,'optional_repeaters_not_bundled_or_required':True,
-        'blockbench_models':3,'embedded_texture_validation':True,'top_references_excluded':True}
-output=ROOT/'validation/0.1.0/prototype-verification.json'
+        'blockbench_models':4,'embedded_texture_validation':True,'top_references_excluded':True,
+        'wide_array_mining_tags_valid':True,'capture_helpers_not_bundled':True}
+output=ROOT/f'validation/{version}/prototype-verification.json'
 output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

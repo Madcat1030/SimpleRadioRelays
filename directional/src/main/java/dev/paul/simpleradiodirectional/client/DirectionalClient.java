@@ -11,10 +11,13 @@ import net.minecraft.client.renderer.RenderType;
 public final class DirectionalClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
         BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.DISH, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.ARRAY, RenderType.cutout());
         ModelLoadingPlugin.register(plugin -> plugin.modifyModelAfterBake().register(ModelModifier.WRAP_PHASE, (model, context) -> {
             var id = context.id();
-            String prefix = "block/parabolic_receiver_aim_";
-            if (model == null || !id.getNamespace().equals(DirectionalAntenna.ID) || !id.getPath().startsWith(prefix)) return model;
+            if (model == null || !id.getNamespace().equals(DirectionalAntenna.ID)) return model;
+            String prefix = id.getPath().startsWith("block/wide_angle_receiver_aim_")
+                    ? "block/wide_angle_receiver_aim_" : "block/parabolic_receiver_aim_";
+            if (!id.getPath().startsWith(prefix)) return model;
             String suffix = id.getPath().substring(prefix.length());
             if (suffix.length() != 1 || suffix.charAt(0) < '0' || suffix.charAt(0) > '6') return model;
             int aim = suffix.charAt(0) - '0';

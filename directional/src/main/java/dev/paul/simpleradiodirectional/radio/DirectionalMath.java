@@ -18,10 +18,13 @@ public final class DirectionalMath {
     }
 
     public static double weight(double dx, double dz, double facingX, double facingZ) {
+        return weight(dx, dz, facingX, facingZ, DishPattern.PARABOLIC);
+    }
+    public static double weight(double dx, double dz, double facingX, double facingZ, DishPattern pattern) {
         double length = Math.hypot(dx, dz);
         if (!Double.isFinite(length) || length < 1.0e-9) return 0;
         double dot = Math.max(-1, Math.min(1, (dx * facingX + dz * facingZ) / length));
-        return angularWeight(Math.toDegrees(Math.acos(dot)));
+        return pattern.angularWeight(Math.toDegrees(Math.acos(dot)));
     }
 
     /** Gain is a distance allowance, matching native receiver power. Keep ordinary reception intact. */

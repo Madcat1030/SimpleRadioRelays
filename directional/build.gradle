@@ -3,7 +3,7 @@ plugins { id 'fabric-loom' }
 evaluationDependsOn(':core')
 if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
 
-version = '0.1.1'
+version = '0.2.0'
 group = project.maven_group
 base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
 
@@ -56,9 +56,11 @@ loom {
 def generatedDishModels = layout.buildDirectory.dir('generated/dish-models')
 tasks.register('generateDishModels') {
     inputs.file('src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json')
+    inputs.file('src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json')
     outputs.dir(generatedDishModels)
     doLast {
-        def model = new groovy.json.JsonSlurper().parse(inputs.files.singleFile)
+        ['parabolic_receiver', 'wide_angle_receiver'].each { modelName ->
+        def model = new groovy.json.JsonSlurper().parse(file("src/main/resources/assets/simpleradio_directional/models/block/${modelName}.json"))
         def fixed = { element -> element.name in ['mast_clamp', 'mounting_arm'] || element.name?.startsWith('mount_') }
         def mount = model.elements.findAll(fixed)
         def head = model.elements.findAll { !fixed(it) }
@@ -69,16 +71,17 @@ tasks.register('generateDishModels') {
             file.parentFile.mkdirs()
             file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(value)) + '\n'
         }
-        writeJson('models/block/parabolic_receiver_mount.json', model + [elements: mount])
-        writeJson('models/block/parabolic_receiver_head.json', model + [elements: head])
-        (0..6).each { aim -> writeJson("models/block/parabolic_receiver_aim_${aim}.json", [parent: 'simpleradio_directional:block/parabolic_receiver_head']) }
+        writeJson("models/block/${modelName}_mount.json", model + [elements: mount])
+        writeJson("models/block/${modelName}_head.json", model + [elements: head])
+        (0..6).each { aim -> writeJson("models/block/${modelName}_aim_${aim}.json", [parent: "simpleradio_directional:block/${modelName}_head"]) }
         def parts = []
         [north: 0, east: 90, south: 180, west: 270].each { facing, yaw ->
-            parts.add([when: [facing: facing], apply: [model: 'simpleradio_directional:block/parabolic_receiver_mount', y: yaw]])
+            parts.add([when: [facing: facing], apply: [model: "simpleradio_directional:block/${modelName}_mount", y: yaw]])
             (0..6).each { aim -> parts.add([when: [facing: facing, aim: aim.toString()],
-                    apply: [model: "simpleradio_directional:block/parabolic_receiver_aim_${aim}", y: yaw]]) }
+                    apply: [model: "simpleradio_directional:block/${modelName}_aim_${aim}", y: yaw]]) }
         }
-        writeJson('blockstates/parabolic_receiver.json', [multipart: parts])
+        writeJson("blockstates/${modelName}.json", [multipart: parts])
+        }
     }
 }
 sourceSets.main.resources.srcDir(generatedDishModels)

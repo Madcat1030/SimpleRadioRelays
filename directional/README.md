@@ -1,14 +1,30 @@
-# Simple Radio Directional Antenna 0.1.1 prototype
+# Simple Radio Directional Antenna 0.2.0 prototype
 
 Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
 
-Adds a mast-mounted **Parabolic Receiver**. It increases the attached station's ability to hear transmitters in front of it. It does not increase a transmitter's outgoing power, give nearby handheld receivers a bonus, or repair previously degraded audio.
+Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver Array**. Both improve the attached station's reception in the direction they face. Their bonuses depend on the underlying antenna and do not increase outgoing transmitter power or repair inherited audio degradation.
 
-Replace the previous Directional Antenna JAR on both server and clients. Existing dishes start at 0° and can be adjusted in place.
+Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
 
-The mod works with base Simple Radio. Repeaters 0.5.0 and Dimensional Foci 0.5.0 are optional. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies; existing Repeaters/Foci JARs can stay installed unchanged.
+The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.2 source for integration checks. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
 
 ## Reception pattern
+
+### Wide-angle array
+
+The array has a 135° primary arc: **±67.5° from its aim**. Throughout that arc it supplies **half the parabolic's additional reception bonus**. A smooth shoulder fades that bonus to zero at ±90°. This scales the added allowance, not the station's ordinary reception or its total power. Multiple arrays and dishes select the strongest applicable bonus; they do not add together.
+
+Its copper-framed open grilles, separate split receiving element, ceramic insulator, fixed mast clamps and swivelling head are actual Java block geometry with four 16×16 pixel textures. The visible reflector is approximately two blocks wide and two blocks high. Placement retains the common clear 3×3 selection/reservation plane for mounting and aiming.
+
+The new recipe uses two copper ingots, three iron bars and one native copper wire:
+
+```text
+Copper ingot   Iron bars      Copper ingot
+Iron bars      Empty          Iron bars
+Empty          Copper wire    Empty
+```
+
+### Parabolic receiver
 
 Angles are measured horizontally from the dish's facing direction. The solid reception wedge is 90° wide: 45° to either side. A smooth shoulder extends another 30° past each edge.
 
@@ -68,6 +84,7 @@ All scans and saved-data changes run on the main server thread. Audio hooks read
 Open the `.bbmodel` files directly in Blockbench. Their textures are embedded, so they do not depend on texture paths on this computer.
 
 - `art/model-kit/Parabolic-Receiver-Placeholder.bbmodel`: editable placeholder dish.
+- `art/model-kit/Wide-Angle-Receiver.bbmodel`: the new receiver, with embedded textures and separate fixed-mount/swivel groups.
 - `art/model-kit/Native-Antenna-Column.bbmodel`: exact native supported-column variant.
 - `art/model-kit/Native-Antenna-Vertical.bbmodel`: exact native non-column vertical variant.
 - `art/model-kit/native-reference/`: the original two Java model JSONs and both original 16×16 textures, extracted losslessly from the pinned Simple Radio source JAR, with its GPL license.
@@ -80,7 +97,7 @@ Keep the export origin and texture references, replace the Java model, and rebui
 
 ## Build and tests
 
-This source workspace includes core/Foci 0.5.0 solely so optional integration can compile and be tested against the actual API. The Directional Antenna runtime JAR does not bundle or require them.
+This source workspace includes core/Foci 0.5.2 solely so optional integration can compile and be tested against the actual API. The Directional Antenna runtime JAR does not bundle or require them.
 
 ```sh
 ./gradlew :directional:build :directional:prototypeJar
@@ -97,9 +114,25 @@ Recreate the model kit from the pinned base-mod source archive with:
 python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4.5.7.9-sources.jar
 ```
 
-Current validation evidence is under `directional/validation/0.1.1/`. Live microphone playback is outside automated checks.
+Current validation evidence is under `directional/validation/0.2.0/`. Live microphone playback is outside automated checks.
 
-## Validation results
+For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecraft tests**, and all **91 combined addon Minecraft tests** pass. The new physical-array checks cover placement on a native mast, aiming from an outer panel, saved pattern identity, complete removal with one correct drop, and actual reception with half the dish's additional gain. The same four native headless tests listed below still fail; no addon test fails. The complete GameTest task therefore exits nonzero in both installations.
+
+The graphical client capture resolves all seven aimed models and all four textures. Prototype verification confirms the two receiver types' mining tags, embedded Blockbench textures, readable runtime names and exclusion of test/capture helpers. No core or Foci code changes are included.
+
+## Native model captures
+
+`art/Wide-Angle-Receiver-0.2.0-Native-Preview.png` shows the actual model on the native mast, plus front and rear details. `art/Wide-Angle-Receiver-0.2.0-Aiming.png` shows all seven aims. These are unretouched Minecraft client framebuffer screenshots using its baked block models, texture atlas and item lighting. No image synthesis or external 3D renderer is used. This is a native model sheet rather than a screenshot of a placed-world scene.
+
+To reproduce the capture on a desktop with a normal display:
+
+```sh
+./gradlew :directional:runClient -I directional/validation/0.2.0/client-preview.gradle
+```
+
+The temporary capture mod is compiled outside the runtime source set. Its code is excluded from the distribution. `native-capture.json` records the raw screenshot hashes and successful model/texture checks. The array's source JSON is `models/block/wide_angle_receiver.json`; keep the `mount_` names on stationary parts and the swivel origin at [8,8,8]. `tools/make_wide_array.py` reproduces the authored geometry, textures, resource definitions and editable project.
+
+## Earlier 0.1.1 validation results
 
 All **15 unit tests pass**, including the baked reflector transforms for all 28 mounting/aim combinations, immutable quad reuse and the seven-step pattern. All **16 Directional Antenna Minecraft tests pass** with base Simple Radio alone. With Repeaters and Dimensional Foci installed, **all 80 addon Minecraft tests pass**. These include actual native reception after aiming, main/outer-panel interactions, end stops, blockstate and saved-data round trips, mirrors, and immediate invalidation of the real Repeaters network cache.
 

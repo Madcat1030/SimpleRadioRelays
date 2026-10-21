@@ -1,0 +1,145 @@
+"""Author the Java block model, pixel textures and editable Blockbench project. No rendered imagery."""
+import base64
+import json
+from pathlib import Path
+import uuid
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / 'src/main/resources/assets/simpleradio_directional'
+DATA = ROOT / 'src/main/resources/data'
+KIT = ROOT / 'art/model-kit'
+
+def write(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + '\n')
+
+palettes = {
+    'array_copper': ['#b96739', '#c77b49', '#a95430', '#da9259', '#8f4b2b'],
+    'array_iron': ['#656d71', '#879194', '#515b60', '#a2aaab', '#727c80'],
+    'array_ceramic': ['#d5d0b5', '#e8e2ca', '#b9b297', '#f0ead5', '#cbc3a7'],
+    'array_cable': ['#252b2c', '#303738', '#1b2021', '#3b4343', '#242a2a'],
+}
+for name, palette in palettes.items():
+    image = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        for x in range(16):
+            # Large restrained pixel patches, rather than noisy high-resolution material.
+            image.putpixel((x, y), tuple(bytes.fromhex(palette[(x // 3 + y // 4 * 3 + (x * y) % 3) % len(palette)][1:])) + (255,))
+    if name == 'array_copper':
+        for point in [(1, 2), (2, 2), (12, 13), (13, 13)]: image.putpixel(point, (73, 103, 86, 255))
+    output = ASSETS / 'textures/block' / (name + '.png')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output)
+
+elements = []
+def cube(name, start, end, material, angle=None):
+    # Each material has a 16x16 texture; face UVs preserve small rods instead of sampling an entire tile.
+    x, y, z = [min(16, abs(b - a)) for a, b in zip(start, end)]
+    uv = {'north': [0, 0, x, y], 'south': [0, 0, x, y],
+          'west': [0, 0, z, y], 'east': [0, 0, z, y],
+          'up': [0, 0, x, z], 'down': [0, 0, x, z]}
+    element = {'name': name, 'from': start, 'to': end,
+               'faces': {face: {'texture': '#' + material, 'uv': coords} for face, coords in uv.items()}}
+    if angle is not None: element['rotation'] = {'axis': 'y', 'angle': angle, 'origin': [8, 8, 8], 'rescale': False}
+    elements.append(element)
+
+# Two 17-pixel wings rotate ±22.5 degrees: a broad, genuinely open V, not a textured solid panel.
+for side, left, right, angle in [('left', -9, 8, -22.5), ('right', 8, 25, 22.5)]:
+    for suffix, start, end in [
+        ('bottom', [left, -8, 7.25], [right, -6.5, 8.75]),
+        ('top', [left, 22.5, 7.25], [right, 24, 8.75]),
+        ('outer', [left if side == 'left' else right - 1.5, -6.5, 7.25],
+                  [left + 1.5 if side == 'left' else right, 22.5, 8.75]),
+    ]: cube(side + '_copper_' + suffix, start, end, 'copper', angle)
+    for index, x in enumerate([left + 4.5, left + 8.5, left + 12.5]):
+        cube(f'{side}_grille_vertical_{index}', [x, -6.5, 7.75], [x + .75, 22.5, 8.5], 'iron', angle)
+    for index, y in enumerate([2.25, 13.5]):
+        cube(f'{side}_grille_horizontal_{index}', [left + 1, y, 7.75], [right - .5, y + .75, 8.5], 'iron', angle)
+    for x in [left + .25, right - 1.25]:
+        for y in [-7.75, 22.75]:
+            cube(f'{side}_corner_bolt_{x}_{y}', [x, y, 6.95], [x + 1, y + 1, 7.25], 'iron', angle)
+cube('reflector_spine', [7.25, -8, 7], [8.75, 24, 9], 'copper')
+cube('dipole_lower', [7.5, -4, -1], [8.5, 6.5, 0], 'copper')
+cube('dipole_upper', [7.5, 9.5, -1], [8.5, 20, 0], 'copper')
+cube('ceramic_insulator', [6.75, 6.5, -1.75], [9.25, 9.5, .75], 'ceramic')
+for y in [5.5, 9.5]: cube('dipole_band_' + str(y), [7, y, -1.5], [9, y + 1, .5], 'iron')
+for y in [4.5, 11.5]:
+    cube('dipole_standoff_' + str(y), [7.5, y, 0], [8.5, y + .75, 7.25], 'iron')
+cube('feed_connector', [7, 2.5, -1.25], [9, 4.5, .75], 'cable')
+cube('feed_cable_forward', [7.5, 2.5, .75], [8.5, 3.5, 7], 'cable')
+cube('feed_cable_up', [7.5, 3.5, 6.5], [8.5, 7, 7.5], 'cable')
+
+# Everything prefixed mount_ stays fixed while the entire reflector and receiving element swivel.
+for y in [1.5, 13]:
+    cube('mount_arm_' + str(y), [6.5, y, 9], [9.5, y + 1.5, 22], 'iron')
+for y in [1, 12.5]:
+    for suffix, start, end in [
+        ('front', [2.5, y, 19.5], [13.5, y + 2.5, 21]),
+        ('back', [2.5, y, 27], [13.5, y + 2.5, 28.5]),
+        ('left', [2.5, y, 21], [4, y + 2.5, 27]),
+        ('right', [12, y, 21], [13.5, y + 2.5, 27]),
+    ]: cube(f'mount_clamp_{y}_{suffix}', start, end, 'iron')
+    for x in [2.5, 11.5]: cube(f'mount_bolt_{x}_{y}', [x, y + .5, 19], [x + 2, y + 2, 19.5], 'cable')
+cube('mount_pivot_lower', [5.5, .5, 5.5], [10.5, 2.5, 10.5], 'iron')
+cube('mount_pivot_upper', [5.5, 14.5, 5.5], [10.5, 16.5, 10.5], 'iron')
+cube('mount_pivot_pin', [7.5, 2.5, 7.5], [8.5, 14.5, 8.5], 'iron')
+
+textures = {key: 'simpleradio_directional:block/array_' + key for key in ['copper', 'iron', 'ceramic', 'cable']}
+textures['particle'] = textures['copper']
+display = {'gui': {'rotation': [25, 225, 0], 'translation': [0, 0, 0], 'scale': [.32, .32, .32]},
+           'ground': {'translation': [0, 3, 0], 'scale': [.16, .16, .16]},
+           'fixed': {'scale': [.35, .35, .35]},
+           'firstperson_righthand': {'rotation': [0, 45, 0], 'scale': [.28, .28, .28]},
+           'thirdperson_righthand': {'rotation': [75, 45, 0], 'scale': [.20, .20, .20]}}
+model = {'credit': 'Simple Radio Directional Antenna / hand-authored Java block geometry',
+         'parent': 'minecraft:block/block', 'ambientocclusion': False, 'textures': textures,
+         'elements': elements, 'display': display}
+assert all(-16 <= v <= 32 for e in elements for v in e['from'] + e['to'])
+write(ASSETS / 'models/block/wide_angle_receiver.json', model)
+write(ASSETS / 'models/item/wide_angle_receiver.json', {'parent': 'simpleradio_directional:block/wide_angle_receiver'})
+write(ASSETS / 'models/block/wide_angle_part.json', {'parent': 'minecraft:block/block', 'elements': []})
+write(ASSETS / 'blockstates/wide_angle_part.json', {'variants': {'': {'model': 'simpleradio_directional:block/wide_angle_part'}}})
+for block in ['wide_angle_receiver', 'wide_angle_part']:
+    write(DATA / f'simpleradio_directional/loot_tables/blocks/{block}.json', {
+        'type': 'minecraft:block', 'pools': [{'rolls': 1, 'entries': [{'type': 'minecraft:item', 'name': 'simpleradio_directional:wide_angle_receiver'}],
+                                         'conditions': [{'condition': 'minecraft:survives_explosion'}]}]})
+for tag in ['mineable/pickaxe', 'needs_stone_tool']:
+    path = DATA / f'minecraft/tags/blocks/{tag}.json'
+    data = json.loads(path.read_text())
+    for block in ['wide_angle_receiver', 'wide_angle_part']:
+        key = 'simpleradio_directional:' + block
+        if key not in data['values']: data['values'].append(key)
+    write(path, data)
+write(DATA / 'simpleradio_directional/recipes/wide_angle_receiver.json', {
+    'type': 'minecraft:crafting_shaped', 'pattern': ['CBC', 'B B', ' W '],
+    'key': {'C': {'item': 'minecraft:copper_ingot'}, 'B': {'item': 'minecraft:iron_bars'}, 'W': {'item': 'simpleradio:copper_wire'}},
+    'result': {'item': 'simpleradio_directional:wide_angle_receiver', 'count': 1}})
+lang_path = ASSETS / 'lang/en_us.json'
+lang = json.loads(lang_path.read_text())
+lang.update({'block.simpleradio_directional.wide_angle_receiver': 'Wide-Angle Receiver Array',
+             'block.simpleradio_directional.wide_angle_part': 'Wide-Angle Receiver Array Part',
+             'tooltip.simpleradio_directional.wide_pattern': 'Receive only: 135\u00b0 at half the dish bonus; fades beyond the edges.',
+             'message.simpleradio_directional.aim': 'Receiver aim: %s\u00b0 from mount'})
+write(lang_path, lang)
+
+def uid(name): return str(uuid.uuid5(uuid.NAMESPACE_URL, 'simple-radio-directional/wide-array/' + name))
+keys = ['copper', 'iron', 'ceramic', 'cable']
+cubes = []
+for index, element in enumerate(elements):
+    rotation = element.get('rotation', {})
+    cubes.append({'name': element['name'], 'uuid': uid(str(index)), 'type': 'cube', 'from': element['from'], 'to': element['to'],
+                  'origin': rotation.get('origin', [8, 8, 8]), 'rotation': [0, rotation.get('angle', 0), 0], 'rescale': False,
+                  'faces': {face: dict(value, texture=keys.index(value['texture'][1:])) for face, value in element['faces'].items()},
+                  'autouv': 0, 'export': True, 'visibility': True})
+images = [{'name': 'array_' + key + '.png', 'id': str(index), 'uuid': uid(key), 'width': 16, 'height': 16,
+           'folder': 'block', 'namespace': 'simpleradio_directional',
+           'uv_width': 16, 'uv_height': 16, 'source': 'data:image/png;base64,' + base64.b64encode((ASSETS / f'textures/block/array_{key}.png').read_bytes()).decode(),
+           'mode': 'bitmap', 'saved': False} for index, key in enumerate(keys)]
+groups = [{'name': name, 'uuid': uid(name), 'origin': [8, 8, 8], 'export': True,
+           'children': [c['uuid'] for c in cubes if c['name'].startswith('mount_') == fixed]}
+          for name, fixed in [('Fixed mount', True), ('Swivelling receiver', False)]]
+write(KIT / 'Wide-Angle-Receiver.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
+     'name': 'Wide-Angle Receiver Array', 'resolution': {'width': 16, 'height': 16}, 'elements': cubes,
+     'outliner': groups, 'textures': images, 'display': display})
+print(f'Authored {len(elements)} native cuboids, four 16x16 textures, recipe/tags, and an embedded-texture Blockbench project.')

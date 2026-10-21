@@ -2,6 +2,7 @@ package dev.paul.simpleradiodirectional.block;
 
 import com.codinglitch.simpleradio.core.registry.blocks.AntennaBlock;
 import dev.paul.simpleradiodirectional.DirectionalAntenna;
+import dev.paul.simpleradiodirectional.radio.DishPattern;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.*;
@@ -44,26 +45,28 @@ public final class DishGeometry {
         return true;
     }
     public static void build(Level level, BlockPos center, Direction facing) {
+        var block = (ParabolicReceiverBlock) level.getBlockState(center).getBlock();
         for (int i = 0; i < 9; i++) if (i != 4) level.setBlock(cell(center, facing, i),
-                DirectionalAntenna.PART.defaultBlockState().setValue(DishPartBlock.FACING, facing)
+                DirectionalAntenna.part(block.pattern()).defaultBlockState().setValue(DishPartBlock.FACING, facing)
                         .setValue(DishPartBlock.PART, i), Block.UPDATE_CLIENTS);
-        for (int i = 0; i < 9; i++) level.updateNeighborsAt(cell(center, facing, i), DirectionalAntenna.DISH);
+        for (int i = 0; i < 9; i++) level.updateNeighborsAt(cell(center, facing, i), block);
     }
     public static Validity validate(ServerLevel level, BlockPos center, Direction facing) {
         BlockPos mast = center.relative(facing.getOpposite());
         for (BlockPos pos : List.of(mast, mast.above(), mast.below())) if (!loaded(level, pos)) return Validity.INCOMPLETE;
         for (int i = 0; i < 9; i++) if (!loaded(level, cell(center, facing, i))) return Validity.INCOMPLETE;
         if (!validMast(level, mast)) return Validity.INVALID;
+        if (!(level.getBlockState(center).getBlock() instanceof ParabolicReceiverBlock block)) return Validity.INVALID;
         for (int i = 0; i < 9; i++) {
             var state = level.getBlockState(cell(center, facing, i));
             if (i == 4) {
-                if (!state.is(DirectionalAntenna.DISH) || state.getValue(ParabolicReceiverBlock.FACING) != facing) return Validity.INVALID;
-            } else if (!state.is(DirectionalAntenna.PART) || state.getValue(DishPartBlock.FACING) != facing
+                if (state.getValue(ParabolicReceiverBlock.FACING) != facing) return Validity.INVALID;
+            } else if (!state.is(DirectionalAntenna.part(block.pattern())) || state.getValue(DishPartBlock.FACING) != facing
                     || state.getValue(DishPartBlock.PART) != i) return Validity.INVALID;
         }
         return Validity.VALID;
     }
-    public static void remove(Level level, BlockPos center, Direction facing, BlockPos changed) {
+    public static void remove(Level level, BlockPos center, Direction facing, BlockPos changed, DishPattern pattern) {
         if (REMOVING.get()) return;
         REMOVING.set(true);
         try {
@@ -71,8 +74,8 @@ public final class DishGeometry {
                 BlockPos pos = cell(center, facing, i);
                 if (pos.equals(changed) || !level.hasChunkAt(pos)) continue;
                 var state = level.getBlockState(pos);
-                if ((i == 4 && state.is(DirectionalAntenna.DISH) && state.getValue(ParabolicReceiverBlock.FACING) == facing)
-                        || (i != 4 && state.is(DirectionalAntenna.PART) && state.getValue(DishPartBlock.FACING) == facing
+                if ((i == 4 && state.is(DirectionalAntenna.receiver(pattern)) && state.getValue(ParabolicReceiverBlock.FACING) == facing)
+                        || (i != 4 && state.is(DirectionalAntenna.part(pattern)) && state.getValue(DishPartBlock.FACING) == facing
                         && state.getValue(DishPartBlock.PART) == i)) level.removeBlock(pos, false);
             }
         } finally { REMOVING.set(false); }

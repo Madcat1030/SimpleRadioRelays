@@ -2,6 +2,7 @@ package dev.paul.simpleradiodirectional.block;
 
 import dev.paul.simpleradiodirectional.DirectionalAntenna;
 import dev.paul.simpleradiodirectional.radio.DishManager;
+import dev.paul.simpleradiodirectional.radio.DishPattern;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -20,8 +21,11 @@ import net.minecraft.world.phys.BlockHitResult;
 public final class DishPartBlock extends Block {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final IntegerProperty PART = IntegerProperty.create("part", 0, 8);
-    public DishPartBlock(Properties properties) {
+    private final DishPattern pattern;
+    public DishPartBlock(Properties properties) { this(properties, DishPattern.PARABOLIC); }
+    public DishPartBlock(Properties properties, DishPattern pattern) {
         super(properties); registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, 0));
+        this.pattern = pattern;
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING).add(PART); }
     public static VoxelShape shape(Direction facing) {
@@ -39,10 +43,10 @@ public final class DishPartBlock extends Block {
         BlockPos center = DishGeometry.center(pos, state.getValue(FACING), state.getValue(PART));
         if (!level.hasChunkAt(center)) return InteractionResult.PASS;
         var dish = level.getBlockState(center);
-        return dish.is(DirectionalAntenna.DISH) ? DirectionalAntenna.DISH.use(dish, level, center, player, hand,
+        return dish.is(DirectionalAntenna.receiver(pattern)) ? DirectionalAntenna.receiver(pattern).use(dish, level, center, player, hand,
                 new BlockHitResult(hit.getLocation(), hit.getDirection(), center, hit.isInside())) : InteractionResult.PASS;
     }
-    @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(DirectionalAntenna.DISH); }
+    @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(DirectionalAntenna.receiver(pattern)); }
     @Override public BlockState rotate(BlockState state, Rotation rotation) { return state.setValue(FACING, rotation.rotate(state.getValue(FACING))); }
     @Override public BlockState mirror(BlockState state, Mirror mirror) {
         Direction facing = state.getValue(FACING), mirrored = mirror.mirror(facing);
@@ -56,14 +60,14 @@ public final class DishPartBlock extends Block {
     }
     @Override public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BlockPos center = DishGeometry.center(pos, state.getValue(FACING), state.getValue(PART));
-        if (level.hasChunkAt(center) && !level.getBlockState(center).is(DirectionalAntenna.DISH)) level.removeBlock(pos, false);
+        if (level.hasChunkAt(center) && !level.getBlockState(center).is(DirectionalAntenna.receiver(pattern))) level.removeBlock(pos, false);
     }
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moving) {
         if (!state.is(replacement.getBlock())) {
             Direction facing = state.getValue(FACING);
             BlockPos center = DishGeometry.center(pos, facing, state.getValue(PART));
             if (!level.isClientSide) DishManager.remove(level, center);
-            DishGeometry.remove(level, center, facing, pos);
+            DishGeometry.remove(level, center, facing, pos, pattern);
         }
         super.onRemove(state, level, pos, replacement, moving);
     }

@@ -7,10 +7,14 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 
 /** Last verified, immutable physical attachment. Safe to retain with an unloaded relay. */
-public record Dish(ResourceLocation dimension, BlockPos position, Direction facing, int aim) {
+public record Dish(ResourceLocation dimension, BlockPos position, Direction facing, int aim, DishPattern pattern) {
     public Dish {
         position = position.immutable();
         if (!DishAim.valid(aim)) throw new IllegalArgumentException("Invalid dish aim: " + aim);
+        if (pattern == null) throw new IllegalArgumentException("Missing reception pattern");
+    }
+    public Dish(ResourceLocation dimension, BlockPos position, Direction facing, int aim) {
+        this(dimension, position, facing, aim, DishPattern.PARABOLIC);
     }
     public Dish(ResourceLocation dimension, BlockPos position, Direction facing) {
         this(dimension, position, facing, DishAim.STRAIGHT);
@@ -19,18 +23,19 @@ public record Dish(ResourceLocation dimension, BlockPos position, Direction faci
     public double weight(double x, double z) {
         return DirectionalMath.weight(x - (mast().getX() + 0.5), z - (mast().getZ() + 0.5),
                 DishAim.x(facing.getStepX(), facing.getStepZ(), aim),
-                DishAim.z(facing.getStepX(), facing.getStepZ(), aim));
+                DishAim.z(facing.getStepX(), facing.getStepZ(), aim), pattern);
     }
     public CompoundTag save() {
         var tag = new CompoundTag(); tag.putString("Dimension", dimension.toString());
         tag.putLong("Position", position.asLong()); tag.putString("Facing", facing.getName());
-        tag.putInt("Aim", aim); return tag;
+        tag.putInt("Aim", aim); tag.putString("Pattern", pattern.id()); return tag;
     }
     public static Dish load(CompoundTag tag) {
         var dimension = ResourceLocation.tryParse(tag.getString("Dimension"));
         var facing = Direction.byName(tag.getString("Facing"));
         int aim = tag.contains("Aim", Tag.TAG_ANY_NUMERIC) ? tag.getInt("Aim") : DishAim.STRAIGHT;
-        return dimension == null || facing == null || facing.getAxis().isVertical() || !DishAim.valid(aim) ? null
-                : new Dish(dimension, BlockPos.of(tag.getLong("Position")), facing, aim);
+        DishPattern pattern = tag.contains("Pattern") ? DishPattern.parse(tag.getString("Pattern")) : DishPattern.PARABOLIC;
+        return dimension == null || facing == null || facing.getAxis().isVertical() || !DishAim.valid(aim) || pattern == null ? null
+                : new Dish(dimension, BlockPos.of(tag.getLong("Position")), facing, aim, pattern);
     }
 }

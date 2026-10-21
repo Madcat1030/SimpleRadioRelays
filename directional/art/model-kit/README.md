@@ -1,15 +1,31 @@
-# Parabolic Receiver model kit
+# Directional Receiver model kit — 0.2.0
 
-Open **Parabolic-Receiver-Placeholder.bbmodel** in Blockbench to edit the dish. Open either **Native-Antenna-Column.bbmodel** or **Native-Antenna-Vertical.bbmodel** for the two eligible native mast styles. Every project embeds its exact 16×16 source textures; external texture paths are unnecessary.
+Open **Wide-Angle-Receiver.bbmodel** for the new array or **Parabolic-Receiver-Placeholder.bbmodel** for the original dish. Both projects embed their pixel textures. The wide-angle array uses four 16×16 materials and 52 native Java-model cuboids; its two shallow grilles, receiving element, ceramic insulator and swivel are actual block geometry.
 
-The references are Simple Radio 1.20.1-4.5.7.9 geometry, copied without modification. Their original Java model JSON and PNG files are under `native-reference/`, with the base mod's GPL license. Top variants are excluded because the dish must have antenna above its supporting mast section.
+**Native-Antenna-Column.bbmodel** and **Native-Antenna-Vertical.bbmodel** are exact supported native mast references. Their original Java JSONs, PNGs and GPL license are under `native-reference/`. Top variants are excluded because a receiver requires another antenna section above its support. Keep the reference projects separate from the receiver export.
 
-One block is 16 model units. The dish faces North (negative Z), reserves a 48×48-unit vertical plane around its center, and mounts to a mast one block behind it (positive Z). The center block is 0–16 on each axis; the reserved plane is X −16…32, Y −16…32. The mounting arm may extend behind it into the mast block.
+## Export and aiming
 
-Export the **dish project only** as a Minecraft Java block/item model. Replace `directional/src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json` in the source workspace. Keep the origin and texture references. You can also supply the edited `.bbmodel` for integration.
+One block is 16 model units. The base orientation faces North (negative Z); the mast is behind the center toward positive Z. The center block is 0–16 on each axis. Both receivers reserve X = −16…32 and Y = −16…32, a 3×3 plane. The wide-angle array's visible face is approximately two blocks wide and two high. Visual edits do not change reserved cells or collision.
 
-Visual edits do not change the 3×3 reservation or collision cells. The four mounting sides use blockstate rotations. The reflector also swivels in seven 15° steps from −45° to +45° relative to that mount. Reception stays full within 45° of the selected aim, drops to 25% extra gain at 60°, and reaches zero extra gain at 75°.
+Keep all fixed cubes named with a **mount_** prefix. The original parabolic also accepts **mast_clamp** and **mounting_arm**. All other cubes swivel about **[8, 8, 8]**. Keep the fixed and swivel groups at 0° in the base export. The build splits the single editable Java JSON into fixed and rotating layers and generates all four mounting directions and seven aim settings. Native model baking caches the rotated quads; no per-frame block-entity renderer is involved.
 
-The **Mount** group is stationary and the **Reflector** group swivels. Keep the existing fixed cubes named **mast_clamp** and **mounting_arm**, or name replacement fixed cubes with a **mount_** prefix. All other cubes rotate around the reflector pivot **[8, 8, 8]**. Keep both groups at 0° when exporting; runtime handles the aim angles. The build automatically splits the editable Java model into fixed mount and swivel layers, and caches angled quads when resources load. Keep the feed and reflector together when redesigning the dish. Leave room for the visual sweep; selection/collision retains the original fixed 3×3 plane.
+Export the receiver alone as a Minecraft Java block/item model. In the full source workspace replace:
 
-In game, right-click any dish part with an empty hand to aim clockwise; sneak-right-click to aim counterclockwise. The end stops do not wrap. Old dishes start straight out from the mast.
+- Array: `directional/src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json`
+- Dish: `directional/src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json`
+
+Retain texture references and place edited PNGs in the corresponding `textures/block/` directory. The model-kit archive also includes the array's current JSON and four PNGs under `assets/`. You can instead return an edited `.bbmodel` for integration. `directional/tools/make_wide_array.py` reproduces the authored array resources, so do not rerun it over manual model edits unless you intend to restore this version.
+
+In game, empty-hand right-click on any receiver part aims clockwise; sneak-right-click aims counterclockwise. Settings are −45°, −30°, −15°, 0°, +15°, +30° and +45°, without wrapping. Clamps remain fixed. Leave room for the visible sweep.
+
+## Reception
+
+| Receiver | Full primary arc | Additional gain | Smooth fade ends |
+| --- | --- | --- | --- |
+| Wide-angle array | 135° (±67.5°) | Half the parabolic's extra gain | ±90° |
+| Parabolic | 90° (±45°) | Full extra gain | ±75° |
+
+The strongest applicable bonus wins; receivers do not stack. These patterns alter reception allowance, preserving ordinary reception and inherited audio quality. Geometry changes alone do not change the reception pattern.
+
+The two preview PNGs are unretouched screenshots from the actual Minecraft 1.20.1 client renderer, with the real texture atlas and native mast. They are native model sheets, rather than placed-world scenes. Capture source and checks are included in the full source archive under `directional/validation/0.2.0/`.

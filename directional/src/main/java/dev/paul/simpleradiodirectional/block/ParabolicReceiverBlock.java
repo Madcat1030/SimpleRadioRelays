@@ -4,6 +4,7 @@ import dev.paul.simpleradiodirectional.DirectionalAntenna;
 import dev.paul.simpleradiodirectional.radio.DishManager;
 import dev.paul.simpleradiodirectional.radio.Dish;
 import dev.paul.simpleradiodirectional.radio.DishAim;
+import dev.paul.simpleradiodirectional.radio.DishPattern;
 import net.minecraft.core.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -25,9 +26,13 @@ import org.jetbrains.annotations.Nullable;
 public final class ParabolicReceiverBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final IntegerProperty AIM = IntegerProperty.create("aim", DishAim.MIN, DishAim.MAX);
-    public ParabolicReceiverBlock(Properties properties) {
+    private final DishPattern pattern;
+    public ParabolicReceiverBlock(Properties properties) { this(properties, DishPattern.PARABOLIC); }
+    public ParabolicReceiverBlock(Properties properties, DishPattern pattern) {
         super(properties); registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(AIM, DishAim.STRAIGHT));
+        this.pattern = pattern;
     }
+    public DishPattern pattern() { return pattern; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, AIM); }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getClickedFace();
@@ -48,7 +53,7 @@ public final class ParabolicReceiverBlock extends BaseEntityBlock {
             if (aim != state.getValue(AIM)) {
                 level.setBlock(pos, state.setValue(AIM, aim), Block.UPDATE_CLIENTS);
                 // Publish immediately: audio threads and cached relay links must see the new bearing together.
-                DishManager.verify(server, new Dish(level.dimension().location(), pos, state.getValue(FACING), aim));
+                DishManager.verify(server, new Dish(level.dimension().location(), pos, state.getValue(FACING), aim, pattern));
             }
             int degrees = DishAim.degrees(aim);
             player.displayClientMessage(Component.translatable("message.simpleradio_directional.aim",
@@ -59,7 +64,7 @@ public final class ParabolicReceiverBlock extends BaseEntityBlock {
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moving) {
         if (!state.is(replacement.getBlock())) {
             if (!level.isClientSide) DishManager.remove(level, pos);
-            DishGeometry.remove(level, pos, state.getValue(FACING), pos);
+            DishGeometry.remove(level, pos, state.getValue(FACING), pos, pattern);
         }
         super.onRemove(state, level, pos, replacement, moving);
     }
