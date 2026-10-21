@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiodirectional.radio.DishPatternTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-21T19:01:31.784Z" hostname="59ce290e75ec" time="0.003">
+  <properties/>
+  <testcase name="wideArrayProvidesHalfBonusThroughoutIts135DegreeCore()" classname="dev.paul.simpleradiodirectional.radio.DishPatternTest" time="0.0"/>
+  <testcase name="broadShoulderIsContinuousMonotoneAndSymmetric()" classname="dev.paul.simpleradiodirectional.radio.DishPatternTest" time="0.001"/>
+  <testcase name="originalDishProfileAndForwardBearingRemainIntact()" classname="dev.paul.simpleradiodirectional.radio.DishPatternTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

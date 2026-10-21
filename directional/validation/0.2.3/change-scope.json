@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "unit_tests_passed": 18,
+  "runtime_classes_unchanged": 30,
+  "changed_class": "DirectionalClient: registers octagonal appearance pack",
+  "both_previous_models_preserved_byte_for_byte": true,
+  "original_mesh_outline_profile_and_sampling_verified": true,
+  "scope": "Appearance update; no RF, placement, inventory or controller code changed. No new full server GameTest run."
+}

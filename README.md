@@ -1,6 +1,6 @@
 # Simple Radio Repeaters 0.5.2
 
-This workspace also includes the separate [Directional Antenna 0.2.2 prototype](directional/README.md), with parabolic and wide-angle receivers. Both dish appearances are retained. Its runtime does not require either addon.
+This workspace also includes the separate [Directional Antenna 0.2.3 prototype](directional/README.md), with the finished stepped mesh receiver and wide-angle array. Both later solid-dish designs are retained as appearance options. Its runtime does not require either addon.
 
 0.5.2 fixes client channel cleanup deleting a live server frequency after travel, and prevents microphone/speaker activity from repeatedly showing `CHECK`. See [the fixes and test instructions](docs/Release-Notes-0.5.2.md). The earlier activation-time repair remains. Hold the transmitting radio and run `/radiorepeaters diagnose` to record saved/live tower state, RF paths and endpoint registrations in `logs/latest.log`.
 

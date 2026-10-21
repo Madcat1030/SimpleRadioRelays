@@ -17,6 +17,9 @@ public final class DirectionalClient implements ClientModInitializer {
         ResourceManagerHelper.registerBuiltinResourcePack(DirectionalAntenna.id("refined_parabolic"),
                 FabricLoader.getInstance().getModContainer(DirectionalAntenna.ID).orElseThrow(),
                 Component.literal("Simple Radio: Refined Parabolic Receiver"), ResourcePackActivationType.NORMAL);
+        ResourceManagerHelper.registerBuiltinResourcePack(DirectionalAntenna.id("octagonal_parabolic"),
+                FabricLoader.getInstance().getModContainer(DirectionalAntenna.ID).orElseThrow(),
+                Component.literal("Simple Radio: Octagonal Parabolic Receiver"), ResourcePackActivationType.NORMAL);
         BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.DISH, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(DirectionalAntenna.ARRAY, RenderType.cutout());
         ModelLoadingPlugin.register(plugin -> plugin.modifyModelAfterBake().register(ModelModifier.WRAP_PHASE, (model, context) -> {

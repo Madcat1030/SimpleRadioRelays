@@ -1,4 +1,4 @@
-"""Author the default chunky dish. Integer geometry, 0/45-degree angles, 1:1 UVs."""
+"""Author the retained octagonal alternate. Whole units, 0/45-degree angles, 1:1 UVs."""
 import base64
 import json
 from pathlib import Path
@@ -119,7 +119,14 @@ for e in elements:
     for face, f in e['faces'].items():
         u0, v0, u1, v1 = f['uv']
         assert (u1 - u0, v1 - v0) == sizes[face] and all(0 <= v <= 16 for v in f['uv'])
-write(ASSETS / 'models/block/parabolic_receiver.json', model)
+write(ASSETS / 'models/block/parabolic_receiver_octagonal.json', model)
+pack = ROOT / 'src/main/resources/resourcepacks/octagonal_parabolic'
+write(pack / 'pack.mcmeta', {'pack': {'pack_format': 15, 'description': 'The solid octagonal parabolic receiver, retained as a visual alternate.'}})
+pack_models = pack / 'assets/simpleradio_directional/models/block'
+write(pack_models / 'parabolic_receiver.json', model)
+for suffix, fixed in [('_mount', True), ('_head', False)]:
+    write(pack_models / ('parabolic_receiver' + suffix + '.json'), dict(model,
+          elements=[e for e in elements if e['name'].startswith('mount_') == fixed]))
 
 def uid(name):
     return str(uuid.uuid5(uuid.NAMESPACE_URL, 'simple-radio-directional/chunky-parabolic/' + name))
@@ -144,7 +151,7 @@ for i, key in enumerate(keys):
 groups = [{'name': name, 'uuid': uid(name), 'origin': [8, 8, 8], 'export': True,
            'children': [c['uuid'] for c in cubes if c['name'].startswith('mount_') == fixed]}
           for name, fixed in [('Fixed mount', True), ('Swivelling dish and feed', False)]]
-write(KIT / 'Parabolic-Receiver.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
+write(KIT / 'Parabolic-Receiver-Octagonal.bbmodel', {'meta': {'format_version': '4.10', 'model_format': 'java_block', 'box_uv': False},
       'name': 'Chunky Parabolic Receiver', 'resolution': {'width': 16, 'height': 16}, 'elements': cubes,
       'outliner': groups, 'textures': images, 'display': display})
-print(f'Authored {len(elements)} chunky cuboids: whole-unit geometry, 0/45-degree angles and 1:1 UVs.')
+print(f'Preserved the {len(elements)}-cuboid octagonal alternate and optional resource pack.')

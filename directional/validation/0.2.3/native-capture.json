@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "renderer": "Minecraft Java 1.20.1 native baked block renderer",
+  "capture": "Screenshot.grab of the real client framebuffer; PNGs are unretouched",
+  "checks": [
+    "All seven aimed models baked",
+    "Six real pixel textures resolved, including native mesh",
+    "Native mast rendered",
+    "Original mesh reference and both retained alternates rendered",
+    "Both alternate packs reloaded and actual block model changed"
+  ],
+  "screenshots": [
+    {
+      "name": "Parabolic-Receiver-0.2.3-Native-Preview.png",
+      "sha256": "c7a3e23fb033e1d3165f681f37516c586782ff961307768a990bab49855ceee2",
+      "bytes": 122245
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.3-Comparison.png",
+      "sha256": "6245610fadfcb4aebe4e3f72ec91d9d7dd8da11b9706636aab491bc9ffccc093",
+      "bytes": 110157
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.3-Aiming.png",
+      "sha256": "81c1b1c07f19bc20d30ea39d249141590ae12e349d6f34ba1e0c9d656b679926",
+      "bytes": 150411
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.3-Octagonal-Alternate.png",
+      "sha256": "e602989bd608622aaed8aa5c21363a8563b1e226cc4cacad01857fa8a9911618",
+      "bytes": 115338
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.3-Refined-Alternate.png",
+      "sha256": "a850823ce755610278546525ba08638f96d37bf0a201bd6aceef660b76cc5adc",
+      "bytes": 119454
+    }
+  ],
+  "scope": "Native model sheet; no generated imagery and no live microphone playback"
+}

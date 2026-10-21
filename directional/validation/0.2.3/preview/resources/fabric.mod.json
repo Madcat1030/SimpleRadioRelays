@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "mesh_receiver_preview",
+  "version": "1.0.0",
+  "name": "Mesh Receiver Native Capture (QA only)",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.paul.simpleradiodirectional.preview.MeshPreviewClient"]},
+  "depends": {"simpleradio_directional": "*"}
+}
