@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "runtime_class_files_byte_identical_to_0_2_0": 31,
+  "unchanged_wide_array_recipe_and_tag_entries": 28,
+  "unit_tests_passed": 18,
+  "scope": "Visual resource change; no new live-voice or GameTest run. Functional Minecraft evidence remains under 0.2.0."
+}

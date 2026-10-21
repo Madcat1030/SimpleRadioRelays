@@ -1,10 +1,12 @@
-# Simple Radio Directional Antenna 0.2.0 prototype
+# Simple Radio Directional Antenna 0.2.1 prototype
 
 Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
 
 Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver Array**. Both improve the attached station's reception in the direction they face. Their bonuses depend on the underlying antenna and do not increase outgoing transmitter power or repair inherited audio degradation.
 
 Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
+
+0.2.1 replaces the parabolic placeholder with a shallow faceted galvanized bowl, rolled copper rim, inner bevel, compact feed horn and the wide array's exact two-point mast clamp. Each dish face maps one texture pixel to one model unit (16 pixels per block), including rotated hardware. Long rails are split instead of stretching a texture. Reception, recipes, reserved cells and controls retain their 0.2.0 behavior; existing placed dishes use the new model automatically.
 
 The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.2 source for integration checks. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
 
@@ -67,7 +69,7 @@ Iron bars      Copper block    Iron bars
 Empty          Copper wire     Empty
 ```
 
-The wire is Simple Radio's copper wire. The recipe and placeholder model can be changed independently of the reception code.
+The wire is Simple Radio's copper wire. The recipe and visual model can be changed independently of the reception code.
 
 ## Repeaters and Dimensional Foci
 
@@ -83,7 +85,7 @@ All scans and saved-data changes run on the main server thread. Audio hooks read
 
 Open the `.bbmodel` files directly in Blockbench. Their textures are embedded, so they do not depend on texture paths on this computer.
 
-- `art/model-kit/Parabolic-Receiver-Placeholder.bbmodel`: editable placeholder dish.
+- `art/model-kit/Parabolic-Receiver.bbmodel`: refined dish, with embedded textures and fixed/swivel groups.
 - `art/model-kit/Wide-Angle-Receiver.bbmodel`: the new receiver, with embedded textures and separate fixed-mount/swivel groups.
 - `art/model-kit/Native-Antenna-Column.bbmodel`: exact native supported-column variant.
 - `art/model-kit/Native-Antenna-Vertical.bbmodel`: exact native non-column vertical variant.
@@ -108,11 +110,13 @@ This source workspace includes core/Foci 0.5.2 solely so optional integration ca
 
 Use JDK 21 for Gradle; release bytecode targets Java 17. Runtime output is under `directional/build/libs/`; use the `-prototype.jar` to exclude addon GameTest fixtures. Names and debug data remain readable.
 
-Recreate the model kit from the pinned base-mod source archive with:
+Recreate the native mast references from the pinned base-mod source archive with:
 
 ```sh
 python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4.5.7.9-sources.jar
 ```
+
+The authored receiver generators are `tools/make_wide_array.py` and `tools/make_parabolic_receiver.py`. The native-reference extractor leaves both current receivers and their registrations/resources alone.
 
 Current validation evidence is under `directional/validation/0.2.0/`. Live microphone playback is outside automated checks.
 
@@ -121,6 +125,8 @@ For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecr
 The graphical client capture resolves all seven aimed models and all four textures. Prototype verification confirms the two receiver types' mining tags, embedded Blockbench textures, readable runtime names and exclusion of test/capture helpers. No core or Foci code changes are included.
 
 ## Native model captures
+
+`art/Parabolic-Receiver-0.2.1-Native-Preview.png` shows the refined dish on the native mast, its front and its rear clamp. `art/Parabolic-Receiver-0.2.1-Aiming.png` shows its seven aims. Reproduce these with `./gradlew :directional:runClient -I directional/validation/0.2.1/client-preview.gradle`. The 0.2.1 build and existing unit checks pass. Asset verification checks every dish face for exact 1:1 UV density, all five 16×16 materials, matching fixed hardware, and agreement between the authored and packaged layers. Runtime class files are unchanged from 0.2.0; no RF logic was edited. Current evidence is under `validation/0.2.1/`.
 
 `art/Wide-Angle-Receiver-0.2.0-Native-Preview.png` shows the actual model on the native mast, plus front and rear details. `art/Wide-Angle-Receiver-0.2.0-Aiming.png` shows all seven aims. These are unretouched Minecraft client framebuffer screenshots using its baked block models, texture atlas and item lighting. No image synthesis or external 3D renderer is used. This is a native model sheet rather than a screenshot of a placed-world scene.
 

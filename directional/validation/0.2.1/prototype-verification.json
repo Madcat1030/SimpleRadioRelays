@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "jar": "simple-radio-directional-antenna-fabric-1.20.1-0.2.1-prototype.jar",
+  "bytes": 117752,
+  "sha256": "a83db4cf80c47e4c8db420abdd983581ab2b9189be80c2dbeb5b21cbdbc424f0",
+  "runtime_classes": 31,
+  "removed_fixture_classes": 3,
+  "retained_runtime_entries_byte_identical": 77,
+  "loom_manifest_preserved": true,
+  "no_obfuscation": true,
+  "optional_repeaters_not_bundled_or_required": true,
+  "blockbench_models": 4,
+  "embedded_texture_validation": true,
+  "top_references_excluded": true,
+  "wide_array_mining_tags_valid": true,
+  "capture_helpers_not_bundled": true,
+  "dish_uv_pixels_per_model_unit": 1,
+  "dish_material_pixels_per_block": 16,
+  "dish_faces_checked": 1500,
+  "shared_mount_exact_match": true,
+  "authored_dish_matches_packaged_layers": true
+}

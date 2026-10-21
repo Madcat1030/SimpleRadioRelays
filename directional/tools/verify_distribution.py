@@ -3,6 +3,7 @@ from pathlib import Path
 import base64
 import hashlib
 import json
+import math
 import re
 import zipfile
 
@@ -41,9 +42,29 @@ for path in kit.glob('*.bbmodel'):
 assert len(list(kit.glob('Native-Antenna-*.bbmodel')))==2
 assert not list(kit.rglob('*top*.json'))
 assert (kit/'Wide-Angle-Receiver.bbmodel').is_file()
+assert (kit/'Parabolic-Receiver.bbmodel').is_file()
 assert len(list(kit.glob('*.bbmodel')))==4
 model=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json').read_text())
 assert all(-16<=v<=32 for e in model['elements'] for v in e['from']+e['to'])
+for element in model['elements']:
+    x,y,z=[b-a for a,b in zip(element['from'],element['to'])]
+    dimensions={'north':(x,y),'south':(x,y),'east':(z,y),'west':(z,y),'up':(x,z),'down':(x,z)}
+    assert not element.get('rotation',{}).get('rescale',False)
+    for face,value in element['faces'].items():
+        u0,v0,u1,v1=value['uv']
+        assert math.isclose(abs(u1-u0),dimensions[face][0],abs_tol=1e-8),(element['name'],face)
+        assert math.isclose(abs(v1-v0),dimensions[face][1],abs_tol=1e-8),(element['name'],face)
+        assert all(0<=v<=16 for v in value['uv']),(element['name'],face)
+for texture in {v for v in model['textures'].values() if not v.startswith('#')}:
+    namespace,path=texture.split(':',1)
+    name=f'assets/{namespace}/textures/{path}.png'
+    raw=runtime[name]
+    assert int.from_bytes(raw[16:20],'big')==16 and int.from_bytes(raw[20:24],'big')==16
+array=json.loads((ROOT/'src/main/resources/assets/simpleradio_directional/models/block/wide_angle_receiver.json').read_text())
+assert [e for e in model['elements'] if e['name'].startswith('mount_')]==[e for e in array['elements'] if e['name'].startswith('mount_')]
+for suffix,fixed in [('_mount',True),('_head',False)]:
+    packaged=json.loads(runtime[f'assets/simpleradio_directional/models/block/parabolic_receiver{suffix}.json'])
+    assert packaged['elements']==[e for e in model['elements'] if e['name'].startswith('mount_')==fixed]
 
 for tag in ['mineable/pickaxe','needs_stone_tool']:
     values=json.loads((ROOT/f'src/main/resources/data/minecraft/tags/blocks/{tag}.json').read_text())['values']
@@ -55,7 +76,10 @@ report={'passed':True,'jar':prototype.name,'bytes':prototype.stat().st_size,
         'retained_runtime_entries_byte_identical':len(runtime)-1,'loom_manifest_preserved':True,
         'no_obfuscation':True,'optional_repeaters_not_bundled_or_required':True,
         'blockbench_models':4,'embedded_texture_validation':True,'top_references_excluded':True,
-        'wide_array_mining_tags_valid':True,'capture_helpers_not_bundled':True}
+        'wide_array_mining_tags_valid':True,'capture_helpers_not_bundled':True,
+        'dish_uv_pixels_per_model_unit':1,'dish_material_pixels_per_block':16,
+        'dish_faces_checked':sum(len(e['faces']) for e in model['elements']),
+        'shared_mount_exact_match':True,'authored_dish_matches_packaged_layers':True}
 output=ROOT/f'validation/{version}/prototype-verification.json'
 output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

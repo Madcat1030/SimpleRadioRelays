@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "renderer": "Minecraft Java 1.20.1 native baked block renderer",
+  "capture": "Screenshot.grab of the real client framebuffer; PNGs are unretouched",
+  "checks": [
+    "All seven aimed models baked",
+    "All five real pixel textures resolved",
+    "Native mast rendered"
+  ],
+  "screenshots": [
+    {
+      "name": "Parabolic-Receiver-0.2.1-Native-Preview.png",
+      "sha256": "e66e6e0cf4c8005a770ff22e201f30230b2210ccdbf554184d1c959b0cb346f5",
+      "bytes": 124863
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.1-Aiming.png",
+      "sha256": "0ffe271d2c820b83c3c3b1ec9210d111d3d3b5962cf9c7e0ff7c20af8a7e54ea",
+      "bytes": 140519
+    }
+  ],
+  "scope": "Native model sheet; no generated imagery and no live microphone playback"
+}
