@@ -15,6 +15,7 @@ public final class DishBlockEntity extends BlockEntity {
         if (!(world instanceof ServerLevel level) || (entity.checked && level.getGameTime() % 20 != 0)) return;
         entity.checked = true;
         var facing = state.getValue(ParabolicReceiverBlock.FACING);
+        DishGeometry.refreshMounts(level, pos.relative(facing.getOpposite()));
         switch (DishGeometry.validate(level, pos, facing)) {
             case VALID -> DishManager.verify(level, new Dish(level.dimension().location(), pos, facing,
                     state.getValue(ParabolicReceiverBlock.AIM), ((ParabolicReceiverBlock) state.getBlock()).pattern()));

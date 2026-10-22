@@ -1,0 +1,21 @@
+gradle.projectsEvaluated {
+    def project=gradle.rootProject.project(':directional')
+    def qa=project.file('validation/0.2.5/server-check')
+    def compile=project.tasks.register('compileSharedMountChecks',JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qa,'java')) { include '**/*.java' }
+        classpath=project.sourceSets.main.runtimeClasspath
+        destinationDirectory=new File(qa,'classes')
+        options.release=17
+        options.compilerArgs.add('-proc:none')
+    }
+    def jar=project.tasks.register('sharedMountCheckJar',Jar) {
+        dependsOn compile
+        archiveFileName='shared-mount-checks.jar'
+        destinationDirectory=project.file('run/gametest/mods')
+        from new File(qa,'classes')
+        from new File(qa,'resources')
+    }
+    project.tasks.named('runGameTest') { dependsOn jar; jvmArgs '-Djava.awt.headless=true' }
+    project.tasks.named('runClient') { mustRunAfter jar; mustRunAfter project.tasks.named('runGameTest') }
+}

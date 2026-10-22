@@ -1,5 +1,5 @@
 {
-  "credit": "Simple Radio Directional Antenna / finished original stepped mesh receiver",
+  "credit": "Simple Radio Directional Antenna / finished original stepped mesh receiver / surface-checked 0.2.5",
   "parent": "minecraft:block/block",
   "ambientocclusion": false,
   "textures": {
@@ -13,939 +13,258 @@
   },
   "elements": [
     {
-      "name": "mount_clamp_1_front",
-      "from": [
-        2,
-        1,
-        20
-      ],
-      "to": [
-        14,
-        4,
-        22
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_1_back",
-      "from": [
-        2,
-        1,
-        27
-      ],
-      "to": [
-        14,
-        4,
-        29
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_1_left",
-      "from": [
-        2,
-        1,
-        22
-      ],
-      "to": [
-        4,
-        4,
-        27
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_1_right",
-      "from": [
-        12,
-        1,
-        22
-      ],
-      "to": [
-        14,
-        4,
-        27
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_bolt_2_1",
-      "from": [
-        2,
-        2,
-        19
-      ],
-      "to": [
-        4,
-        4,
-        20
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
-        }
-      }
-    },
-    {
-      "name": "mount_bolt_12_1",
-      "from": [
-        12,
-        2,
-        19
-      ],
-      "to": [
-        14,
-        4,
-        20
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
-        }
-      }
-    },
-    {
-      "name": "mount_arm_1",
+      "name": "mount_arm_lower",
       "from": [
         6,
-        2,
+        3,
         10
       ],
       "to": [
         10,
         4,
-        21
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            4,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            4,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            11,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            11,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            4,
-            11
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            4,
-            11
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_12_front",
-      "from": [
-        2,
-        12,
-        20
-      ],
-      "to": [
-        14,
-        15,
         22
       ],
       "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
         "south": {
           "uv": [
             0,
             0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_12_back",
-      "from": [
-        2,
-        12,
-        27
-      ],
-      "to": [
-        14,
-        15,
-        29
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            12,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            12,
-            2
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_12_left",
-      "from": [
-        2,
-        12,
-        22
-      ],
-      "to": [
-        4,
-        15,
-        27
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_clamp_12_right",
-      "from": [
-        12,
-        12,
-        22
-      ],
-      "to": [
-        14,
-        15,
-        27
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            5,
-            3
-          ],
-          "texture": "#iron"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            5
-          ],
-          "texture": "#iron"
-        }
-      }
-    },
-    {
-      "name": "mount_bolt_2_12",
-      "from": [
-        2,
-        13,
-        19
-      ],
-      "to": [
-        4,
-        15,
-        20
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            2,
+            4,
             1
           ],
-          "texture": "#cable"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
-        }
-      }
-    },
-    {
-      "name": "mount_bolt_12_12",
-      "from": [
-        12,
-        13,
-        19
-      ],
-      "to": [
-        14,
-        15,
-        20
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            2,
-            2
-          ],
-          "texture": "#cable"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1,
-            2
-          ],
-          "texture": "#cable"
+          "texture": "#iron"
         },
         "west": {
           "uv": [
             0,
             0,
-            1,
-            2
+            12,
+            1
           ],
-          "texture": "#cable"
+          "texture": "#iron"
         },
-        "up": {
+        "east": {
           "uv": [
             0,
             0,
-            2,
+            12,
             1
           ],
-          "texture": "#cable"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            2,
-            1
-          ],
-          "texture": "#cable"
+          "texture": "#iron"
         }
       }
     },
     {
-      "name": "mount_arm_12",
+      "name": "mount_arm_lower_surface_north_0",
       "from": [
         6,
-        13,
+        3,
+        10
+      ],
+      "to": [
+        7,
+        4,
+        22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_north_1",
+      "from": [
+        9,
+        3,
         10
       ],
       "to": [
         10,
-        15,
-        21
+        4,
+        22
       ],
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
-            4,
-            2
+            0.0,
+            0.0,
+            1.0,
+            1.0
           ],
           "texture": "#iron"
-        },
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_up_0",
+      "from": [
+        6,
+        3,
+        10
+      ],
+      "to": [
+        7,
+        4,
+        22
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            1.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_up_1",
+      "from": [
+        9,
+        3,
+        10
+      ],
+      "to": [
+        10,
+        4,
+        22
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_up_2",
+      "from": [
+        7,
+        3,
+        12
+      ],
+      "to": [
+        9,
+        4,
+        22
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            1.0,
+            2.0,
+            3.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_down_0",
+      "from": [
+        6,
+        3,
+        10
+      ],
+      "to": [
+        7,
+        4,
+        22
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            1.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_down_1",
+      "from": [
+        9,
+        3,
+        10
+      ],
+      "to": [
+        10,
+        4,
+        22
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_lower_surface_down_2",
+      "from": [
+        7,
+        3,
+        12
+      ],
+      "to": [
+        9,
+        4,
+        22
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            1.0,
+            0.0,
+            3.0,
+            10.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper",
+      "from": [
+        6,
+        12,
+        10
+      ],
+      "to": [
+        10,
+        13,
+        22
+      ],
+      "faces": {
         "south": {
           "uv": [
             0,
             0,
             4,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            11,
-            2
+            1
           ],
           "texture": "#iron"
         },
@@ -953,26 +272,209 @@
           "uv": [
             0,
             0,
-            11,
-            2
+            12,
+            1
           ],
           "texture": "#iron"
         },
+        "east": {
+          "uv": [
+            0,
+            0,
+            12,
+            1
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_north_0",
+      "from": [
+        6,
+        12,
+        10
+      ],
+      "to": [
+        7,
+        13,
+        22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_north_1",
+      "from": [
+        9,
+        12,
+        10
+      ],
+      "to": [
+        10,
+        13,
+        22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_up_0",
+      "from": [
+        6,
+        12,
+        10
+      ],
+      "to": [
+        7,
+        13,
+        22
+      ],
+      "faces": {
         "up": {
           "uv": [
-            0,
-            0,
-            4,
-            11
+            0.0,
+            0.0,
+            1.0,
+            12.0
           ],
           "texture": "#iron"
-        },
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_up_1",
+      "from": [
+        9,
+        12,
+        10
+      ],
+      "to": [
+        10,
+        13,
+        22
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_up_2",
+      "from": [
+        7,
+        12,
+        12
+      ],
+      "to": [
+        9,
+        13,
+        22
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            1.0,
+            2.0,
+            3.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_down_0",
+      "from": [
+        6,
+        12,
+        10
+      ],
+      "to": [
+        7,
+        13,
+        22
+      ],
+      "faces": {
         "down": {
           "uv": [
-            0,
-            0,
-            4,
-            11
+            0.0,
+            0.0,
+            1.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_down_1",
+      "from": [
+        9,
+        12,
+        10
+      ],
+      "to": [
+        10,
+        13,
+        22
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            3.0,
+            0.0,
+            4.0,
+            12.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_arm_upper_surface_down_2",
+      "from": [
+        7,
+        12,
+        12
+      ],
+      "to": [
+        9,
+        13,
+        22
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            1.0,
+            0.0,
+            3.0,
+            10.0
           ],
           "texture": "#iron"
         }
@@ -982,13 +484,13 @@
       "name": "mount_pivot_lower",
       "from": [
         5,
-        0,
-        6
+        -2,
+        10
       ],
       "to": [
         11,
-        2,
-        12
+        -1,
+        16
       ],
       "faces": {
         "north": {
@@ -996,7 +498,7 @@
             0,
             0,
             6,
-            2
+            1
           ],
           "texture": "#iron"
         },
@@ -1005,16 +507,7 @@
             0,
             0,
             6,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            6,
-            2
+            1
           ],
           "texture": "#iron"
         },
@@ -1023,16 +516,16 @@
             0,
             0,
             6,
-            2
+            1
           ],
           "texture": "#iron"
         },
-        "up": {
+        "east": {
           "uv": [
             0,
             0,
             6,
-            6
+            1
           ],
           "texture": "#iron"
         },
@@ -1042,6 +535,78 @@
             0,
             6,
             6
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_lower_surface_up_0",
+      "from": [
+        5,
+        -2,
+        10
+      ],
+      "to": [
+        7,
+        -1,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            6.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_lower_surface_up_1",
+      "from": [
+        9,
+        -2,
+        10
+      ],
+      "to": [
+        11,
+        -1,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            4.0,
+            0.0,
+            6.0,
+            6.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_lower_surface_up_2",
+      "from": [
+        7,
+        -2,
+        12
+      ],
+      "to": [
+        9,
+        -1,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            2.0,
+            2.0,
+            4.0,
+            6.0
           ],
           "texture": "#iron"
         }
@@ -1051,13 +616,13 @@
       "name": "mount_pivot_upper",
       "from": [
         5,
-        15,
-        6
+        17,
+        10
       ],
       "to": [
         11,
-        17,
-        12
+        18,
+        16
       ],
       "faces": {
         "north": {
@@ -1065,7 +630,7 @@
             0,
             0,
             6,
-            2
+            1
           ],
           "texture": "#iron"
         },
@@ -1074,16 +639,7 @@
             0,
             0,
             6,
-            2
-          ],
-          "texture": "#iron"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            6,
-            2
+            1
           ],
           "texture": "#iron"
         },
@@ -1092,20 +648,20 @@
             0,
             0,
             6,
-            2
+            1
           ],
           "texture": "#iron"
         },
-        "up": {
+        "east": {
           "uv": [
             0,
             0,
             6,
-            6
+            1
           ],
           "texture": "#iron"
         },
-        "down": {
+        "up": {
           "uv": [
             0,
             0,
@@ -1117,16 +673,88 @@
       }
     },
     {
-      "name": "mount_pivot_pin",
+      "name": "mount_pivot_upper_surface_down_0",
+      "from": [
+        5,
+        17,
+        10
+      ],
+      "to": [
+        7,
+        18,
+        16
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            6.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_upper_surface_down_1",
+      "from": [
+        9,
+        17,
+        10
+      ],
+      "to": [
+        11,
+        18,
+        16
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            4.0,
+            0.0,
+            6.0,
+            6.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_upper_surface_down_2",
       "from": [
         7,
-        2,
-        8
+        17,
+        12
       ],
       "to": [
         9,
-        15,
+        18,
+        16
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            2.0,
+            0.0,
+            4.0,
+            4.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower",
+      "from": [
+        7,
+        -1,
         10
+      ],
+      "to": [
+        9,
+        8,
+        12
       ],
       "faces": {
         "north": {
@@ -1134,52 +762,319 @@
             0,
             0,
             2,
-            13
+            9
           ],
           "texture": "#iron"
-        },
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_south_0",
+      "from": [
+        7,
+        -1,
+        10
+      ],
+      "to": [
+        9,
+        3,
+        12
+      ],
+      "faces": {
         "south": {
           "uv": [
-            0,
-            0,
-            2,
-            13
+            0.0,
+            5.0,
+            2.0,
+            9.0
           ],
           "texture": "#iron"
-        },
-        "east": {
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_south_1",
+      "from": [
+        7,
+        4,
+        10
+      ],
+      "to": [
+        9,
+        8,
+        12
+      ],
+      "faces": {
+        "south": {
           "uv": [
-            0,
-            0,
-            2,
-            13
+            0.0,
+            0.0,
+            2.0,
+            4.0
           ],
           "texture": "#iron"
-        },
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_west_0",
+      "from": [
+        7,
+        -1,
+        10
+      ],
+      "to": [
+        9,
+        3,
+        12
+      ],
+      "faces": {
         "west": {
           "uv": [
-            0,
-            0,
-            2,
-            13
+            0.0,
+            5.0,
+            2.0,
+            9.0
           ],
           "texture": "#iron"
-        },
-        "up": {
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_west_1",
+      "from": [
+        7,
+        4,
+        10
+      ],
+      "to": [
+        9,
+        8,
+        12
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            4.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_east_0",
+      "from": [
+        7,
+        -1,
+        10
+      ],
+      "to": [
+        9,
+        3,
+        12
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0.0,
+            5.0,
+            2.0,
+            9.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_lower_surface_east_1",
+      "from": [
+        7,
+        4,
+        10
+      ],
+      "to": [
+        9,
+        8,
+        12
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            4.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper",
+      "from": [
+        7,
+        8,
+        10
+      ],
+      "to": [
+        9,
+        17,
+        12
+      ],
+      "faces": {
+        "north": {
           "uv": [
             0,
             0,
             2,
-            2
+            9
           ],
           "texture": "#iron"
-        },
-        "down": {
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_south_0",
+      "from": [
+        7,
+        8,
+        10
+      ],
+      "to": [
+        9,
+        12,
+        12
+      ],
+      "faces": {
+        "south": {
           "uv": [
-            0,
-            0,
-            2,
-            2
+            0.0,
+            5.0,
+            2.0,
+            9.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_south_1",
+      "from": [
+        7,
+        13,
+        10
+      ],
+      "to": [
+        9,
+        17,
+        12
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            4.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_west_0",
+      "from": [
+        7,
+        8,
+        10
+      ],
+      "to": [
+        9,
+        12,
+        12
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0.0,
+            5.0,
+            2.0,
+            9.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_west_1",
+      "from": [
+        7,
+        13,
+        10
+      ],
+      "to": [
+        9,
+        17,
+        12
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            4.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_east_0",
+      "from": [
+        7,
+        8,
+        10
+      ],
+      "to": [
+        9,
+        12,
+        12
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0.0,
+            5.0,
+            2.0,
+            9.0
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "mount_pivot_pin_upper_surface_east_1",
+      "from": [
+        7,
+        13,
+        10
+      ],
+      "to": [
+        9,
+        17,
+        12
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            4.0
           ],
           "texture": "#iron"
         }

@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "renderer": "Minecraft Java 1.20.1 native baked block renderer",
+  "capture": "Screenshot.grab of the real client framebuffer; PNGs are unretouched",
+  "checks": [
+    "Both receiver types baked at all seven aims",
+    "Shared state removes exactly one ring pair",
+    "Native mast rendered with opposite receiver supports",
+    "All three actual alternate packs reloaded",
+    "Two focused native shared-mount GameTests passed"
+  ],
+  "screenshots": [
+    {
+      "name": "Parabolic-Receiver-0.2.5-Native-Preview.png",
+      "sha256": "fdea012d42dde8db3d8d8ee2bf2b7c4fe88d5360604073b8b41523229515a03d",
+      "bytes": 104781
+    },
+    {
+      "name": "Wide-Angle-Receiver-0.2.5-Native-Preview.png",
+      "sha256": "c64b0da9e4360540a7481ac5eb6826270219655035efcb253794cb657cdc9b40",
+      "bytes": 106604
+    },
+    {
+      "name": "Directional-Receivers-0.2.5-Shared-Mounts.png",
+      "sha256": "9be7e488fd05ea7143050f4faa96936a7037449f20b2c2584612749d62ccf7d9",
+      "bytes": 128008
+    },
+    {
+      "name": "Directional-Receivers-0.2.5-Aiming.png",
+      "sha256": "35de2523f9ca191c7f642b79bf18a2a9bbe3787441bf165e7d2b6c855b70e33a",
+      "bytes": 138399
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.5-Mesh-Alternate.png",
+      "sha256": "7ee35994ab48de7e4b71f9366be160e6b335154097b6ff5b0207f91c78dddcd8",
+      "bytes": 122388
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.5-Octagonal-Alternate.png",
+      "sha256": "8965990708f55ac5c95b93645f9d8c3750baeaf404ccb2b538dabf6248c0d640",
+      "bytes": 116896
+    },
+    {
+      "name": "Parabolic-Receiver-0.2.5-Refined-Alternate.png",
+      "sha256": "b84f88ebf855188e6fce4611a029aba77cc4ad73238cf2eaece7c178825d87de",
+      "bytes": 123422
+    }
+  ],
+  "scope": "Native model sheets and focused server checks; no live microphone playback"
+}

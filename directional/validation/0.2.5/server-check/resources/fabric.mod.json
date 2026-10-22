@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"shared_mount_checks","version":"1.0.0","name":"Shared Mount Test Selection (QA only)","environment":"server","mixins":["shared-mount-checks.mixins.json"],"depends":{"simpleradio_directional":"*"}}

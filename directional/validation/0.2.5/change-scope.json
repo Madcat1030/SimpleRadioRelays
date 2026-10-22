@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "runtime_source_files_compared": 24,
+  "changed_sources": [
+    "src/main/java/dev/paul/simpleradiodirectional/block/DishBlockEntity.java",
+    "src/main/java/dev/paul/simpleradiodirectional/block/DishGeometry.java",
+    "src/main/java/dev/paul/simpleradiodirectional/block/ParabolicReceiverBlock.java",
+    "src/main/java/dev/paul/simpleradiodirectional/gametest/DirectionalGameTests.java"
+  ],
+  "radio_reception_scanning_and_optional_integration_sources_unchanged": true,
+  "core_and_foci_sources_unchanged": true,
+  "existing_unit_tests_passed": 18,
+  "focused_native_gametests_passed": 2,
+  "shared_mount_uses_baked_blockstates": true,
+  "no_new_runtime_renderer_or_per_frame_world_lookup": true
+}

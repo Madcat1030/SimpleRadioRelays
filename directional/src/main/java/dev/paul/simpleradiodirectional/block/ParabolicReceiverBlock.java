@@ -26,14 +26,20 @@ import org.jetbrains.annotations.Nullable;
 public final class ParabolicReceiverBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final IntegerProperty AIM = IntegerProperty.create("aim", DishAim.MIN, DishAim.MAX);
+    public static final BooleanProperty BRACKETS = BooleanProperty.create("brackets");
     private final DishPattern pattern;
     public ParabolicReceiverBlock(Properties properties) { this(properties, DishPattern.PARABOLIC); }
     public ParabolicReceiverBlock(Properties properties, DishPattern pattern) {
-        super(properties); registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(AIM, DishAim.STRAIGHT));
+        super(properties); registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH)
+                .setValue(AIM, DishAim.STRAIGHT).setValue(BRACKETS, true));
         this.pattern = pattern;
     }
     public DishPattern pattern() { return pattern; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, AIM); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, AIM, BRACKETS); }
+    @Override public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moving) {
+        super.onPlace(state, level, pos, previous, moving);
+        if (!state.is(previous.getBlock())) DishGeometry.refreshMounts(level, pos.relative(state.getValue(FACING).getOpposite()));
+    }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getClickedFace();
         if (facing.getAxis().isVertical() || !DishGeometry.room(context.getLevel(), context.getClickedPos(), facing)) return null;
@@ -65,6 +71,7 @@ public final class ParabolicReceiverBlock extends BaseEntityBlock {
         if (!state.is(replacement.getBlock())) {
             if (!level.isClientSide) DishManager.remove(level, pos);
             DishGeometry.remove(level, pos, state.getValue(FACING), pos, pattern);
+            DishGeometry.refreshMounts(level, pos.relative(state.getValue(FACING).getOpposite()));
         }
         super.onRemove(state, level, pos, replacement, moving);
     }

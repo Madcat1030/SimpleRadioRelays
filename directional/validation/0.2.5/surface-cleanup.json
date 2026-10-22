@@ -1,0 +1,72 @@
+{
+  "parabolic_receiver": {
+    "authored_faces": 600,
+    "finished_faces": 632,
+    "elements": 483,
+    "remaining_overlap_counts_by_aim": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  },
+  "parabolic_receiver_mesh": {
+    "authored_faces": 600,
+    "finished_faces": 637,
+    "elements": 417,
+    "remaining_overlap_counts_by_aim": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  },
+  "parabolic_receiver_octagonal": {
+    "authored_faces": 756,
+    "finished_faces": 640,
+    "elements": 362,
+    "remaining_overlap_counts_by_aim": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  },
+  "parabolic_receiver_refined": {
+    "authored_faces": 1530,
+    "finished_faces": 1757,
+    "elements": 1260,
+    "remaining_overlap_counts_by_aim": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  },
+  "wide_angle_receiver": {
+    "authored_faces": 408,
+    "finished_faces": 512,
+    "elements": 358,
+    "remaining_overlap_counts_by_aim": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  }
+}

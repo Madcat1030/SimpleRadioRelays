@@ -73,6 +73,44 @@ public final class DirectionalGameTests implements FabricGameTest {
         return source;
     }
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
+    public void shared_mount_opposite_dish_and_array_transfer_on_removal(GameTestHelper helper) {
+        var tower=mast(helper,Direction.NORTH); dish(tower);
+        BlockPos opposite=tower.mast().south();
+        tower.level().setBlockAndUpdate(opposite,DirectionalAntenna.ARRAY.defaultBlockState()
+                .setValue(ParabolicReceiverBlock.FACING,Direction.SOUTH));
+        DishGeometry.build(tower.level(),opposite,Direction.SOUTH);
+        check(tower.level().getBlockState(tower.center()).getValue(ParabolicReceiverBlock.BRACKETS),"North dish must render the shared rings");
+        check(!tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"Opposite array must retain its arm without duplicating rings");
+        tower.level().setBlock(opposite,tower.level().getBlockState(opposite).setValue(ParabolicReceiverBlock.AIM,6),2);
+        check(!tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"Aiming must not duplicate stationary rings");
+        tower.level().destroyBlock(tower.center(),false);
+        check(tower.level().getBlockState(opposite).is(DirectionalAntenna.ARRAY),"Removing the owner must preserve the other receiver");
+        check(tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"Remaining array must inherit the rings immediately");
+        helper.succeed();
+    }
+    @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
+    public void shared_mount_east_west_repairs_saved_assignment_without_loading_chunks(GameTestHelper helper) {
+        var tower=mast(helper,Direction.EAST); dish(tower);
+        BlockPos opposite=tower.mast().west();
+        tower.level().setBlockAndUpdate(opposite,DirectionalAntenna.DISH.defaultBlockState()
+                .setValue(ParabolicReceiverBlock.FACING,Direction.WEST));
+        DishGeometry.build(tower.level(),opposite,Direction.WEST);
+        check(!tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"West receiver must share the east receiver's rings");
+        // Simulate a saved or pasted stale assignment. The normal block-entity load pass repairs it.
+        tower.level().setBlock(tower.center(),tower.level().getBlockState(tower.center()).setValue(ParabolicReceiverBlock.BRACKETS,false),2);
+        tower.level().setBlock(opposite,tower.level().getBlockState(opposite).setValue(ParabolicReceiverBlock.BRACKETS,true),2);
+        var entity=new DishBlockEntity(tower.center(),tower.level().getBlockState(tower.center()));
+        DishBlockEntity.tick(tower.level(),tower.center(),entity.getBlockState(),entity);
+        check(tower.level().getBlockState(tower.center()).getValue(ParabolicReceiverBlock.BRACKETS),"Load pass must restore deterministic ring ownership");
+        check(!tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"Load pass must clear a duplicate saved assignment");
+        int chunks=tower.level().getChunkSource().getLoadedChunksCount();
+        DishGeometry.refreshMounts(tower.level(),new BlockPos(6000000,80,6000000));
+        check(chunks==tower.level().getChunkSource().getLoadedChunksCount(),"Visual ownership must never load missing chunks");
+        tower.level().destroyBlock(tower.center(),false);
+        check(tower.level().getBlockState(opposite).getValue(ParabolicReceiverBlock.BRACKETS),"West receiver must inherit the rings on owner removal");
+        helper.succeed();
+    }
+    @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
     public void vertical_non_top_mast_and_clearance_are_required(GameTestHelper helper) {
         var tower=mast(helper,Direction.NORTH);
         check(DishGeometry.room(tower.level(),tower.center(),Direction.NORTH),"Valid vertical section must accept dish");

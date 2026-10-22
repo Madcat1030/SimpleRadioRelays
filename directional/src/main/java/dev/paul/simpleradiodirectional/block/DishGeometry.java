@@ -16,6 +16,23 @@ public final class DishGeometry {
     private static final ThreadLocal<Boolean> REMOVING = ThreadLocal.withInitial(() -> false);
     private DishGeometry() {}
     public static Direction right(Direction facing) { return facing.getClockWise(); }
+    /** One visible ring pair per mast; each receiver keeps its own support arm. */
+    public static void refreshMounts(Level level, BlockPos mast) {
+        if (level.isClientSide) return;
+        var sides = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
+        // Preserve the saved assignment across incomplete chunk loads. Never load a chunk for a visual.
+        for (var side : sides) if (!level.hasChunkAt(mast.relative(side))) return;
+        boolean assigned = false;
+        for (var side : sides) {
+            BlockPos pos = mast.relative(side);
+            var state = level.getBlockState(pos);
+            if (!(state.getBlock() instanceof ParabolicReceiverBlock) || state.getValue(ParabolicReceiverBlock.FACING) != side) continue;
+            boolean brackets = !assigned;
+            assigned = true;
+            if (state.getValue(ParabolicReceiverBlock.BRACKETS) != brackets)
+                level.setBlock(pos, state.setValue(ParabolicReceiverBlock.BRACKETS, brackets), Block.UPDATE_CLIENTS);
+        }
+    }
     public static BlockPos cell(BlockPos center, Direction facing, int part) {
         return center.relative(right(facing), part % 3 - 1).above(part / 3 - 1);
     }
@@ -50,6 +67,7 @@ public final class DishGeometry {
                 DirectionalAntenna.part(block.pattern()).defaultBlockState().setValue(DishPartBlock.FACING, facing)
                         .setValue(DishPartBlock.PART, i), Block.UPDATE_CLIENTS);
         for (int i = 0; i < 9; i++) level.updateNeighborsAt(cell(center, facing, i), block);
+        refreshMounts(level, center.relative(facing.getOpposite()));
     }
     public static Validity validate(ServerLevel level, BlockPos center, Direction facing) {
         BlockPos mast = center.relative(facing.getOpposite());

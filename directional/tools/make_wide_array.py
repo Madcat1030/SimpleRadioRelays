@@ -34,8 +34,16 @@ for name, palette in palettes.items():
 
 elements = []
 def cube(name, start, end, material, angle=None):
-    # Each material has a 16x16 texture; face UVs preserve small rods instead of sampling an entire tile.
-    x, y, z = [min(16, abs(b - a)) for a, b in zip(start, end)]
+    # Long members tile at sixteen units. One texture pixel always covers one model unit.
+    for axis, length in enumerate(b-a for a, b in zip(start, end)):
+        if length > 16:
+            a, b = end.copy(), start.copy()
+            a[axis] = b[axis] = start[axis]+16
+            cube(name+'_a', start, a, material, angle)
+            cube(name+'_b', b, end, material, angle)
+            return
+    x, y, z = [b-a for a, b in zip(start, end)]
+    assert all(v == int(v) for v in start+end) and min(x, y, z) >= 1
     uv = {'north': [0, 0, x, y], 'south': [0, 0, x, y],
           'west': [0, 0, z, y], 'east': [0, 0, z, y],
           'up': [0, 0, x, z], 'down': [0, 0, x, z]}
@@ -45,45 +53,47 @@ def cube(name, start, end, material, angle=None):
     elements.append(element)
 
 # Two 17-pixel wings rotate ±22.5 degrees: a broad, genuinely open V, not a textured solid panel.
-for side, left, right, angle in [('left', -9, 8, -22.5), ('right', 8, 25, 22.5)]:
+for side, left, right, angle in [('left', -9, 7, -22.5), ('right', 9, 25, 22.5)]:
     for suffix, start, end in [
-        ('bottom', [left, -8, 7.25], [right, -6.5, 8.75]),
-        ('top', [left, 22.5, 7.25], [right, 24, 8.75]),
-        ('outer', [left if side == 'left' else right - 1.5, -6.5, 7.25],
-                  [left + 1.5 if side == 'left' else right, 22.5, 8.75]),
+        ('bottom', [left, -8, 7], [right, -6, 9]),
+        ('top', [left, 22, 7], [right, 24, 9]),
+        ('outer', [left if side == 'left' else right - 2, -6, 7],
+                  [left + 2 if side == 'left' else right, 22, 9]),
     ]: cube(side + '_copper_' + suffix, start, end, 'copper', angle)
-    for index, x in enumerate([left + 4.5, left + 8.5, left + 12.5]):
-        cube(f'{side}_grille_vertical_{index}', [x, -6.5, 7.75], [x + .75, 22.5, 8.5], 'iron', angle)
-    for index, y in enumerate([2.25, 13.5]):
-        cube(f'{side}_grille_horizontal_{index}', [left + 1, y, 7.75], [right - .5, y + .75, 8.5], 'iron', angle)
-    for x in [left + .25, right - 1.25]:
-        for y in [-7.75, 22.75]:
-            cube(f'{side}_corner_bolt_{x}_{y}', [x, y, 6.95], [x + 1, y + 1, 7.25], 'iron', angle)
-cube('reflector_spine', [7.25, -8, 7], [8.75, 24, 9], 'copper')
-cube('dipole_lower', [7.5, -4, -1], [8.5, 6.5, 0], 'copper')
-cube('dipole_upper', [7.5, 9.5, -1], [8.5, 20, 0], 'copper')
-cube('ceramic_insulator', [6.75, 6.5, -1.75], [9.25, 9.5, .75], 'ceramic')
-for y in [5.5, 9.5]: cube('dipole_band_' + str(y), [7, y, -1.5], [9, y + 1, .5], 'iron')
-for y in [4.5, 11.5]:
-    cube('dipole_standoff_' + str(y), [7.5, y, 0], [8.5, y + .75, 7.25], 'iron')
-cube('feed_connector', [7, 2.5, -1.25], [9, 4.5, .75], 'cable')
-cube('feed_cable_forward', [7.5, 2.5, .75], [8.5, 3.5, 7], 'cable')
-cube('feed_cable_up', [7.5, 3.5, 6.5], [8.5, 7, 7.5], 'cable')
+    for index, x in enumerate([left + 4, left + 8, left + 12]):
+        cube(f'{side}_grille_vertical_{index}', [x, -6, 7], [x + 1, 22, 8], 'iron', angle)
+    for index, y in enumerate([2, 14]):
+        cube(f'{side}_grille_horizontal_{index}', [left + 2 if side == 'left' else left, y, 7],
+             [right if side == 'left' else right - 2, y + 1, 8], 'iron', angle)
+    for x in [left, right - 1]:
+        for y in [-8, 23]:
+            cube(f'{side}_corner_bolt_{x}_{y}', [x, y, 6], [x + 1, y + 1, 7], 'iron', angle)
+cube('reflector_spine', [7, -7, 13], [9, 23, 15], 'copper')
+for y in [5, 10]: cube('reflector_bridge_'+str(y), [6, y, 7], [10, y+1, 14], 'iron')
+cube('dipole_lower', [7, -4, -1], [9, 6, 0], 'copper')
+cube('dipole_upper', [7, 10, -1], [9, 20, 0], 'copper')
+cube('ceramic_insulator', [6, 6, -2], [10, 10, 1], 'ceramic')
+for y in [5, 10]: cube('dipole_band_' + str(y), [6, y, -2], [10, y + 1, 1], 'iron')
+for y in [4, 12]:
+    cube('dipole_standoff_' + str(y), [7, y, 0], [9, y + 1, 9], 'iron')
+cube('feed_connector', [7, 2, -2], [9, 4, 0], 'cable')
+cube('feed_cable_forward', [7, 3, 0], [9, 4, 6], 'cable')
+cube('feed_cable_up', [7, 4, 6], [9, 7, 7], 'cable')
 
 # Everything prefixed mount_ stays fixed while the entire reflector and receiving element swivel.
-for y in [1.5, 13]:
-    cube('mount_arm_' + str(y), [6.5, y, 9], [9.5, y + 1.5, 22], 'iron')
-for y in [1, 12.5]:
+for y in [2, 11]:
+    cube('mount_arm_' + str(y), [6, y, 10], [10, y + 2, 22], 'iron')
+for y in [2, 11]:
     for suffix, start, end in [
-        ('front', [2.5, y, 19.5], [13.5, y + 2.5, 21]),
-        ('back', [2.5, y, 27], [13.5, y + 2.5, 28.5]),
-        ('left', [2.5, y, 21], [4, y + 2.5, 27]),
-        ('right', [12, y, 21], [13.5, y + 2.5, 27]),
+        ('front', [3, y, 19], [13, y + 3, 21]),
+        ('back', [3, y, 27], [13, y + 3, 29]),
+        ('left', [3, y, 21], [5, y + 3, 27]),
+        ('right', [11, y, 21], [13, y + 3, 27]),
     ]: cube(f'mount_clamp_{y}_{suffix}', start, end, 'iron')
-    for x in [2.5, 11.5]: cube(f'mount_bolt_{x}_{y}', [x, y + .5, 19], [x + 2, y + 2, 19.5], 'cable')
-cube('mount_pivot_lower', [5.5, .5, 5.5], [10.5, 2.5, 10.5], 'iron')
-cube('mount_pivot_upper', [5.5, 14.5, 5.5], [10.5, 16.5, 10.5], 'iron')
-cube('mount_pivot_pin', [7.5, 2.5, 7.5], [8.5, 14.5, 8.5], 'iron')
+    for x in [3, 11]: cube(f'mount_bolt_{x}_{y}', [x, y + 1, 18], [x + 2, y + 2, 19], 'cable')
+cube('mount_pivot_lower', [5, -2, 10], [11, 0, 16], 'iron')
+cube('mount_pivot_upper', [5, 16, 10], [11, 18, 16], 'iron')
+cube('mount_pivot_pin', [7, 0, 8], [9, 16, 10], 'iron')
 
 textures = {key: 'simpleradio_directional:block/array_' + key for key in ['copper', 'iron', 'ceramic', 'cable']}
 textures['particle'] = textures['copper']

@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "jar": "simple-radio-directional-antenna-fabric-1.20.1-0.2.5-prototype.jar",
+  "bytes": 262010,
+  "sha256": "767531b7e48cadca8753307a326c7f69b7c38996caecf9931c150ea45d796d8b",
+  "runtime_classes": 31,
+  "removed_fixture_classes": 3,
+  "retained_runtime_entries_byte_identical": 101,
+  "no_obfuscation": true,
+  "capture_helpers_not_bundled": true,
+  "optional_repeaters_not_bundled_or_required": true,
+  "blockbench_models": 7,
+  "all_materials_16x16": true,
+  "all_receiver_faces_one_texture_pixel_per_model_unit": true,
+  "primary_receivers_whole_unit_geometry": true,
+  "coplanar_overlaps_by_model_and_aim": {
+    "parabolic_receiver": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    },
+    "wide_angle_receiver": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    },
+    "parabolic_receiver_mesh": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    },
+    "parabolic_receiver_octagonal": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    },
+    "parabolic_receiver_refined": {
+      "-45": 0,
+      "-30": 0,
+      "-15": 0,
+      "0": 0,
+      "15": 0,
+      "30": 0,
+      "45": 0
+    }
+  },
+  "receiver_to_native_mast_cases_checked": 28,
+  "opposite_shared_mount_cases_checked": 54,
+  "duplicate_faces_found": 0,
+  "all_three_alternate_packs_and_shared_layers_valid": true,
+  "prototype_contains_no_tests": true
+}

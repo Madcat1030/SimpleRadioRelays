@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiodirectional.client.RotatedDishModelTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-22T00:19:13.063Z" hostname="2b1074030860" time="0.116">
+  <properties/>
+  <testcase name="renderRequestsReuseImmutableQuadsAndDoNotReadSourceAgain()" classname="dev.paul.simpleradiodirectional.client.RotatedDishModelTest" time="0.096"/>
+  <testcase name="bakedReflectorMatchesRadioBearingForAllTwentyEightStates()" classname="dev.paul.simpleradiodirectional.client.RotatedDishModelTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

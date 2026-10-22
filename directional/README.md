@@ -1,10 +1,14 @@
-# Simple Radio Directional Antenna 0.2.4 prototype
+# Simple Radio Directional Antenna 0.2.5 prototype
 
 Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
 
 Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver Array**. Both improve the attached station's reception in the direction they face. Their bonuses depend on the underlying antenna and do not increase outgoing transmitter power or repair inherited audio degradation.
 
 Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
+
+0.2.5 removes overlapping rendered faces from the stepped dish, its rear supports, the wide-angle grille and the three retained dish appearances. The wide-angle array now uses whole model units and 1:1 UVs throughout; long bars are tiled instead of compressing their texture. Mast rings are square and symmetric, with inner faces one unit clear of the native mast planes. The lower grip moves up one unit and the upper grip down one unit.
+
+Receivers on opposite sides of one mast share a single ring pair. Each keeps its own arm and swivel. One receiver stores the visible-ring assignment in its `brackets` blockstate; removing it transfers the rings immediately. The existing block-entity validation pass restores the assignment after loading. It waits for missing neighboring chunks rather than loading them. Model layers are baked and selected through ordinary blockstates.
 
 0.2.4 makes a solid version of the original square-stepped receiver. Its 32 opaque reflector panels preserve the mesh design's outline and front bowl profile. Three-unit panels meet across the steps, forming a connected shell with pale metal fronts, darker backing, a steel perimeter and small copper binding straps. The feed, rear braces and paired mast clamps retain their existing geometry; two hidden hinge pieces move four units back to clear the solid surface. All default geometry uses whole units and one texture pixel per model unit (16 pixels per block).
 
@@ -121,15 +125,19 @@ Recreate the native mast references from the pinned base-mod source archive with
 python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4.5.7.9-sources.jar
 ```
 
-The authored generators are `tools/make_wide_array.py`, `tools/make_parabolic_receiver.py` (refined alternate and pack), `tools/make_blocky_parabolic.py` (octagonal alternate and pack), `tools/make_mesh_parabolic.py` (mesh alternate and pack), and `tools/make_solid_parabolic.py` (solid stepped default). Generate them in that order when recreating all assets. `art/model-kit/original-reference/` retains the unmodified original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
+Run `python3 directional/tools/make_receiver_assets.py` to regenerate all authored receivers and apply the final surface cleanup and common mounts. It runs the five named generators in dependency order, then trims interior/duplicate faces without stretching the remaining UVs. Running a single generator produces intermediate geometry; finish through the full pipeline before building a distribution. Manual edits should be made after generation. `art/model-kit/original-reference/` retains the original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
 
-Full server/GameTest evidence is under `directional/validation/0.2.0/`; current appearance checks are under `0.2.4/`. Live microphone playback is outside automated checks.
+Full radio/server GameTest evidence is under `directional/validation/0.2.0/`; current appearance and shared-mount checks are under `0.2.5/`. Live microphone playback is outside automated checks.
 
 For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecraft tests**, and all **91 combined addon Minecraft tests** pass. The new physical-array checks cover placement on a native mast, aiming from an outer panel, saved pattern identity, complete removal with one correct drop, and actual reception with half the dish's additional gain. The same four native headless tests listed below still fail; no addon test fails. The complete GameTest task therefore exits nonzero in both installations.
 
 The graphical client capture resolves all seven aimed models and all four textures. Prototype verification confirms the two receiver types' mining tags, embedded Blockbench textures, readable runtime names and exclusion of test/capture helpers. No core or Foci code changes are included.
 
 ## Native model captures
+
+0.2.5 includes native previews of both receivers, a close-up of two receiver arms sharing one ring pair, all seven aiming positions for both receivers and the three retained dish appearances. The same launcher runs only the two new shared-mount GameTests through a QA-only selection helper. Reproduce on a desktop with `./gradlew :directional:runGameTest :directional:runClient -I directional/validation/0.2.5/server-check.gradle -I directional/validation/0.2.5/client-preview.gradle`. The prototype excludes all fixture and capture helpers.
+
+The geometric verifier checks actual transformed face polygons at seven aims, including opposite normals, both supported native mast variants and opposite receiver pairs. Both active receiver models use whole-unit coordinates and 1:1 UV density. Alternate dish appearances receive the same mount/surface fixes; the finer round alternative retains its original finer geometry style.
 
 0.2.4 captures show the solid stepped default on a native mast, front and rear details, a comparison with the preserved mesh, all seven aims and all three earlier appearances after real resource-pack reloads. Reproduce with `./gradlew :directional:runClient -I directional/validation/0.2.4/client-preview.gradle`. Evidence is in `validation/0.2.4/`. Images are raw Minecraft framebuffer captures of native model-preview sheets. Asset checks cover opacity, connected panel steps, the preserved outline/profile, whole-unit geometry, 1:1 UVs and each packaged alternate. This appearance update uses the existing unit checks; full server GameTests are not repeated.
 
