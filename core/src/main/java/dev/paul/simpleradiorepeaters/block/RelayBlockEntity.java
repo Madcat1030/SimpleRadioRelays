@@ -176,7 +176,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         long now = level.getGameTime(); TowerRecord previous = manager.snapshot(relayId);
         boolean available = previous == null || AntennaScanner.dependenciesAvailable(server, previous.footprint());
         boolean scanReady = verification.canScan(now, available);
-        AntennaScanner.Result antenna = scanReady ? AntennaScanner.scan(server, worldPosition, corePos()) : new AntennaScanner.Result(false, 0, Set.of());
+        AntennaScanner.Result antenna = scanReady ? AntennaScanner.scan(server, worldPosition, corePos())
+                : new AntennaScanner.Result(false, 0, Set.of(), corePos());
         boolean accepted = scanReady && verification.accept(now, antenna.complete(), antenna.score());
         if (accepted) { antennaPower = antenna.score(); manager.publish(this, antenna); super.setChanged(); dirty = false; }
         nextRefresh = verification.nextAttempt(now); updateDisplayedState(manager);

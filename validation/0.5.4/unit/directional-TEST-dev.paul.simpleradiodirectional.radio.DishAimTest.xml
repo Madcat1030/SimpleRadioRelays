@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiodirectional.radio.DishAimTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-22T21:26:20.822Z" hostname="4b666571f3d4" time="0.012">
+  <properties/>
+  <testcase name="exactlySevenFifteenDegreeOffsets()" classname="dev.paul.simpleradiodirectional.radio.DishAimTest" time="0.003"/>
+  <testcase name="clicksStopAtBothEndsRatherThanWrapping()" classname="dev.paul.simpleradiodirectional.radio.DishAimTest" time="0.001"/>
+  <testcase name="clockwiseSwivelOfNorthTurnsTowardEast()" classname="dev.paul.simpleradiodirectional.radio.DishAimTest" time="0.001"/>
+  <testcase name="mirroringTwiceRestoresEveryAim()" classname="dev.paul.simpleradiodirectional.radio.DishAimTest" time="0.001"/>
+  <testcase name="allFourMountsKeepTheSamePatternForEveryAim()" classname="dev.paul.simpleradiodirectional.radio.DishAimTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

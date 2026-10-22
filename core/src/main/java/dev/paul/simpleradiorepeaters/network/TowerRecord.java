@@ -11,14 +11,23 @@ import java.util.*;
 
 public record TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
                           boolean enabled, @Nullable ResourceLocation catalystItem, boolean verified, int antennaScore, Set<Long> footprint,
-                          CardBankRef cardBank, RelayAttachment attachment, @Nullable TransponderChannels transponder) {
+                          CardBankRef cardBank, RelayAttachment attachment, @Nullable TransponderChannels transponder,
+                          BlockPos antennaBase) {
     public TowerRecord {
-        position = position.immutable(); channels = Set.copyOf(channels); footprint = Set.copyOf(footprint);
+        position = position.immutable(); antennaBase = antennaBase.immutable();
+        channels = Set.copyOf(channels); footprint = Set.copyOf(footprint);
         // Apply the same mounting rule to restored records and all later manager updates.
         if (cardBank != null && !BankConnection.isMounted(position, cardBank.position())) {
             cardBank = null; channels = Set.of(); transponder = null;
         }
         if (transponder != null) channels = transponder.channels();
+    }
+    /** Legacy snapshots and external adapters default to their supplied site until a scan resolves the mast. */
+    public TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
+                       boolean enabled, @Nullable ResourceLocation catalystItem, boolean verified, int antennaScore, Set<Long> footprint,
+                       CardBankRef cardBank, RelayAttachment attachment, @Nullable TransponderChannels transponder) {
+        this(id, dimension, position, channels, enabled, catalystItem, verified, antennaScore, footprint,
+                cardBank, attachment, transponder, position);
     }
     public TowerRecord(UUID id, String dimension, BlockPos position, Set<ChannelKey> channels,
                        boolean enabled, @Nullable ResourceLocation catalystItem, boolean verified, int antennaScore, Set<Long> footprint, CardBankRef cardBank) {
@@ -41,12 +50,14 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
     }
     public TowerRecord settings(Set<ChannelKey> selected, boolean enabled, ResourceLocation catalyst, CardBankRef controller,
                                 RelayAttachment attachment, @Nullable TransponderChannels transponder) {
-        return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint, controller, attachment, transponder);
+        return new TowerRecord(id, dimension, position, selected, enabled, catalyst, verified, antennaScore, footprint,
+                controller, attachment, transponder, antennaBase);
     }
     public TowerRecord invalidate() { return new TowerRecord(id, dimension, position, channels, enabled, catalystItem, false,
-            antennaScore, footprint, cardBank, attachment, transponder); }
+            antennaScore, footprint, cardBank, attachment, transponder, antennaBase); }
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag(); tag.putUUID("Id", id); tag.putString("Dimension", dimension); tag.putLong("Position", position.asLong());
+        tag.putLong("AntennaBase", antennaBase.asLong());
         tag.putBoolean("Enabled", enabled); if (catalystItem != null) tag.putString("CatalystItem", catalystItem.toString());
         tag.putBoolean("Verified", verified); tag.putInt("Score", antennaScore);
         tag.putString("Attachment", attachment.name());
@@ -66,6 +77,7 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
                 tag.getBoolean("Enabled"), tag.getString("CatalystItem").isBlank() ? null : ResourceLocation.tryParse(tag.getString("CatalystItem")),
                 tag.getBoolean("Verified"), Math.max(0, tag.getInt("Score")), footprint, controller,
                 RelayAttachment.stored(tag.getString("Attachment")), tag.contains("Transponder", Tag.TAG_COMPOUND)
-                        ? TransponderChannels.load(tag.getCompound("Transponder")) : null);
+                        ? TransponderChannels.load(tag.getCompound("Transponder")) : null,
+                BlockPos.of(tag.getLong(tag.contains("AntennaBase", Tag.TAG_LONG) ? "AntennaBase" : "Position")));
     }
 }

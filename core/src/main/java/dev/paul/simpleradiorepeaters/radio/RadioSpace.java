@@ -33,7 +33,7 @@ public final class RadioSpace {
     public static List<Site> sites(MinecraftServer server, TowerRecord tower, boolean nativeCrossDimensional) {
         ResourceLocation id = ResourceLocation.tryParse(tower.dimension());
         ServerLevel home = id == null ? null : server.getLevel(ResourceKey.create(Registries.DIMENSION, id));
-        return home == null ? List.of() : List.copyOf(policy.sites(server, tower, physical(home, tower.position().getCenter())));
+        return home == null ? List.of() : List.copyOf(policy.sites(server, tower, physical(home, tower.antennaBase().getCenter())));
     }
     @Nullable public static Leg between(Site from, Site to, boolean nativeCrossDimensional) {
         if (from.projected() && to.projected()) return null;

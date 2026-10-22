@@ -43,6 +43,7 @@ public final class RelayDiagnostics {
             channels.addAll(tower.channels());
             lines.add("SAVED " + tower.id() + " " + tower.dimension() + " " + tower.position().toShortString()
                     + " eligible=" + tower.eligible() + " enabled=" + tower.enabled() + " verified=" + tower.verified()
+                    + " antennaBase=" + tower.antennaBase().toShortString()
                     + " antennaRaw=" + tower.antennaScore() + " antennaEffective="
                     + RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
                     + " catalyst=" + tower.catalystItem() + " efficiency=" + tower.efficiency()

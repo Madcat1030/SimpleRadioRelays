@@ -206,6 +206,7 @@ public class RepeaterGameTests implements FabricGameTest {
         helper.runAfterDelay(30, () -> {
             TowerManager manager = TowerManager.get(level.getServer()); relay.refresh(manager);
             check(relay.getAntennaPower() > 0 && manager.isEligible(relay.relayId()), "Split hardware must scan the native antenna");
+            check(manager.snapshot(relay.relayId()).antennaBase().equals(core), "A directly mounted relay must use the core centre as its radio origin");
             CompoundTag saved = relay.saveWithoutMetadata();
             RelayBlockEntity restored = new RelayBlockEntity(relay.getBlockPos(), relay.getBlockState()); restored.load(saved);
             check(restored.relayId().equals(relay.relayId()) && restored.hasCatalyst(), "Relay identity and direct catalyst must survive reload");
@@ -254,6 +255,9 @@ public class RepeaterGameTests implements FabricGameTest {
             helper.runAfterDelay(30, () -> {
                 TowerManager manager = TowerManager.get(level.getServer());
                 check(bank.getAntennaPower() > 0 && manager.isEligible(bank.relayId()), "Wired antenna must first be verified");
+                check(manager.snapshot(bank.relayId()).antennaBase().equals(remoteCore), "A wired relay must resolve the remote mast core, not its local adaptor");
+                check(TowerRecord.load(manager.snapshot(bank.relayId()).save()).antennaBase().equals(remoteCore),
+                        "The remote antenna origin must survive network persistence");
                 int score = bank.getAntennaPower();
                 CompoundTag tag = bank.saveWithoutMetadata();
                 tag.putInt("AntennaScore", 0); // A block-entity cache can lag the authoritative saved network record.
@@ -266,9 +270,11 @@ public class RepeaterGameTests implements FabricGameTest {
                 RelayBlockEntity.tick(level, restored.getBlockPos(), restored.getBlockState(), restored);
                 check(restored.getAntennaPower() == score, "Reload must recover the authoritative cached score");
                 check(manager.isEligible(restored.relayId()), "The first reload tick must retain relay eligibility");
+                check(manager.snapshot(restored.relayId()).antennaBase().equals(remoteCore), "Pending wire restoration must retain the verified remote origin");
                 helper.runAfterDelay(30, () -> {
                     check(near.hasWire(wire) && far.hasWire(wire), "Native wire tick must reconnect both endpoints");
                     check(restored.getAntennaPower() == score && manager.isEligible(restored.relayId()), "Bank must recover without an enable toggle");
+                    check(manager.snapshot(restored.relayId()).antennaBase().equals(remoteCore), "Restored wire scan must retain the same remote antenna origin");
                     check(restored.saveWithoutMetadata().getInt("AntennaScore") == score, "Refreshed score must be saved in the block entity");
                     wire.burnOut(); restored.markDirty(); // Explicit refresh; do not patch upstream cut-wire notifications.
                     helper.runAfterDelay(30, () -> {
@@ -301,7 +307,8 @@ public class RepeaterGameTests implements FabricGameTest {
             check(!level.hasChunkAt(unavailable), "The historical antenna dependency must be unloaded");
             Set<Long> footprint = new HashSet<>(verified.footprint()); footprint.add(unavailable.asLong());
             TowerRecord snapshot = new TowerRecord(verified.id(), verified.dimension(), verified.position(), verified.channels(),
-                    verified.enabled(), verified.catalystItem(), verified.verified(), verified.antennaScore(), footprint, verified.cardBank());
+                    verified.enabled(), verified.catalystItem(), verified.verified(), verified.antennaScore(), footprint,
+                    verified.cardBank(), verified.attachment(), verified.transponder(), verified.antennaBase());
             manager.updateSnapshot(snapshot); bank.markDirty();
             level.setBlock(core.east(), Blocks.STONE.defaultBlockState(), 3);
             check(manager.isEligible(bank.relayId()), "An unrelated neighbouring block change must not invalidate the snapshot");

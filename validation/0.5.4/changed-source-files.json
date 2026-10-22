@@ -1,0 +1,15 @@
+[
+  "README.md",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlockEntity.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/AntennaScanner.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerRecord.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RadioSpace.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.java",
+  "core/src/main/resources/fabric.mod.json",
+  "docs/Simple-Radio-Repeaters-Documentation.md",
+  "foci/src/main/java/dev/paul/simpleradiorepeaters/gametest/ExpansionGameTests.java",
+  "gradle.properties"
+]

@@ -1,0 +1,34 @@
+{
+  "game_tests": {
+    "core-only": {
+      "tests": 57,
+      "failed": []
+    },
+    "core-foci-directional": {
+      "tests": 102,
+      "failed": []
+    }
+  },
+  "unit_tests": {
+    "core": {
+      "tests": 51,
+      "failed": 0,
+      "skipped": 0
+    },
+    "foci": {
+      "tests": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    "directional": {
+      "tests": 18,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "native_dependency": {
+    "artifact": "maven.modrinth:simple-radio:f9TIjf7X",
+    "version": "1.20.1-4.5.7.9",
+    "sha256": "667528f774ba38426ad8bcbea5db260ec0841316b38e56302cb47037445066e8"
+  }
+}

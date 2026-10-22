@@ -151,9 +151,9 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
                 if (nearSide) {
                     TowerRecord cRecord = manager.snapshot(c.relayId()); ChannelKey channel = ChannelKey.from(incoming);
                     float power = NativeRadioAdapter.departurePower(b, channel, 2);
-                    var directArrival = NativeRadioAdapter.receiveAtReceiver(b.position().getCenter().distanceTo(receiverPos.getCenter()),
+                    var directArrival = NativeRadioAdapter.receiveAtReceiver(b.antennaBase().getCenter().distanceTo(receiverPos.getCenter()),
                             power, power, SimpleRadioFrequencing.TRANSMITTER, rx, channel);
-                    var relayArrival = NativeRadioAdapter.receiveAtTower(b.position().getCenter().distanceTo(cRecord.position().getCenter()),
+                    var relayArrival = NativeRadioAdapter.receiveAtTower(b.antennaBase().getCenter().distanceTo(cRecord.antennaBase().getCenter()),
                             power, power, SimpleRadioFrequencing.TRANSMITTER, cRecord, channel);
                     check(directArrival != null && relayArrival != null, "Both B exits must be viable at the receiving tower");
                     check(directArrival.severity() < relayArrival.severity() && relayArrival.severity() - directArrival.severity() < 1,

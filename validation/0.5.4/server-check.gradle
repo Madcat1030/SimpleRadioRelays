@@ -1,0 +1,23 @@
+// QA-only selection: excludes the native mod's independently recorded test failures.
+gradle.projectsEvaluated {
+    ['core', 'foci', 'directional'].each { module ->
+        def project = gradle.rootProject.project(':' + module)
+        def qa = gradle.rootProject.file('validation/0.5.4/server-check')
+        def compile = project.tasks.register('compileParityChecks', JavaCompile) {
+            dependsOn project.tasks.named('classes')
+            source project.fileTree(new File(qa, 'java')) { include '**/*.java' }
+            classpath = project.sourceSets.main.runtimeClasspath
+            destinationDirectory = project.layout.buildDirectory.dir('parity-checks')
+            options.release = 17
+            options.compilerArgs.add('-proc:none')
+        }
+        def jar = project.tasks.register('parityCheckJar', Jar) {
+            dependsOn compile
+            archiveFileName = 'parity-checks.jar'
+            destinationDirectory = project.file('run/gametest/mods')
+            from compile.flatMap { it.destinationDirectory }
+            from new File(qa, 'resources')
+        }
+        project.tasks.named('runGameTest') { dependsOn jar; jvmArgs '-Djava.awt.headless=true' }
+    }
+}

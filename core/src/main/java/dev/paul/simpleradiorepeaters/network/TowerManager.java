@@ -196,7 +196,7 @@ public final class TowerManager {
     public void publish(RelayBlockEntity relay, AntennaScanner.Result antenna) {
         updateSnapshot(new TowerRecord(relay.relayId(), relay.getLevel().dimension().location().toString(), relay.getBlockPos(), relay.channels(),
                 relay.enabled(), relay.catalystItem(), true, antenna.score(), antenna.footprint(), relay.cardBank(),
-                relay.attachmentType(), relay.transponderChannels()));
+                relay.attachmentType(), relay.transponderChannels(), antenna.antennaBase()));
     }
     /** Accept a verified snapshot from a stationary tower adapter, on the server thread. */
     public void updateSnapshot(TowerRecord record) {
@@ -310,6 +310,7 @@ public final class TowerManager {
         data.towers.values().stream().sorted(Comparator.comparing(n -> n.id().toString())).forEach(n -> result.add(n.dimension() + " "
                 + n.position().toShortString() + " | " + (n.eligible() ? loaded.containsKey(n.id()) ? "loaded" : "saved" : "inactive")
                 + " | antenna " + RelayPower.antennaScore(n.antennaScore(), n.attachment().antennaMultiplier())
+                + " at " + n.antennaBase().toShortString()
                 + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%)"
                 + " | " + n.attachment() + " | " + (n.transponder() == null ? "bank" : n.transponder().duplex() ? "duplex" : "simplex")
                 + " | " + n.channels().stream().sorted().toList()));

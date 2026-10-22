@@ -27,6 +27,46 @@ import java.util.*;
 public class ExpansionGameTests implements FabricGameTest {
     private static short nextId = 28000;
     private static void check(boolean result, String message) { if (!result) throw new GameTestAssertException(message); }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void native_Nether_noise_floor_matches_the_adapter_with_foci_hooks_active(GameTestHelper helper) {
+        boolean before = FociConfig.INSTANCE.netherTweaks;
+        var nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        try {
+            for (boolean tweaks : new boolean[]{true, false}) {
+                FociConfig.INSTANCE.netherTweaks = tweaks;
+                for (var mode : Frequency.Modulation.values()) for (double coordinate : new double[]{18000.5, 1000000.5, -1000000.5}) {
+                    Vec3 origin = new Vec3(coordinate, 64.5, coordinate);
+                    for (double distance : new double[]{1, 80, 400, 700}) {
+                        var received = NativeMathGameTests.compare(nether, origin, nether, origin.add(distance, 0, 0),
+                                mode, SimpleRadioFrequencing.TRANSMITTER, 2000, 2000, "Foci Nether hooks/" + tweaks + "/" + distance);
+                        if (distance == 1) check(received.delivered() && received.severity() >= NativeRadioAdapter.base(new ChannelKey("097.81",
+                                        mode == Frequency.Modulation.AMPLITUDE ? "AM" : "FM")) + (tweaks ? 10 : 0),
+                                "The native probe must exercise the configured Nether noise floor");
+                    }
+                }
+            }
+        } finally { FociConfig.INSTANCE.netherTweaks = before; }
+        helper.succeed();
+    }
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void focus_projections_use_the_saved_antenna_base_instead_of_the_relay_box(GameTestHelper helper) {
+        var world = helper.getLevel(); var key = new ChannelKey("097.82", "AM");
+        BlockPos box = new BlockPos(-1000000, 80, 1000000), base = box.offset(400, 20, 800);
+        for (var focus : List.of(DimensionalFoci.NETHER, DimensionalFoci.END)) {
+            var tower = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), box, Set.of(key), true,
+                    RelayCatalysts.GILDED, true, 32, Set.of(), null, focus, null, base);
+            var restored = TowerRecord.load(tower.save());
+            var sites = RadioSpace.sites(world.getServer(), restored, false);
+            check(sites.get(0).position().equals(base.getCenter()), "Physical focus site must sit at the remote antenna base");
+            var projected = sites.get(1); double scale = focus == DimensionalFoci.NETHER ? 1d / 8 : 1;
+            check(projected.position().x == base.getCenter().x * scale && projected.position().z == base.getCenter().z * scale,
+                    "The projected pocket must map antenna coordinates, not box coordinates");
+            check(projected.position().y == (focus == DimensionalFoci.NETHER ? 128 : 0), "Projection height rules must remain intact");
+            check(!world.hasChunkAt(box) && !world.hasChunkAt(base)
+                    && !projected.level().hasChunkAt(BlockPos.containing(projected.position())), "Projection lookup must not load either site");
+        }
+        helper.succeed();
+    }
     private static ChannelKey channel(int number) { return channel(number, Frequency.Modulation.AMPLITUDE); }
     private static ChannelKey channel(int number, Frequency.Modulation mode) {
         var frequencies = ServerSimpleRadioApi.getInstance().frequencies();

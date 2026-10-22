@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /** Runs native antenna geometry against a guarded accessor that cannot request absent chunks. */
 public final class AntennaScanner {
-    public record Result(boolean complete, int score, Set<Long> footprint) {}
+    public record Result(boolean complete, int score, Set<Long> footprint, BlockPos antennaBase) {}
     private static final class MissingChunk extends RuntimeException {
         @Override public synchronized Throwable fillInStackTrace() { return this; }
     }
@@ -50,7 +50,7 @@ public final class AntennaScanner {
         try {
             // Native antennas need a sturdy top face. A floating mast must not give a bare Relay a score.
             if (!guarded.getBlockState(core).isFaceSturdy(guarded, core, Direction.UP))
-                return new Result(true, 0, Set.copyOf(observed));
+                return new Result(true, 0, Set.copyOf(observed), core.immutable());
             // A loaded insulator can still have no router, or an unresolved wire endpoint.
             // Neither establishes that the antenna extension was disconnected.
             for (Direction direction : Direction.values()) {
@@ -67,7 +67,7 @@ public final class AntennaScanner {
             BlockPos base = ServerSimpleRadioApi.getInstance().travelExtension(core, guarded).above();
             BlockPos antennaCore = base.below();
             if (!guarded.getBlockState(antennaCore).isFaceSturdy(guarded, antennaCore, Direction.UP))
-                return new Result(true, 0, Set.copyOf(observed));
+                return new Result(true, 0, Set.copyOf(observed), antennaCore.immutable());
             BlockState state = guarded.getBlockState(base); int score = 0;
             if (state.getBlock() instanceof Antennal antennal) {
                 AtomicInteger total = new AtomicInteger(); List<BlockPos> visited = new ArrayList<>();
@@ -76,7 +76,7 @@ public final class AntennaScanner {
             }
             Set<Long> footprint = new HashSet<>(observed);
             for (long packed : observed) for (Direction direction : Direction.values()) footprint.add(BlockPos.of(packed).relative(direction).asLong());
-            return new Result(true, score, Set.copyOf(footprint));
-        } catch (MissingChunk e) { return new Result(false, 0, Set.copyOf(observed)); }
+            return new Result(true, score, Set.copyOf(footprint), antennaCore.immutable());
+        } catch (MissingChunk e) { return new Result(false, 0, Set.copyOf(observed), core.immutable()); }
     }
 }

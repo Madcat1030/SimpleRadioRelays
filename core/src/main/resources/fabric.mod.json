@@ -23,7 +23,9 @@
       "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests",
       "dev.paul.simpleradiorepeaters.gametest.SplitBoundaryGameTests",
       "dev.paul.simpleradiorepeaters.gametest.TransponderRoutingGameTests",
-      "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests"
+      "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests"
     ]
   },
   "mixins": [

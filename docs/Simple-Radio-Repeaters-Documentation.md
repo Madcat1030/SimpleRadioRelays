@@ -141,7 +141,9 @@ Core 0.5.2 also fixes the native `FrequencyChannel` cleanup path: removing the l
 
 ## Persistence and antenna verification
 
-The saved network remains `data/simpleradio_repeaters_relays_v3.dat`. Immutable tower snapshots retain identity, dimension, position, channels, catalyst ID, attachment effect name, module identity/position, Transponder policy, verified antenna and dependency footprint. Existing 0.3/0.4 records read without a migration/reset layer; earlier stores are not imported.
+The saved network remains `data/simpleradio_repeaters_relays_v3.dat`. Immutable tower snapshots retain identity, dimension, relay position, antenna-base position, channels, catalyst ID, attachment effect name, module identity/position, Transponder policy, verified antenna and dependency footprint. Existing records without `AntennaBase` keep their previous radio origin until a successful scan resolves the antenna; earlier stores are not imported.
+
+From 0.5.4, radio distance and emitted-carrier origins use the centre of the resolved core directly below the mast. A copper-wire extension resolves to the remote antenna core. The relay box remains the identity/ownership location, so module mounting, removal reconciliation and directional-dish bindings still address the correct block. Successful origin changes invalidate cached routes even if antenna strength is unchanged. Incomplete reload scans retain the last verified origin. Foci project from the antenna coordinates with their existing scale and height rules.
 
 Loaded Relay ownership resolves copied UUIDs before adopting/publishing controller state. Module bindings must point directly above the Relay. A moved/copied Relay cannot keep a distant wireless Bank. Ordinary removal retires the appropriate record/binding. Chunk-load reconciliation detects missing/replaced blocks and identities after external edits/restoration, including ghost relays.
 
@@ -198,6 +200,10 @@ Use JDK 21 for Gradle/Loom. Release classes target Java 17. `./gradlew build pro
 `./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.2/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
 
 `tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
+
+0.5.4 adds `NativeMathGameTests`: real native transmitters, receivers and sources provide the reach/travel/severity reference for `NativeRadioAdapter` and `RadioLinkMath`. Coverage includes AM/FM, handheld and tower sender types, native tower power, additive/multiplicative loss, partial incoming power, reception-floor branches, all standard dimensions and coordinates near ±1,000,000. Range-edge probes use an explicit margin outside float rounding uncertainty; power/severity comparisons budget native float ULPs. Cross-world cases separately cover reach passing but travel exhausting the carrier, plus native dimensional OFF. Expansion tests compare the Nether profile with native Foci hooks active and verify antenna-based projections. These fixtures never load the terrain at the radio positions.
+
+Gameplay retains numeric candidate evaluation. Native reference objects exist only in development tests and are stripped from prototype distributions. The exact Simple Radio version constraint cannot identify an upstream binary republished under the same version; validation records the tested dependency hash. A future jar with that version still needs hook compatibility and parity checks.
 
 ## 0.5.0 regression results
 
