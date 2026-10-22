@@ -1,0 +1,39 @@
+{
+  "version": "0.5.5",
+  "routing_logic_changed": false,
+  "unit_tests": {
+    "core": {
+      "tests": 54,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "foci": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "directional": {
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "server_tests": {
+    "core-only": {
+      "tests": 60,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "core-foci-directional": {
+      "tests": 105,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "native_simple_radio_sha256": "667528f774ba38426ad8bcbea5db260ec0841316b38e56302cb47037445066e8"
+}

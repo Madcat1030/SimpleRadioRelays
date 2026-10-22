@@ -7,6 +7,12 @@ import java.util.function.IntPredicate;
 
 /** Cached minimax routes over directed channel ports. Amplifiers reset decay, never the total visit budget. */
 public final class RelayGraph {
+    // Optional observation has no dependency on Minecraft and never changes cache contents or policy.
+    private static volatile java.util.function.BiConsumer<String, String> cacheObserver;
+    public static void observeCaches(java.util.function.BiConsumer<String, String> observer) { cacheObserver = observer; }
+    private static void observedCache(String kind, String outcome) {
+        var observer = cacheObserver; if (observer != null) observer.accept(kind, outcome);
+    }
     public record Edge(int destination, double severity) {}
     /** Total relay visits, including those before a wired re-entry. */
     public record Reach(double severity, int hops, int decay) {
@@ -20,8 +26,8 @@ public final class RelayGraph {
     private final Links links;
     private final boolean[] resets;
     private final boolean anyReset;
-    private final Cache<RouteKey, Routes> routes = new Cache<>(128, 32768, Routes::size);
-    private final Cache<LinkKey, List<Edge>> rows = new Cache<>(512, 65536, List::size);
+    private final Cache<RouteKey, Routes> routes = new Cache<>("path", 128, 32768, Routes::size);
+    private final Cache<LinkKey, List<Edge>> rows = new Cache<>("link_row", 512, 65536, List::size);
 
     public RelayGraph(List<List<Edge>> edges, int maxHops) {
         List<List<Edge>> fixed = edges.stream().map(List::copyOf).toList();
@@ -123,21 +129,25 @@ public final class RelayGraph {
     private static final class Cache<K, V> {
         private final LinkedHashMap<K, V> entries = new LinkedHashMap<>(16, .75f, true);
         private final int maxEntries, maxWeight;
+        private final String kind;
         private final ToIntFunction<V> weigh;
         private int weight;
-        Cache(int maxEntries, int maxWeight, ToIntFunction<V> weigh) {
-            this.maxEntries = maxEntries; this.maxWeight = maxWeight; this.weigh = weigh;
+        Cache(String kind, int maxEntries, int maxWeight, ToIntFunction<V> weigh) {
+            this.kind = kind; this.maxEntries = maxEntries; this.maxWeight = maxWeight; this.weigh = weigh;
         }
         V get(K key, Function<K, V> create) {
-            V cached = entries.get(key); if (cached != null) return cached;
+            V cached = entries.get(key);
+            observedCache(kind, cached == null ? "miss" : "hit");
+            if (cached != null) return cached;
             V value = create.apply(key); int cost = weigh.applyAsInt(value);
             if (cost <= maxWeight) {
                 entries.put(key, value); weight += cost;
                 var iterator = entries.entrySet().iterator();
                 while (entries.size() > maxEntries || weight > maxWeight) {
                     weight -= weigh.applyAsInt(iterator.next().getValue()); iterator.remove();
+                    observedCache(kind, "eviction");
                 }
-            }
+            } else observedCache(kind, "not_retained_over_weight");
             return value;
         }
     }

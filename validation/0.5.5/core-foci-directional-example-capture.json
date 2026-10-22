@@ -1,0 +1,445 @@
+{
+  "schema": 1,
+  "capture_id": "504455da",
+  "started_utc": "2026-10-22T22:32:27.639600856Z",
+  "stopped_utc": "2026-10-22T22:32:27.662955427Z",
+  "stop_reason": "command_stop",
+  "elapsed_seconds": 0.023234885,
+  "elapsed_ticks": 0,
+  "observed_tps": 0.0,
+  "start": {
+    "network": "Repeaters: 5 configured; 2 ready (0 loaded, 2 saved). Forwarded 69 frames; delivered 88 receiver packets.",
+    "towers": [
+      "Repeaters: 5 configured; 2 ready (0 loaded, 2 saved). Forwarded 69 frames; delivered 88 receiver packets.",
+      "minecraft:overworld 36, -60, 158 | inactive | antenna 3.0 at 37, -60, 158 | catalyst null (0%) | NONE | bank | []",
+      "minecraft:overworld 27, -57, 28 | inactive | antenna 0.0 at 27, -57, 29 | catalyst null (0%) | NONE | bank | []",
+      "minecraft:overworld 8800000, 80, -8800000 | saved | antenna 32.0 at 8800000, 80, -8800000 | catalyst minecraft:gilded_blackstone (90%) | NONE | simplex | [096.81 AM, 096.82 AM]",
+      "minecraft:overworld 8801000, 80, -8800000 | saved | antenna 32.0 at 8801000, 80, -8800000 | catalyst minecraft:gilded_blackstone (90%) | NONE | bank | [096.82 AM]",
+      "minecraft:overworld 86, -58, 28 | inactive | antenna 0.0 at 86, -58, 29 | catalyst null (0%) | NONE | bank | []"
+    ],
+    "players": 0,
+    "java": "21.0.8",
+    "available_processors": 4,
+    "mods": {
+      "fabricloader": "0.19.3",
+      "minecraft": "1.20.1",
+      "simpleradio": "1.20.1-4.5.7.9",
+      "simpleradio_directional": "0.2.6",
+      "simpleradio_repeaters": "0.5.5",
+      "simpleradio_repeaters_foci": "0.5.5",
+      "voicechat": "1.20.1-2.6.18"
+    },
+    "rf_configuration_stamp": -289354857,
+    "rf_parameters": {
+      "tower_tx_am": 4400,
+      "tower_tx_fm": 3300,
+      "tx_antenna_aptitude": 10,
+      "tx_loss": 1.0,
+      "tx_loss_method": "ADDITIVE",
+      "threshold_am": 500,
+      "threshold_fm": 300,
+      "rx_base": 300,
+      "rx_floor": 20,
+      "rx_antenna_aptitude": 10,
+      "base_noise_am": 15.0,
+      "base_noise_fm": 2.0,
+      "native_dimensional_enabled": false,
+      "dimensional_interference": 4.0,
+      "relay_dimensional_enabled": false,
+      "policy_fingerprint": -1969126533,
+      "catalysts": {
+        "minecraft:amethyst_block": 0.6000000238418579,
+        "minecraft:ender_pearl": 2.0,
+        "minecraft:gilded_blackstone": 0.8999999761581421,
+        "minecraft:nether_star": 1.0,
+        "minecraft:quartz": 0.800000011920929
+      }
+    },
+    "persistent_unloaded_towers": true,
+    "max_relay_hops": 64
+  },
+  "end": {
+    "network": "Repeaters: 5 configured; 2 ready (0 loaded, 2 saved). Forwarded 79 frames; delivered 93 receiver packets.",
+    "towers": [
+      "Repeaters: 5 configured; 2 ready (0 loaded, 2 saved). Forwarded 79 frames; delivered 93 receiver packets.",
+      "minecraft:overworld 36, -60, 158 | inactive | antenna 3.0 at 37, -60, 158 | catalyst null (0%) | NONE | bank | []",
+      "minecraft:overworld 27, -57, 28 | inactive | antenna 0.0 at 27, -57, 29 | catalyst null (0%) | NONE | bank | []",
+      "minecraft:overworld 8800000, 80, -8800000 | saved | antenna 32.0 at 8800000, 80, -8800000 | catalyst minecraft:gilded_blackstone (90%) | NONE | simplex | [096.81 AM, 096.82 AM]",
+      "minecraft:overworld 8801000, 80, -8800000 | saved | antenna 32.0 at 8801000, 80, -8800000 | catalyst minecraft:gilded_blackstone (90%) | NONE | bank | [096.82 AM]",
+      "minecraft:overworld 86, -58, 28 | inactive | antenna 0.0 at 86, -58, 29 | catalyst null (0%) | NONE | bank | []"
+    ],
+    "players": 0,
+    "java": "21.0.8",
+    "available_processors": 4,
+    "mods": {
+      "fabricloader": "0.19.3",
+      "minecraft": "1.20.1",
+      "simpleradio": "1.20.1-4.5.7.9",
+      "simpleradio_directional": "0.2.6",
+      "simpleradio_repeaters": "0.5.5",
+      "simpleradio_repeaters_foci": "0.5.5",
+      "voicechat": "1.20.1-2.6.18"
+    },
+    "rf_configuration_stamp": -289354857,
+    "rf_parameters": {
+      "tower_tx_am": 4400,
+      "tower_tx_fm": 3300,
+      "tx_antenna_aptitude": 10,
+      "tx_loss": 1.0,
+      "tx_loss_method": "ADDITIVE",
+      "threshold_am": 500,
+      "threshold_fm": 300,
+      "rx_base": 300,
+      "rx_floor": 20,
+      "rx_antenna_aptitude": 10,
+      "base_noise_am": 15.0,
+      "base_noise_fm": 2.0,
+      "native_dimensional_enabled": false,
+      "dimensional_interference": 4.0,
+      "relay_dimensional_enabled": false,
+      "policy_fingerprint": -1969126533,
+      "catalysts": {
+        "minecraft:amethyst_block": 0.6000000238418579,
+        "minecraft:ender_pearl": 2.0,
+        "minecraft:gilded_blackstone": 0.8999999761581421,
+        "minecraft:nether_star": 1.0,
+        "minecraft:quartz": 0.800000011920929
+      }
+    },
+    "persistent_unloaded_towers": true,
+    "max_relay_hops": 64
+  },
+  "counters": {
+    "route_calls": 10,
+    "taken_over": 10,
+    "forwarded_frames": 10,
+    "no_ports": 0,
+    "no_entrance": 0,
+    "hop_limit": 0,
+    "duplicate_emitters": 0,
+    "router_acceptors": 5,
+    "wire_distributions": 0,
+    "ingress_passes": 20,
+    "ingress_site_pairs": 20,
+    "ingress_rf_checks": 20,
+    "ingress_rf_successes": 20,
+    "initial_ingress_rf_checks": 10,
+    "final_ingress_rf_checks": 10,
+    "reachable_options": 20,
+    "output_channels": 20,
+    "missing_frequencies": 0,
+    "receiver_visits": 10,
+    "receivers_eligible": 5,
+    "skipped_state": 0,
+    "skipped_criteria": 0,
+    "skipped_duplicate": 5,
+    "skipped_unloaded": 0,
+    "direct_rf_checks": 0,
+    "direct_candidates": 0,
+    "port_visits": 10,
+    "matching_ports": 10,
+    "egress_site_pairs": 10,
+    "egress_rf_checks": 10,
+    "relay_candidates": 10,
+    "custom_route_criteria": 0,
+    "receiver_selections": 5,
+    "delivery_attempts": 5,
+    "delivery_accepted": 5,
+    "router_source_copies": 35,
+    "callback_rf_changes": 5,
+    "source_rf_repeats": 8,
+    "source_rf_changes": 0,
+    "source_moved_8_blocks": 0,
+    "receiver_observations": 5,
+    "receiver_moved_8_blocks": 0,
+    "receiver_state_changes": 1,
+    "receiver_replacements": 0,
+    "snapshots_unchanged": 1,
+    "relay_loads": 0,
+    "relay_unloads": 0,
+    "invalidations": 1,
+    "discarded_networks": 1,
+    "route_exceptions": 0
+  },
+  "route_self": {
+    "samples": 10,
+    "total_ms": 11.34958,
+    "mean_us": 1134.958,
+    "max_us": 6266.955,
+    "p50_upper_us": 262.143,
+    "p95_upper_us": 8388.607,
+    "p99_upper_us": 8388.607
+  },
+  "route_inclusive": {
+    "samples": 10,
+    "total_ms": 14.819588,
+    "mean_us": 1481.9588,
+    "max_us": 8974.798,
+    "p50_upper_us": 524.287,
+    "p95_upper_us": 16777.215,
+    "p99_upper_us": 16777.215
+  },
+  "route_self_percent_of_capture_wall_time": 48.847153751783146,
+  "phase_self": {
+    "setup": {
+      "samples": 10,
+      "total_ms": 2.07459,
+      "mean_us": 207.459,
+      "max_us": 1654.661,
+      "p50_upper_us": 16.383,
+      "p95_upper_us": 2097.151,
+      "p99_upper_us": 2097.151
+    },
+    "network_lookup": {
+      "samples": 10,
+      "total_ms": 0.945431,
+      "mean_us": 94.5431,
+      "max_us": 659.431,
+      "p50_upper_us": 16.383,
+      "p95_upper_us": 1048.575,
+      "p99_upper_us": 1048.575
+    },
+    "initial_entrances": {
+      "samples": 10,
+      "total_ms": 0.628781,
+      "mean_us": 62.8781,
+      "max_us": 363.144,
+      "p50_upper_us": 32.767,
+      "p95_upper_us": 524.287,
+      "p99_upper_us": 524.287
+    },
+    "callbacks_and_wires": {
+      "samples": 10,
+      "total_ms": 3.917105,
+      "mean_us": 391.7105,
+      "max_us": 3274.022,
+      "p50_upper_us": 8.191,
+      "p95_upper_us": 4194.303,
+      "p99_upper_us": 4194.303
+    },
+    "final_entrances": {
+      "samples": 10,
+      "total_ms": 0.323126,
+      "mean_us": 32.3126,
+      "max_us": 176.732,
+      "p50_upper_us": 8.191,
+      "p95_upper_us": 262.143,
+      "p99_upper_us": 262.143
+    },
+    "paths": {
+      "samples": 10,
+      "total_ms": 0.536514,
+      "mean_us": 53.6514,
+      "max_us": 189.095,
+      "p50_upper_us": 65.535,
+      "p95_upper_us": 262.143,
+      "p99_upper_us": 262.143
+    },
+    "outputs": {
+      "samples": 30,
+      "total_ms": 1.375394,
+      "mean_us": 45.846466666666664,
+      "max_us": 1134.449,
+      "p50_upper_us": 8.191,
+      "p95_upper_us": 65.535,
+      "p99_upper_us": 2097.151
+    },
+    "receiver_filter": {
+      "samples": 10,
+      "total_ms": 0.070506,
+      "mean_us": 7.0506,
+      "max_us": 16.411,
+      "p50_upper_us": 4.095,
+      "p95_upper_us": 32.767,
+      "p99_upper_us": 32.767
+    },
+    "direct_candidates": {
+      "samples": 5,
+      "total_ms": 0.006047,
+      "mean_us": 1.2094,
+      "max_us": 2.175,
+      "p50_upper_us": 1.023,
+      "p95_upper_us": 4.095,
+      "p99_upper_us": 4.095
+    },
+    "relay_candidates": {
+      "samples": 5,
+      "total_ms": 1.170598,
+      "mean_us": 234.1196,
+      "max_us": 1008.083,
+      "p50_upper_us": 32.767,
+      "p95_upper_us": 1048.575,
+      "p99_upper_us": 1048.575
+    },
+    "select_winner": {
+      "samples": 5,
+      "total_ms": 0.108412,
+      "mean_us": 21.6824,
+      "max_us": 66.722,
+      "p50_upper_us": 16.383,
+      "p95_upper_us": 131.071,
+      "p99_upper_us": 131.071
+    },
+    "delivery": {
+      "samples": 5,
+      "total_ms": 0.193076,
+      "mean_us": 38.6152,
+      "max_us": 119.25,
+      "p50_upper_us": 32.767,
+      "p95_upper_us": 131.071,
+      "p99_upper_us": 131.071
+    }
+  },
+  "cache_operations": {
+    "routing/network/hit": 9,
+    "routing/network/miss": 1,
+    "routing/path/hit": 9,
+    "routing/path/miss": 1,
+    "routing/link_row/hit": 1,
+    "routing/link_row/miss": 3,
+    "maintenance/network/hit": 2,
+    "diagnostic/path/hit": 1,
+    "diagnostic/path/miss": 1,
+    "diagnostic/link_row/hit": 1,
+    "diagnostic/link_row/miss": 3
+  },
+  "network_builds": {
+    "diagnostic": {
+      "samples": 1,
+      "total_ms": 0.268625,
+      "mean_us": 268.625,
+      "max_us": 268.625,
+      "p50_upper_us": 524.287,
+      "p95_upper_us": 524.287,
+      "p99_upper_us": 524.287
+    },
+    "routing": {
+      "samples": 1,
+      "total_ms": 0.200558,
+      "mean_us": 200.558,
+      "max_us": 200.558,
+      "p50_upper_us": 262.143,
+      "p95_upper_us": 262.143,
+      "p99_upper_us": 262.143
+    }
+  },
+  "invalidation_reasons": {
+    "performance_fixture_refresh": 1
+  },
+  "max_network_ports_observed": 2,
+  "antenna_scans": {
+    "samples": 0,
+    "total_ms": 0.0,
+    "mean_us": 0.0,
+    "max_us": 0.0,
+    "p50_upper_us": 0.0,
+    "p95_upper_us": 0.0,
+    "p99_upper_us": 0.0
+  },
+  "antenna_scan_results": {},
+  "flows": [
+    {
+      "transmitter": "38eb92cd-8609-4f37-9cbd-f195ce1b7550",
+      "dimension": "minecraft:overworld",
+      "input_channel": "096.81 AM",
+      "incoming_relays": 0,
+      "incoming_decay": 0,
+      "calls": 5,
+      "forwarded_frames": 5,
+      "receiver_visits": 5,
+      "egress_rf_checks": 0,
+      "accepted_deliveries": 0,
+      "rf_repeats": 4,
+      "rf_changes": 0,
+      "source_moved_8_blocks": 0,
+      "route_self": {
+        "samples": 5,
+        "total_ms": 7.879572,
+        "mean_us": 1575.9144,
+        "max_us": 6266.955,
+        "p50_upper_us": 524.287,
+        "p95_upper_us": 8388.607,
+        "p99_upper_us": 8388.607
+      }
+    },
+    {
+      "transmitter": "2b5c7c4a-7367-43cc-8264-f5bac9157a36",
+      "dimension": "minecraft:overworld",
+      "input_channel": "096.81 AM",
+      "incoming_relays": 0,
+      "incoming_decay": 0,
+      "calls": 5,
+      "forwarded_frames": 5,
+      "receiver_visits": 5,
+      "egress_rf_checks": 10,
+      "accepted_deliveries": 5,
+      "rf_repeats": 4,
+      "rf_changes": 0,
+      "source_moved_8_blocks": 0,
+      "route_self": {
+        "samples": 5,
+        "total_ms": 3.470008,
+        "mean_us": 694.0016,
+        "max_us": 2707.843,
+        "p50_upper_us": 262.143,
+        "p95_upper_us": 4194.303,
+        "p99_upper_us": 4194.303
+      }
+    }
+  ],
+  "untracked_flow_observations": 0,
+  "unique_receivers_tracked": 1,
+  "untracked_receiver_observations": 0,
+  "events": [
+    {
+      "elapsed_seconds": 0.018110486,
+      "tick": 372,
+      "kind": "graph_built",
+      "ports": 2,
+      "policy_fingerprint": -1969126533,
+      "dimension": "minecraft:overworld",
+      "native_dimensions": false,
+      "input_channel": "096.81 AM",
+      "context": "diagnostic"
+    },
+    {
+      "elapsed_seconds": 0.022507037,
+      "tick": 372,
+      "kind": "invalidation",
+      "reason": "performance_fixture_refresh",
+      "cached_networks_removed": 1
+    },
+    {
+      "elapsed_seconds": 0.022888071,
+      "tick": 372,
+      "kind": "graph_built",
+      "ports": 2,
+      "policy_fingerprint": -1969126533,
+      "dimension": "minecraft:overworld",
+      "native_dimensions": false,
+      "input_channel": "096.81 AM",
+      "context": "routing"
+    }
+  ],
+  "events_dropped": 0,
+  "timeline": [
+    {
+      "elapsed_seconds": 0.023234885,
+      "interval_seconds": 0.023234885,
+      "tick": 372,
+      "route_calls": 10,
+      "route_self_ms": 11.34958,
+      "egress_rf_checks": 10,
+      "accepted_deliveries": 5
+    }
+  ],
+  "timeline_buckets_dropped": 0,
+  "notes": [
+    "Elapsed timings include instrumentation and JVM/OS pauses; they are not CPU sampling or allocation measurements.",
+    "Self timings exclude nested repeater routing; inclusive timings overlap during wired re-entry. Phase self times partition route self time.",
+    "p50/p95/p99 values are powers-of-two histogram bucket upper bounds; means and maxima use measured nanoseconds.",
+    "Cache operations and graph builds are separated into routing, maintenance and explicit diagnostic contexts.",
+    "Counters observe the existing algorithm. No routing, cache lifetime, packet rate, RF math or delivery choice is changed.",
+    "Router source copies exclude additional copies made inside native Simple Radio. Audio contents are never recorded."
+  ]
+}

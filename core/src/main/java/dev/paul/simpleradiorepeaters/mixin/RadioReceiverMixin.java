@@ -20,6 +20,7 @@ public abstract class RadioReceiverMixin {
         if (!frame.delivered(ChannelKey.from(receiver.frequency).toString(), receiver.reference)) { ci.cancel(); return; }
         if (receiver.getLocation().level instanceof ServerLevel level) {
             TowerManager manager = TowerManager.get(level.getServer()); if (manager != null) manager.receiverDeliveries++;
+            RelayPerformance.count(RelayPerformance.Counter.DELIVERY_ACCEPTED);
         }
     }
 }

@@ -50,16 +50,23 @@ public final class TowerManager {
             manager.checkConfiguration();
         }
     }
-    public static void resourcesReloaded(MinecraftServer server) {
+    public static void resourcesReloaded(MinecraftServer server) { resourcesReloaded(server, "extension_or_external_reload"); }
+    public static void resourcesReloaded(MinecraftServer server, String reason) {
         TowerManager manager = get(server); if (manager == null) return;
+        RelayPerformance.invalidated(server, reason, manager.networks.size(), null, null);
         manager.networks.clear(); manager.configStamp = NativeRadioAdapter.configurationStamp();
     }
     private void checkConfiguration() {
         int stamp = NativeRadioAdapter.configurationStamp();
-        if (stamp != configStamp) { configStamp = stamp; networks.clear(); }
+        if (stamp != configStamp) {
+            RelayPerformance.invalidated(server, "rf_configuration_changed", networks.size(), null, null);
+            configStamp = stamp; networks.clear();
+        }
     }
     private void put(TowerRecord node) {
-        TowerRecord old = data.towers.get(node.id()); if (node.equals(old)) return;
+        TowerRecord old = data.towers.get(node.id());
+        if (node.equals(old)) { RelayPerformance.count(RelayPerformance.Counter.SNAPSHOTS_UNCHANGED); return; }
+        RelayPerformance.invalidated(server, old == null ? "tower_added" : "tower_snapshot_changed", networks.size(), old, node);
         if (old != null) unindex(old);
         data.towers.put(node.id(), node); data.setDirty(); networks.clear();
         index(node); pendingChunks.addAll(chunkKeys(node));
@@ -83,6 +90,7 @@ public final class TowerManager {
     }
     private void removeRecord(UUID id) {
         TowerRecord record = data.towers.remove(id); if (record == null) return;
+        RelayPerformance.invalidated(server, "tower_removed", networks.size(), record, null);
         unindex(record); loaded.remove(id); data.setDirty(); networks.clear();
     }
     public static void chunkLoaded(ServerLevel level, LevelChunk chunk) {
@@ -175,15 +183,22 @@ public final class TowerManager {
             relay.regenerateId();
         }
         RelayBlockEntity previous = loaded.put(relay.relayId(), relay);
-        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
+        if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) {
+            RelayPerformance.invalidated(server, "nonpersistent_relay_loaded", networks.size(), null, saved); networks.clear();
+        }
         if (previous != relay) {
+            RelayPerformance.count(RelayPerformance.Counter.RELAY_LOADS);
             pendingChunks.add(new ChunkKey(relay.getLevel().dimension().location().toString(), new ChunkPos(relay.getBlockPos()).toLong()));
         }
         return previous != relay;
     }
     public void unloaded(RelayBlockEntity relay) {
-        if (loaded.get(relay.relayId()) == relay) { settingsChanged(relay); loaded.remove(relay.relayId(), relay); }
-        if (!RepeatersConfig.INSTANCE.persistentUnloadedTowers) networks.clear();
+        if (loaded.get(relay.relayId()) == relay) {
+            RelayPerformance.count(RelayPerformance.Counter.RELAY_UNLOADS); settingsChanged(relay); loaded.remove(relay.relayId(), relay);
+        }
+        if (!RepeatersConfig.INSTANCE.persistentUnloadedTowers) {
+            RelayPerformance.invalidated(server, "nonpersistent_relay_unloaded", networks.size(), data.towers.get(relay.relayId()), null); networks.clear();
+        }
     }
     public void settingsChanged(RelayBlockEntity relay) {
         TowerRecord saved = data.towers.get(relay.relayId());
@@ -214,7 +229,10 @@ public final class TowerManager {
         boolean nativeCrossDimensional = RadioSpace.nativeCrossDimensional();
         Scope scope = new Scope(level.dimension().location().toString(), channel, nativeCrossDimensional,
                 RadioSpace.policyFingerprint());
-        return networks.computeIfAbsent(scope, key -> buildNetwork(level, key));
+        boolean recording = RelayPerformance.running(server), hit = recording && networks.containsKey(scope);
+        Network network = networks.computeIfAbsent(scope, key -> buildNetwork(level, key));
+        if (recording) RelayPerformance.networkLookup(server, hit, network);
+        return network;
     }
     public record Inspection(Network cached, Network fresh) {}
     /** Builds an independent numeric graph for diagnostics without replacing the live cached graph. */
@@ -224,6 +242,11 @@ public final class TowerManager {
         return new Inspection(networks.get(scope), buildNetwork(level, scope));
     }
     private Network buildNetwork(ServerLevel sourceLevel, Scope scope) {
+        long started = RelayPerformance.clock(server); Network result = null;
+        try { return result = buildNetworkObserved(sourceLevel, scope); }
+        finally { RelayPerformance.graphBuilt(server, started, result, scope); }
+    }
+    private Network buildNetworkObserved(ServerLevel sourceLevel, Scope scope) {
         List<RelayPort> all = new ArrayList<>(); Map<ChannelKey, List<RelayPort>> listeners = new HashMap<>();
         for (TowerRecord tower : data.towers.values().stream().filter(n -> n.eligible()
                 && (RepeatersConfig.INSTANCE.persistentUnloadedTowers || loaded.containsKey(n.id())))

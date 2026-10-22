@@ -45,7 +45,7 @@ public final class DimensionalFoci implements ModInitializer {
                     FociConfig.INSTANCE.netherTweaks = old;
                     context.getSource().sendFailure(Component.literal("Could not save foci settings; previous value retained.")); return 0;
                 }
-                TowerManager.resourcesReloaded(context.getSource().getServer());
+                TowerManager.resourcesReloaded(context.getSource().getServer(), "foci_config_changed");
                 context.getSource().sendSuccess(() -> Component.literal("netherTweaks: " + FociConfig.INSTANCE.netherTweaks + ". Saved."), true); return 1;
             }));
             dispatcher.register(literal("radiofoci").requires(source -> source.hasPermission(2))

@@ -23,6 +23,9 @@ public final class RelayDiagnostics {
         return describe(player.serverLevel(), player.position(), player.getMainHandItem());
     }
     public static List<String> describe(ServerLevel level, Vec3 position, ItemStack held) {
+        return RelayPerformance.diagnostic(level.getServer(), () -> describeObserved(level, position, held));
+    }
+    private static List<String> describeObserved(ServerLevel level, Vec3 position, ItemStack held) {
         TowerManager manager = TowerManager.get(level.getServer());
         List<String> lines = new ArrayList<>();
         lines.add("BEGIN tick=" + level.getServer().getTickCount() + " position=" + level.dimension().location() + " " + position);

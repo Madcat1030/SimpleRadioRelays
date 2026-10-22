@@ -1,0 +1,70 @@
+[
+  {
+    "path": "README.md",
+    "status": "modified"
+  },
+  {
+    "path": "gradle.properties",
+    "status": "modified"
+  },
+  {
+    "path": "docs/Simple-Radio-Repeaters-Documentation.md",
+    "status": "modified"
+  },
+  {
+    "path": "docs/Release-Notes-0.5.5.md",
+    "status": "added"
+  },
+  {
+    "path": "foci/src/main/java/dev/paul/simpleradiofoci/DimensionalFoci.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/test/java/dev/paul/simpleradiorepeaters/radio/PerformanceTimingTest.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/fabric.mod.json",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/SimpleRadioRepeaters.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayPerformance.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayGraph.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/PerformanceTiming.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayRouter.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/mixin/RadioReceiverMixin.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/PerformanceGameTests.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/network/AntennaScanner.java",
+    "status": "modified"
+  }
+]

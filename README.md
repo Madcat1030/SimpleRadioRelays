@@ -1,8 +1,10 @@
-# Simple Radio Repeaters 0.5.4
+# Simple Radio Repeaters 0.5.5
 
 This workspace also includes the separate [Directional Antenna 0.2.6 prototype](directional/README.md), with the solid stepped receiver, wide-angle array, shared mounts and narrowed reception profiles. Earlier dish designs remain as appearance options. Its runtime does not require either addon.
 
-0.5.4 moves each relay's radio origin to its resolved antenna core, including copper-wire extensions. The verified core position is saved for unloaded routing and focus projections. Native-object parity tests now check reach, travel power and audio severity against the numeric adapter. See [release notes](docs/Release-Notes-0.5.4.md). Core and the matching Foci package are 0.5.4; Directional Antenna remains 0.2.6.
+0.5.5 adds an operator performance recorder: `/radiorepeater test start`, `/radiorepeater test stop`, or `/radiorepeater test start 60`. Speak normally while recording, then compare the JSON files in `logs/radiorepeaters/` before and after expanding the network. It records routing stages, RF comparisons, cache hits/misses, graph rebuild reasons, signal/movement changes and real accepted deliveries. Routing behavior is unchanged. See [commands and report details](docs/Release-Notes-0.5.5.md). Core and matching Foci are 0.5.5; Directional Antenna remains 0.2.6.
+
+0.5.4 moves each relay's radio origin to its resolved antenna core, including copper-wire extensions. The verified core position is saved for unloaded routing and focus projections. Native-object parity tests check reach, travel power and audio severity against the numeric adapter. See [release notes](docs/Release-Notes-0.5.4.md).
 
 0.5.3 adds **Relays for Dummies**, an in-game handbook crafted shapelessly from a vanilla book and native copper wire. Right-click to read it, or find it in the Repeaters creative tab. Clickable contents cover tower setup, cards and controls, signal quality, catalysts, amplifiers, transponders and troubleshooting. Dimensional Foci and Extenders chapters appear only when their respective addons are installed. Every opening uses the current language and installed content, so existing books grow without recrafting. The reader uses vanilla book pages and adds no book-mod dependency.
 

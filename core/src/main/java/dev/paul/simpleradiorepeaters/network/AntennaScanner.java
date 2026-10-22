@@ -1,6 +1,7 @@
 package dev.paul.simpleradiorepeaters.network;
 
 import com.codinglitch.simpleradio.ServerSimpleRadioApi;
+import dev.paul.simpleradiorepeaters.radio.RelayPerformance;
 import com.codinglitch.simpleradio.central.Antennal;
 import com.codinglitch.simpleradio.core.registry.blocks.InsulatorBlockEntity;
 import com.codinglitch.simpleradio.routers.Router;
@@ -33,6 +34,11 @@ public final class AntennaScanner {
         return true;
     }
     public static Result scan(ServerLevel level, BlockPos bank, BlockPos core) {
+        long started = RelayPerformance.clock(level.getServer()); Result result = null;
+        try { return result = scanObserved(level, bank, core); }
+        finally { RelayPerformance.scanned(level.getServer(), started, result); }
+    }
+    private static Result scanObserved(ServerLevel level, BlockPos bank, BlockPos core) {
         Set<Long> observed = new HashSet<>(); observed.add(bank.asLong()); observed.add(core.asLong());
         LevelAccessor guarded = (LevelAccessor) Proxy.newProxyInstance(LevelAccessor.class.getClassLoader(), new Class<?>[]{LevelAccessor.class},
             (proxy, method, args) -> {

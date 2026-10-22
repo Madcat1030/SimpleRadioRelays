@@ -8,6 +8,7 @@ import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
 import dev.paul.simpleradiorepeaters.radio.RelayDiagnostics;
+import dev.paul.simpleradiorepeaters.radio.RelayPerformance;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -83,9 +84,10 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                     output.accept(COPPER_AMPLIFIER); output.accept(REDSTONE_AMPLIFIER); output.accept(RELAY_AMPLIFIER);
                 }).build());
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);
+        ServerLifecycleEvents.SERVER_STOPPING.register(RelayPerformance::stopping);
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
-            if (success) { TowerManager.resourcesReloaded(server); server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts); }
+            if (success) { TowerManager.resourcesReloaded(server, "server_datapack_reload"); server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts); }
         });
         ServerPlayNetworking.registerGlobalReceiver(CATALYST_REQUEST, (server, player, handler, packet, sender) ->
                 server.execute(() -> {
@@ -93,10 +95,12 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                         syncCatalysts(player);
                 }));
         ServerTickEvents.END_SERVER_TICK.register(TowerManager::tick);
+        ServerTickEvents.END_SERVER_TICK.register(RelayPerformance::tick);
         ServerChunkEvents.CHUNK_LOAD.register(TowerManager::chunkLoaded);
         ServerChunkEvents.CHUNK_UNLOAD.register(TowerManager::chunkUnloaded);
-        CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) ->
-            dispatcher.register(literal("radiorepeaters")
+        CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
+            var commands = dispatcher.register(literal("radiorepeaters")
+                .then(RelayPerformance.commands())
                 .then(literal("status").executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     context.getSource().sendSuccess(() -> Component.literal(manager == null
@@ -120,7 +124,9 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                     if (manager != null) manager.refreshLoaded();
                     context.getSource().sendSuccess(() -> Component.literal("Checking saved relays and card banks in loaded chunks and refreshing loaded antennas."), false);
                     return 1;
-                }))));
+                })));
+            dispatcher.register(literal("radiorepeater").redirect(commands));
+        });
         LOGGER.info("Simple Radio Repeaters ready; persistent towers do not force-load chunks.");
     }
 }
