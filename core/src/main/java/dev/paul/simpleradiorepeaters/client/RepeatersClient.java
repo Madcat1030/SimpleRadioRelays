@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 public final class RepeatersClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
+        SimpleRadioRepeaters.HANDBOOK.setReader(HandbookBook::open);
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.RELAY_ENTITY, RelayRenderer::new);
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, ChannelBankRenderer::new);
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.TRANSPONDER_ENTITY, TransponderRenderer::new);

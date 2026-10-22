@@ -1,0 +1,57 @@
+{
+  "version": "0.5.3",
+  "unit": {
+    "core": {
+      "tests": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "foci": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "dedicated_server_handbook_tests": 1,
+  "native_client_configurations": 4,
+  "native_page_fit_and_links_passed": true,
+  "native_captures": [
+    {
+      "name": "Relays-for-Dummies-Catalysts.png",
+      "sha256": "e59141a99ca65937632c5d299d3a83dd011843d9b41c91916bf3209f621f61af"
+    },
+    {
+      "name": "Relays-for-Dummies-Contents.png",
+      "sha256": "931efba1c6a7e67e113f3f6b00d2456e2f9d2375362a4bc8a23454014e6a9ee8"
+    },
+    {
+      "name": "Relays-for-Dummies-Core-Contents.png",
+      "sha256": "b3dbd2a8e646966e2f9b0bdaeba4ef18002131409f4a2011da5d6e8e9dfd35a8"
+    },
+    {
+      "name": "Relays-for-Dummies-Cover.png",
+      "sha256": "2f4d338b22648c8422c70a835125f17173e14a1eecf6c722d8ee7eda1d2b2c3a"
+    },
+    {
+      "name": "Relays-for-Dummies-Extenders.png",
+      "sha256": "624ee16186c7af467f444e0e3168f1e0441ee95243d85aea89c91b0c4cb364e9"
+    },
+    {
+      "name": "Relays-for-Dummies-Foci.png",
+      "sha256": "d59367a95052a60d748e0f8eeb81f5925d27cc2316e855f926f2caab0b42ba6f"
+    }
+  ],
+  "changed_existing_files": [
+    "README.md",
+    "core/src/main/java/dev/paul/simpleradiorepeaters/SimpleRadioRepeaters.java",
+    "core/src/main/java/dev/paul/simpleradiorepeaters/client/RepeatersClient.java",
+    "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+    "core/src/main/resources/fabric.mod.json",
+    "directional/README.md",
+    "gradle.properties"
+  ],
+  "radio_routing_and_propagation_source_unchanged": true,
+  "directional_version": "0.2.6"
+}

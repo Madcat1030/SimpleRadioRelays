@@ -16,7 +16,7 @@ Receivers on opposite sides of one mast share a single ring pair. Each keeps its
 
 Three earlier appearances remain in the same JAR. In **Options → Resource Packs**, choose **Simple Radio: Stepped Mesh Receiver**, **Simple Radio: Octagonal Parabolic Receiver** or **Simple Radio: Refined Parabolic Receiver**, then press Done. Leave all three disabled for the solid stepped default. These are client appearance choices for the same block. Normal pack priority applies if several are enabled.
 
-The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.2 source for integration checks. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
+The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.3 source, including the shared handbook. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
 
 ## Reception pattern
 
@@ -110,7 +110,7 @@ Keep the export origin and texture references, replace the Java model, and rebui
 
 ## Build and tests
 
-This source workspace includes core/Foci 0.5.2 solely so optional integration can compile and be tested against the actual API. The Directional Antenna runtime JAR does not bundle or require them.
+This source workspace includes core/Foci 0.5.3 so optional integration can compile and be tested against the actual API. The Directional Antenna runtime JAR does not bundle or require them.
 
 ```sh
 ./gradlew :directional:build :directional:prototypeJar

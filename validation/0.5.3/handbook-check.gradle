@@ -1,0 +1,20 @@
+gradle.projectsEvaluated {
+    def project=gradle.rootProject.project(':core')
+    def qa=project.file('../validation/0.5.3/handbook-check')
+    def compile=project.tasks.register('compileHandbookChecks',JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qa,'java')) { include '**/*.java' }
+        classpath=project.sourceSets.main.runtimeClasspath
+        destinationDirectory=new File(qa,'classes')
+        options.release=17
+        options.compilerArgs.add('-proc:none')
+    }
+    def jar=project.tasks.register('handbookCheckJar',Jar) {
+        dependsOn compile
+        archiveFileName='handbook-checks.jar'
+        destinationDirectory=project.file('run/gametest/mods')
+        from new File(qa,'classes')
+        from new File(qa,'resources')
+    }
+    project.tasks.named('runGameTest') { dependsOn jar; jvmArgs '-Djava.awt.headless=true' }
+}

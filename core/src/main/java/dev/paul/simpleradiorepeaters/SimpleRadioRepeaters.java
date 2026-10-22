@@ -3,6 +3,7 @@ package dev.paul.simpleradiorepeaters;
 import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.item.FrequencyCardItem;
 import dev.paul.simpleradiorepeaters.item.RelayAttachmentItem;
+import dev.paul.simpleradiorepeaters.item.HandbookItem;
 import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.radio.RelayCatalysts;
@@ -40,6 +41,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
     public static final TransponderBlock TRANSPONDER = new TransponderBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final FrequencyCardItem CARD = new FrequencyCardItem(new Item.Properties().stacksTo(1));
+    public static final HandbookItem HANDBOOK = new HandbookItem();
     public static final RelayAttachmentItem COPPER_AMPLIFIER = new RelayAttachmentItem(RelayAttachment.COPPER_AMPLIFIER);
     public static final RelayAttachmentItem REDSTONE_AMPLIFIER = new RelayAttachmentItem(RelayAttachment.REDSTONE_AMPLIFIER);
     public static final RelayAttachmentItem RELAY_AMPLIFIER = new RelayAttachmentItem(RelayAttachment.AMPLIFIER);
@@ -63,6 +65,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         Registry.register(BuiltInRegistries.BLOCK, id("transponder"), TRANSPONDER);
         Registry.register(BuiltInRegistries.ITEM, id("transponder"), new BlockItem(TRANSPONDER, new Item.Properties()));
         Registry.register(BuiltInRegistries.ITEM, id("frequency_card"), CARD);
+        Registry.register(BuiltInRegistries.ITEM, id("handbook"), HANDBOOK);
         Registry.register(BuiltInRegistries.ITEM, id("copper_amplifier"), COPPER_AMPLIFIER);
         Registry.register(BuiltInRegistries.ITEM, id("redstone_amplifier"), REDSTONE_AMPLIFIER);
         Registry.register(BuiltInRegistries.ITEM, id("relay_amplifier"), RELAY_AMPLIFIER);
@@ -76,7 +79,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                 .title(Component.translatable("itemGroup.simpleradio_repeaters"))
                 .icon(() -> new ItemStack(RELAY))
                 .displayItems((parameters, output) -> {
-                    output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(TRANSPONDER); output.accept(CARD);
+                    output.accept(HANDBOOK); output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(TRANSPONDER); output.accept(CARD);
                     output.accept(COPPER_AMPLIFIER); output.accept(REDSTONE_AMPLIFIER); output.accept(RELAY_AMPLIFIER);
                 }).build());
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);

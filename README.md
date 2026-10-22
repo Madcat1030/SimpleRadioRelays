@@ -1,6 +1,8 @@
-# Simple Radio Repeaters 0.5.2
+# Simple Radio Repeaters 0.5.3
 
-This workspace also includes the separate [Directional Antenna 0.2.3 prototype](directional/README.md), with the finished stepped mesh receiver and wide-angle array. Both later solid-dish designs are retained as appearance options. Its runtime does not require either addon.
+This workspace also includes the separate [Directional Antenna 0.2.6 prototype](directional/README.md), with the solid stepped receiver, wide-angle array, shared mounts and narrowed reception profiles. Earlier dish designs remain as appearance options. Its runtime does not require either addon.
+
+0.5.3 adds **Relays for Dummies**, an in-game handbook crafted shapelessly from a vanilla book and native copper wire. Right-click to read it, or find it in the Repeaters creative tab. Clickable contents cover tower setup, cards and controls, signal quality, catalysts, amplifiers, transponders and troubleshooting. Dimensional Foci and Extenders chapters appear only when their respective addons are installed. Every opening uses the current language and installed content, so existing books grow without recrafting. The reader uses vanilla book pages and adds no book-mod dependency. Core and the matching Foci package are 0.5.3; Directional Antenna remains 0.2.6.
 
 0.5.2 fixes client channel cleanup deleting a live server frequency after travel, and prevents microphone/speaker activity from repeatedly showing `CHECK`. See [the fixes and test instructions](docs/Release-Notes-0.5.2.md). The earlier activation-time repair remains. Hold the transmitting radio and run `/radiorepeaters diagnose` to record saved/live tower state, RF paths and endpoint registrations in `logs/latest.log`.
 
@@ -92,7 +94,7 @@ One workspace builds two independent runtime JARs. Use JDK 21 for Gradle; releas
 
 Outputs are in `core/build/libs/` and `foci/build/libs/`. Install the `-prototype.jar` files for distributions without addon test fixtures. They retain readable addon names and debug data. Source and development builds retain the tests.
 
-Current validation passes 51 unit tests, 50 core addon Minecraft tests and 73 combined addon tests. Evidence is under `validation/0.5.2/`; older directories remain historical. The four previously recorded native headless failures remain documented separately from addon regressions. Live microphone playback is outside the automated checks.
+0.5.3 passes all 53 core/Foci unit tests and the focused dedicated-server handbook recipe/use test. The real Minecraft client checks all four chapter combinations, verifies page fit and navigation, and captures the native reader. Evidence is under `validation/0.5.3/`. The earlier 0.5.2 routing regression suite passed 50 core addon Minecraft tests and 73 combined addon tests; it is not repeated for this handbook-only change. The four previously recorded native headless failures remain documented separately from addon regressions. Live microphone playback is outside the automated checks.
 
 See [the implementation guide](docs/Simple-Radio-Repeaters-Documentation.md) and [model editing guide](art/Model-Editing-Guide.md).
 

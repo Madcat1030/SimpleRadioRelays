@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"handbook_native_preview","version":"1.0.0","name":"Handbook Native Preview (QA only)","environment":"client","entrypoints":{"client":["dev.paul.handbookpreview.HandbookPreviewClient"]},"depends":{"simpleradio_repeaters":"*"}}

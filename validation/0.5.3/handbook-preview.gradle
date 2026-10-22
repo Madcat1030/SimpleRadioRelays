@@ -1,0 +1,21 @@
+gradle.projectsEvaluated {
+    def project=gradle.rootProject.project(':directional')
+    def qa=project.rootProject.file('validation/0.5.3/handbook-preview')
+    def compile=project.tasks.register('compileHandbookPreview',JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qa,'java')) { include '**/*.java' }
+        classpath=project.sourceSets.main.runtimeClasspath
+        destinationDirectory=new File(qa,'classes')
+        options.release=17
+        options.compilerArgs.add('-proc:none')
+    }
+    def jar=project.tasks.register('handbookPreviewJar',Jar) {
+        dependsOn compile
+        archiveFileName='handbook-native-preview.jar'
+        destinationDirectory=project.file('run/mods')
+        from new File(qa,'classes')
+        from new File(qa,'resources')
+    }
+    project.tasks.named('runClient') { dependsOn jar }
+    project.tasks.matching { it.name=='downloadAssets' }.configureEach { enabled=false }
+}
