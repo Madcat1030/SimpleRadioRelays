@@ -56,7 +56,7 @@ public final class WideArrayGameTests implements FabricGameTest {
         helper.succeed();
     }
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
-    public void placed_array_applies_half_the_dish_bonus_to_native_reception(GameTestHelper helper) {
+    public void placed_array_applies_shared_scale_and_falloff_to_native_reception(GameTestHelper helper) {
         var level = helper.getLevel(); BlockPos core = setup(helper), center = core.above(2).north();
         DishBlockEntity.tick(level, center, level.getBlockState(center), (DishBlockEntity) level.getBlockEntity(center));
         BlockPos receiverPos = core.east();
@@ -72,7 +72,15 @@ public final class WideArrayGameTests implements FabricGameTest {
         double fullDishBonus = DirectionalMath.bonus(base, SimpleRadioFrequencing.TRANSMITTER.getTransmissionPower(frequency.getModulation())
                 + 32 * SimpleRadioFrequencing.TRANSMITTER.antennaAptitude, SimpleRadioFrequencing.TRANSMITTER.transmissionDiminishment, 1);
         double got = DirectionalReception.reception((float) base, receiver, from, frequency.getModulation());
-        check(Math.abs(got - (base + fullDishBonus * .5)) < .01, "Physical arrays must publish their weaker pattern to native RF hooks");
+        check(Math.abs(got - (base + fullDishBonus * .75)) < .01, "Physical arrays must publish 75 percent of the shared maximum bonus");
+        for (double[] anchor : new double[][]{{45, .75}, {52.5, .625}, {60, .5}, {67.5, .25}, {75, 0}}) {
+            double radians = Math.toRadians(anchor[0]);
+            var offAxis = new WorldlyPosition((float) (core.getX() + .5 + Math.sin(radians) * 2000),
+                    core.getY(), (float) (core.getZ() + .5 - Math.cos(radians) * 2000), level);
+            double allowance = DirectionalReception.reception((float) base, receiver, offAxis, frequency.getModulation());
+            check(Math.abs(allowance - (base + fullDishBonus * anchor[1])) < .1,
+                    "Native array reception must follow its continuous angular profile at " + anchor[0] + " degrees");
+        }
         check(receiver.getPower() == base, "Directional gain must remain contextual and leave ordinary reception intact");
         check(DirectionalReception.reception((float) base, receiver, WorldlyPosition.of(core.south(2000), level), frequency.getModulation()) == base,
                 "The rear of an array must retain only ordinary reception");

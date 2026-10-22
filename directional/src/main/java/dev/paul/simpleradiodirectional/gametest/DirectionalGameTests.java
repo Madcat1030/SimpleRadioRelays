@@ -169,12 +169,12 @@ public final class DirectionalGameTests implements FabricGameTest {
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
     public void angular_shoulder_is_weaker_and_side_has_no_bonus(GameTestHelper helper) {
         var tower=mast(helper,Direction.NORTH); dish(tower); var receiver=receiver(tower);
-        var front=sender(tower,receiver,45,2500); var shoulder=sender(tower,receiver,60,2500); var side=sender(tower,receiver,75,2500);
-        check(front.shouldRouteTo(packet(front,1000),receiver),"45-degree edge must retain full gain");
+        var front=sender(tower,receiver,30,2600); var shoulder=sender(tower,receiver,45,2600); var side=sender(tower,receiver,60,2600);
+        check(front.shouldRouteTo(packet(front,1000),receiver),"30-degree edge must retain full gain");
         check(!shoulder.shouldRouteTo(packet(shoulder,1000),receiver),"At 15 degrees outside the edge the same distant sender must lose reach");
         check(!side.shouldRouteTo(packet(side,1000),receiver),"At 30 degrees outside the edge there must be no extra reach");
         double partial=DirectionalReception.reception(460,receiver,shoulder.getLocation(),Frequency.Modulation.FREQUENCY);
-        check(Math.abs(partial-(460+(2595-460)*.25))<1,"Shoulder bonus must be one quarter");
+        check(Math.abs(partial-(460+(2595-460)*.5))<1,"45-degree shoulder bonus must be one half");
         helper.succeed();
     }
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
@@ -226,8 +226,8 @@ public final class DirectionalGameTests implements FabricGameTest {
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)
     public void seven_aims_rotate_native_reception_and_keep_the_mast_binding(GameTestHelper helper) {
         var tower=mast(helper,Direction.NORTH); dish(tower); var receiver=receiver(tower);
-        var east=sender(tower,receiver,90,2500);
-        check(!east.shouldRouteTo(packet(east,1000),receiver),"Straight dish must not hear a distant sender to the side");
+        var sideSender=sender(tower,receiver,75,2500);
+        check(!sideSender.shouldRouteTo(packet(sideSender,1000),receiver),"Straight dish must not hear a distant sender to the side");
         var player=helper.makeMockPlayer(); player.setShiftKeyDown(true);
         var hit=new BlockHitResult(tower.center().getCenter(),Direction.NORTH,tower.center(),false);
         for(int i=0;i<3;i++) DirectionalAntenna.DISH.use(tower.level().getBlockState(tower.center()),tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
@@ -242,7 +242,7 @@ public final class DirectionalGameTests implements FabricGameTest {
             check(aligned.shouldRouteTo(packet(aligned,1000),receiver),"Native routing must follow the new bearing");
             if(aim<6) DirectionalAntenna.DISH.use(state,tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
         }
-        check(east.shouldRouteTo(packet(east,1000),receiver),"A 45-degree swivel must bring the distant side sender into full gain");
+        check(sideSender.shouldRouteTo(packet(sideSender,1000),receiver),"A 45-degree swivel must bring a 75-degree sender to the full-gain edge");
         helper.succeed();
     }
     @GameTest(template=FabricGameTest.EMPTY_STRUCTURE)

@@ -129,7 +129,7 @@ lang_path = ASSETS / 'lang/en_us.json'
 lang = json.loads(lang_path.read_text())
 lang.update({'block.simpleradio_directional.wide_angle_receiver': 'Wide-Angle Receiver Array',
              'block.simpleradio_directional.wide_angle_part': 'Wide-Angle Receiver Array Part',
-             'tooltip.simpleradio_directional.wide_pattern': 'Receive only: 135\u00b0 at half the dish bonus; fades beyond the edges.',
+             'tooltip.simpleradio_directional.wide_pattern': 'Receive only: 75% bonus through \u00b145\u00b0; 50% at \u00b160\u00b0; zero at \u00b175\u00b0.',
              'message.simpleradio_directional.aim': 'Receiver aim: %s\u00b0 from mount'})
 write(lang_path, lang)
 

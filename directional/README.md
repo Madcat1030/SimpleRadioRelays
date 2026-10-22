@@ -1,10 +1,12 @@
-# Simple Radio Directional Antenna 0.2.5 prototype
+# Simple Radio Directional Antenna 0.2.6 prototype
 
 Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
 
 Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver Array**. Both improve the attached station's reception in the direction they face. Their bonuses depend on the underlying antenna and do not increase outgoing transmitter power or repair inherited audio degradation.
 
 Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
+
+0.2.6 narrows the parabolic to full bonus through ±30°, half at ±45° and zero at ±60°. The wide-angle array supplies 75% through ±45°, 50% at ±60° and zero at ±75°. Both use the same maximum-bonus scale and smooth interpolation between these anchors. This update retains the 0.2.5 models and shared mounts.
 
 0.2.5 removes overlapping rendered faces from the stepped dish, its rear supports, the wide-angle grille and the three retained dish appearances. The wide-angle array now uses whole model units and 1:1 UVs throughout; long bars are tiled instead of compressing their texture. Mast rings are square and symmetric, with inner faces one unit clear of the native mast planes. The lower grip moves up one unit and the upper grip down one unit.
 
@@ -20,7 +22,7 @@ The mod works with base Simple Radio. Repeaters and Dimensional Foci are optiona
 
 ### Wide-angle array
 
-The array has a 135° primary arc: **±67.5° from its aim**. Throughout that arc it supplies **half the parabolic's additional reception bonus**. A smooth shoulder fades that bonus to zero at ±90°. This scales the added allowance, not the station's ordinary reception or its total power. Multiple arrays and dishes select the strongest applicable bonus; they do not add together.
+The array has a 90° primary arc: **±45° from its aim**. Throughout that arc it supplies **75% of the maximum directional reception bonus**. It fades smoothly to 50% at ±60°, then to zero at ±75°. Each shoulder segment uses smoothstep interpolation, with no discrete strength steps. Percentages use the same maximum as the parabolic, not a separate array maximum. They scale the added allowance, not the station's ordinary reception or its total power. Multiple arrays and dishes select the strongest applicable bonus; they do not add together.
 
 Its copper-framed open grilles, separate split receiving element, ceramic insulator, fixed mast clamps and swivelling head are actual Java block geometry with four 16×16 pixel textures. The visible reflector is approximately two blocks wide and two blocks high. Placement retains the common clear 3×3 selection/reservation plane for mounting and aiming.
 
@@ -34,13 +36,13 @@ Empty          Copper wire    Empty
 
 ### Parabolic receiver
 
-Angles are measured horizontally from the dish's facing direction. The solid reception wedge is 90° wide: 45° to either side. A smooth shoulder extends another 30° past each edge.
+Angles are measured horizontally from the dish's aimed direction. The full-strength reception wedge is 60° wide: 30° to either side. A smooth shoulder extends another 30° past each edge, reaching half bonus at 45° and zero at 60°.
 
 | Angle from facing | Beyond the full-gain edge | Extra gain remaining |
 | ---: | ---: | ---: |
-| 0–45° | 0° | 100% |
-| 60° | 15° | 25% |
-| 75° and beyond | 30° and beyond | 0% |
+| 0–30° | 0° | 100% |
+| 45° | 15° | 50% |
+| 60° and beyond | 30° and beyond | 0% |
 
 Only the extra gain fades. The station retains its ordinary omnidirectional reception everywhere. The pattern uses horizontal bearing; ordinary native distance and height loss still apply. Overlapping dishes use the strongest applicable bonus, rather than adding their gains.
 
@@ -128,6 +130,8 @@ python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4
 Run `python3 directional/tools/make_receiver_assets.py` to regenerate all authored receivers and apply the final surface cleanup and common mounts. It runs the five named generators in dependency order, then trims interior/duplicate faces without stretching the remaining UVs. Running a single generator produces intermediate geometry; finish through the full pipeline before building a distribution. Manual edits should be made after generation. `art/model-kit/original-reference/` retains the original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
 
 Full radio/server GameTest evidence is under `directional/validation/0.2.0/`; current appearance and shared-mount checks are under `0.2.5/`. Live microphone playback is outside automated checks.
+
+0.2.6 reception-curve validation is under `directional/validation/0.2.6/`. The existing angular and aiming fixtures use the new anchor angles. The native array check also measures both shoulders against the common maximum-bonus scale.
 
 For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecraft tests**, and all **91 combined addon Minecraft tests** pass. The new physical-array checks cover placement on a native mast, aiming from an outer panel, saved pattern identity, complete removal with one correct drop, and actual reception with half the dish's additional gain. The same four native headless tests listed below still fail; no addon test fails. The complete GameTest task therefore exits nonzero in both installations.
 

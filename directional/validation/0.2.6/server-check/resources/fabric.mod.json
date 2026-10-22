@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"reception_checks","version":"1.0.0","name":"Reception Test Selection (QA only)","environment":"server","mixins":["reception-checks.mixins.json"],"depends":{"simpleradio_directional":"*"}}

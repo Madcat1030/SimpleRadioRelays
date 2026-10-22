@@ -3,7 +3,7 @@
   "id": "simpleradio_directional",
   "version": "${version}",
   "name": "Simple Radio Directional Antenna",
-  "description": "Aimable parabolic receivers and cheaper 135-degree wide-angle receiver arrays for native radio towers and optional relays.",
+  "description": "Aimable narrow-focus parabolic receivers and cheaper wide-angle receiver arrays for native radio towers and optional relays.",
   "authors": ["Paul", "OpenAI"],
   "license": "GPL-3.0-only",
   "environment": "*",

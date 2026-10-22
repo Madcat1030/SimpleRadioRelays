@@ -1,0 +1,1 @@
+{"required":true,"package":"dev.paul.simpleradiodirectional.preview","compatibilityLevel":"JAVA_17","mixins":["ReceptionTestFilter"],"injectors":{"defaultRequire":1}}

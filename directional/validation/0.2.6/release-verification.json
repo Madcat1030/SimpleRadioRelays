@@ -1,0 +1,44 @@
+{
+  "version": "0.2.6",
+  "unit_tests": [
+    {
+      "suite": "dev.paul.simpleradiodirectional.client.RotatedDishModelTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "dev.paul.simpleradiodirectional.radio.DirectionalMathTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "dev.paul.simpleradiodirectional.radio.DishAimTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "dev.paul.simpleradiodirectional.radio.DishPatternTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "runtime_changed_entries": [
+    "assets/simpleradio_directional/lang/en_us.json",
+    "dev/paul/simpleradiodirectional/radio/DirectionalMath.class",
+    "dev/paul/simpleradiodirectional/radio/DishPattern.class",
+    "fabric.mod.json"
+  ],
+  "all_models_textures_and_other_runtime_entries_identical_to_0_2_5": true,
+  "test_fixtures_excluded": true,
+  "sha256": "9a415ac687b3dbf4bc03550d04336c610290a867efd24c65c070428ad242238c",
+  "native_gametests": {
+    "passed": 7,
+    "failed": 0,
+    "repeaters": "0.5.2",
+    "dimensional_foci": "0.5.2"
+  }
+}

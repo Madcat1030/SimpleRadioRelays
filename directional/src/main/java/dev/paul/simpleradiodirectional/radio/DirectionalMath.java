@@ -2,8 +2,8 @@ package dev.paul.simpleradiodirectional.radio;
 
 /** Horizontal azimuth pattern; no game state or terrain access. */
 public final class DirectionalMath {
-    public static final double FULL_HALF_ANGLE = 45;
-    public static final double FADE_HALF_ANGLE = 75;
+    public static final double FULL_HALF_ANGLE = 30;
+    public static final double FADE_HALF_ANGLE = 60;
     public static final double RANGE_FRACTION = 0.75;
     private DirectionalMath() {}
 
@@ -13,9 +13,11 @@ public final class DirectionalMath {
         if (angle <= FULL_HALF_ANGLE) return 1;
         if (angle >= FADE_HALF_ANGLE) return 0;
         double t = (angle - FULL_HALF_ANGLE) / (FADE_HALF_ANGLE - FULL_HALF_ANGLE);
-        double remaining = 1 - t * t * (3 - 2 * t);
-        return remaining * remaining;
+        return smoothFade(t);
     }
+
+    /** Smooth interpolation from one to zero; callers bound t to [0, 1]. */
+    static double smoothFade(double t) { return 1 - t * t * (3 - 2 * t); }
 
     public static double weight(double dx, double dz, double facingX, double facingZ) {
         return weight(dx, dz, facingX, facingZ, DishPattern.PARABOLIC);

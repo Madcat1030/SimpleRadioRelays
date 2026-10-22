@@ -12,10 +12,12 @@ public enum DishPattern {
         if (this == PARABOLIC) return DirectionalMath.angularWeight(degrees);
         if (!Double.isFinite(degrees)) return 0;
         double angle = Math.abs(degrees);
-        if (angle <= 67.5) return .5;
-        if (angle >= 90) return 0;
-        double t = (angle - 67.5) / 22.5;
-        return .5 * (1 - t * t * (3 - 2 * t));
+        // Both patterns use the same maximum-bonus scale: 75% through 45 degrees,
+        // 50% at 60, then zero at 75, with continuous shoulders between anchors.
+        if (angle <= 45) return .75;
+        if (angle >= 75) return 0;
+        if (angle <= 60) return .5 + .25 * DirectionalMath.smoothFade((angle - 45) / 15);
+        return .5 * DirectionalMath.smoothFade((angle - 60) / 15);
     }
     public static DishPattern parse(String id) {
         for (var pattern : values()) if (pattern.id.equals(id)) return pattern;
