@@ -125,13 +125,8 @@ write(DATA / 'simpleradio_directional/recipes/wide_angle_receiver.json', {
     'type': 'minecraft:crafting_shaped', 'pattern': ['CBC', 'B B', ' W '],
     'key': {'C': {'item': 'minecraft:copper_ingot'}, 'B': {'item': 'minecraft:iron_bars'}, 'W': {'item': 'simpleradio:copper_wire'}},
     'result': {'item': 'simpleradio_directional:wide_angle_receiver', 'count': 1}})
-lang_path = ASSETS / 'lang/en_us.json'
-lang = json.loads(lang_path.read_text())
-lang.update({'block.simpleradio_directional.wide_angle_receiver': 'Wide-Angle Receiver Array',
-             'block.simpleradio_directional.wide_angle_part': 'Wide-Angle Receiver Array Part',
-             'tooltip.simpleradio_directional.wide_pattern': 'Receive only: 75% bonus through \u00b145\u00b0; 50% at \u00b160\u00b0; zero at \u00b175\u00b0.',
-             'message.simpleradio_directional.aim': 'Receiver aim: %s\u00b0 from mount'})
-write(lang_path, lang)
+# Names, tooltips and handbook text are maintained in the language resources.
+# Regenerating geometry must not overwrite player-facing descriptions.
 
 def uid(name): return str(uuid.uuid5(uuid.NAMESPACE_URL, 'simple-radio-directional/wide-array/' + name))
 keys = ['copper', 'iron', 'ceramic', 'cable']

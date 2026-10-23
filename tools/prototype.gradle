@@ -1,33 +1,9 @@
-// Development builds retain their tests. The separate classifier JAR contains runtime code only.
-def prototypeAsm = files(fileTree(new File(gradle.gradleHomeDir, 'lib')) { include 'asm-*.jar' })
-def compilePrototype = tasks.register('compilePrototypeTool', JavaCompile) {
-    source rootProject.file('tools/PrototypeJar.java')
-    classpath = prototypeAsm
-    destinationDirectory = layout.buildDirectory.dir('prototype/tool')
-    options.release = 17
-    options.encoding = 'UTF-8'
-}
-tasks.register('prototypeJar', JavaExec) {
+// Both names contain the same runtime-only JAR. No class rewriting or shrinking.
+tasks.register('prototypeJar', Copy) {
     group = 'build'
-    description = 'Create an unobfuscated runtime-only copy, excluding GameTests and audited test-only helpers.'
-    dependsOn tasks.named('remapJar'), compilePrototype
-    def inputJar = tasks.named('remapJar').flatMap { it.archiveFile }
-    def outputJar = layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}-prototype.jar")
-    def report = layout.buildDirectory.file('prototype/packaging-report.json')
-    inputs.file(inputJar)
-    outputs.files(outputJar, report)
-    classpath = files(compilePrototype.flatMap { it.destinationDirectory }) + prototypeAsm
-    mainClass = 'PrototypeJar'
-    doFirst {
-        def metadata
-        new java.util.zip.ZipFile(inputJar.get().asFile).withCloseable { zip ->
-            metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
-        }
-        metadata.entrypoints.remove('fabric-gametest')
-        def descriptor = layout.buildDirectory.file('prototype/fabric.mod.json').get().asFile
-        descriptor.parentFile.mkdirs()
-        descriptor.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)) + '\n'
-        args = [inputJar.get().asFile.absolutePath, outputJar.get().asFile.absolutePath,
-                descriptor.absolutePath, report.get().asFile.absolutePath]
-    }
+    description = 'Copy the normal release JAR under the familiar prototype filename.'
+    dependsOn tasks.named('remapJar')
+    from(tasks.named('remapJar').flatMap { it.archiveFile })
+    into(layout.buildDirectory.dir('libs'))
+    rename { "${base.archivesName.get()}-${project.version}-prototype.jar" }
 }

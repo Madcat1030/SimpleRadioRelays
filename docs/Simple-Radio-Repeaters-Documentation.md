@@ -1,5 +1,7 @@
 # Simple Radio Repeaters 0.5.2
 
+Historical implementation notes for 0.5.2. For current setup, use the [README](../README.md); for current build, test and integration details, use [Development](Development.md). Later behavior changes are recorded in the versioned release notes.
+
 A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. The core provides persistent stationary relay networks. The optional Dimensional Foci addon replaces native dimensional radio with focus-equipped relay bridges.
 
 ## Installation and module ownership

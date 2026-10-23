@@ -4,18 +4,37 @@
   "version": "${version}",
   "name": "Simple Radio Directional Antenna",
   "description": "Aimable narrow-focus parabolic receivers and cheaper wide-angle receiver arrays for native radio towers and optional relays.",
-  "authors": ["Paul", "OpenAI"],
+  "authors": [
+    "Paul",
+    "OpenAI"
+  ],
   "license": "GPL-3.0-only",
   "environment": "*",
   "entrypoints": {
-    "main": ["dev.paul.simpleradiodirectional.DirectionalAntenna"],
-    "client": ["dev.paul.simpleradiodirectional.client.DirectionalClient"],
-    "fabric-gametest": ["dev.paul.simpleradiodirectional.gametest.DirectionalGameTests", "dev.paul.simpleradiodirectional.gametest.WideArrayGameTests"]
+    "main": [
+      "dev.paul.simpleradiodirectional.DirectionalAntenna"
+    ],
+    "client": [
+      "dev.paul.simpleradiodirectional.client.DirectionalClient"
+    ],
+    "simpleradio_repeaters:integration": [
+      "dev.paul.simpleradiodirectional.integration.RepeatersIntegration"
+    ]
   },
-  "mixins": ["simpleradio_directional.mixins.json"],
+  "mixins": [
+    "simpleradio_directional.mixins.json"
+  ],
   "depends": {
-    "fabricloader": ">=0.19.0", "fabric-api": "*", "minecraft": "1.20.1", "java": ">=17",
+    "fabricloader": ">=0.19.0",
+    "fabric-api": "*",
+    "minecraft": "1.20.1",
+    "java": ">=17",
     "simpleradio": "1.20.1-4.5.7.9"
   },
-  "suggests": { "simpleradio_repeaters": ">=0.5.6" }
+  "suggests": {
+    "simpleradio_repeaters": ">=0.5.7"
+  },
+  "breaks": {
+    "simpleradio_repeaters": "<0.5.7"
+  }
 }

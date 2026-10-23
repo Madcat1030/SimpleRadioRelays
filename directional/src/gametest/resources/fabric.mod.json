@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleradio_directional_tests",
+  "version": "1.0.0",
+  "name": "Simple Radio Directional Antenna GameTests (development only)",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": [
+      "dev.paul.simpleradiodirectional.gametest.DirectionalGameTests",
+      "dev.paul.simpleradiodirectional.gametest.WideArrayGameTests"
+    ]
+  },
+  "depends": {
+    "simpleradio_directional": "*"
+  }
+}

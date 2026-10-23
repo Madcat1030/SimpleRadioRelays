@@ -42,7 +42,7 @@ public final class RelayRenderer implements BlockEntityRenderer<RelayBlockEntity
         String label = status >= 0 && status < STATUS.length ? STATUS[status] : "WAIT";
         long antenna = Math.round(RelayPower.antennaScore(relay.getAntennaPower(), relay.attachmentType().antennaMultiplier()));
         DeviceRendering.text(font, "ANT " + antenna, 8, 11.8, -1, 8, .008f, 0xffb5d994, pose, buffers);
-        DeviceRendering.text(font, label, 8, 10.6, -1, 8, .008f, status == 0 ? 0xff91d25f : 0xffd7b766, pose, buffers);
+        DeviceRendering.text(font, label, 8, 10.6, -1, 8, .008f, status == RelayBlockEntity.READY ? 0xff91d25f : 0xffd7b766, pose, buffers);
         DeviceRendering.text(font, "LINK " + relay.displayPeers(), 8, 9.4, -1, 8, .008f, 0xffb5d994, pose, buffers);
         pose.popPose();
     }

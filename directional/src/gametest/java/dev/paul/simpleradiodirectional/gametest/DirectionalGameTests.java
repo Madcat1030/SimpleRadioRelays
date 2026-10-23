@@ -304,7 +304,10 @@ public final class DirectionalGameTests implements FabricGameTest {
         BlockPos relay=tower.core().west();
         tower.level().setBlockAndUpdate(relay,dev.paul.simpleradiorepeaters.SimpleRadioRepeaters.RELAY.defaultBlockState()
                 .setValue(dev.paul.simpleradiorepeaters.block.RelayBlock.FACING,Direction.WEST));
-        DishManager.refreshRelay(tower.level(),relay,tower.core());
+        var entity = (dev.paul.simpleradiorepeaters.block.RelayBlockEntity) tower.level().getBlockEntity(relay);
+        dev.paul.simpleradiorepeaters.block.RelayBlockEntity.tick(tower.level(), relay, entity.getBlockState(), entity);
+        check(!DishManager.relays(tower.level().dimension().location().toString(), relay).isEmpty(),
+                "Optional API ticker must discover the relay's attached dish");
         var channel=new dev.paul.simpleradiorepeaters.network.ChannelKey("089.17","FM");
         var record=new dev.paul.simpleradiorepeaters.network.TowerRecord(UUID.randomUUID(),tower.level().dimension().location().toString(),relay,
                 Set.of(channel),true,dev.paul.simpleradiorepeaters.radio.RelayCatalysts.GILDED,true,32,Set.of());
@@ -323,6 +326,20 @@ public final class DirectionalGameTests implements FabricGameTest {
         var manager=dev.paul.simpleradiorepeaters.network.TowerManager.get(tower.level().getServer());
         var cached=manager.network(tower.level(),channel);
         check(cached==manager.network(tower.level(),channel),"Unchanged reception must reuse the existing network cache");
+        int relayRevision = DishManager.relayRevision();
+        DishManager.forget(receiver);
+        check(DishManager.receivers(receiver).isEmpty(), "Native receiver unload must clear its reception binding");
+        check(relayRevision == DishManager.relayRevision() && stamp == dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp()
+                        && cached == manager.network(tower.level(), channel),
+                "Native receiver unload must not invalidate relay reception or the graph");
+        var nativeEntity = (ReceiverBlockEntity) tower.level().getBlockEntity(tower.core().east());
+        DishManager.refreshReceiver(tower.level(), nativeEntity);
+        check(!DishManager.receivers(receiver).isEmpty(), "Native receiver reload must restore directional reception");
+        check(relayRevision == DishManager.relayRevision() && cached == manager.network(tower.level(), channel),
+                "Native receiver reload must reuse the relay graph");
+        DishManager.dirtyRelay(tower.level(), relay);
+        DishManager.refreshRelay(tower.level(), relay, tower.core());
+        check(cached == manager.network(tower.level(), channel), "Unchanged relay mast scan must reuse the graph");
         var player=helper.makeMockPlayer();var hit=new BlockHitResult(tower.center().getCenter(),Direction.NORTH,tower.center(),false);
         for(int i=0;i<3;i++) DirectionalAntenna.DISH.use(tower.level().getBlockState(tower.center()),tower.level(),tower.center(),player,InteractionHand.MAIN_HAND,hit);
         check(stamp!=dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter.configurationStamp(),"Aiming must immediately invalidate cached relay links");

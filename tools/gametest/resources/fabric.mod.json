@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "parity_checks",
+  "version": "1.0.0",
+  "name": "Addon GameTest selection (development only)",
+  "environment": "server",
+  "mixins": [
+    "parity-checks.mixins.json"
+  ]
+}

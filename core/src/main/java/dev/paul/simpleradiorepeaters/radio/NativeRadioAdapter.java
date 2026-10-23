@@ -33,7 +33,9 @@ public final class NativeRadioAdapter {
     public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
-        return receive(leg.distance(), power, cap, sender, type.receptionPower + antennaScore(receiver) * type.antennaAptitude,
+        double reception = RelayIntegrations.receptionAtTower(
+                type.receptionPower + antennaScore(receiver) * type.antennaAptitude, leg, receiver, channel);
+        return receive(leg.distance(), power, cap, sender, reception,
                 type.receptionFloor, channel, leg.dimensional(), leg.propagation());
     }
     public static RadioLinkMath.Result receiveAtReceiver(double distance, double power, double cap,
@@ -43,7 +45,8 @@ public final class NativeRadioAdapter {
     }
     public static RadioLinkMath.Result receiveAtReceiver(RadioSpace.Leg leg, double power, double cap,
                                                          FrequencingType sender, RadioReceiver receiver, ChannelKey channel) {
-        return receive(leg.distance(), power, cap, sender, receiver.getPower(), receiver.frequencingType.receptionFloor,
+        float reception = RelayIntegrations.receptionAtReceiver(receiver.getPower(), leg, receiver, channel);
+        return receive(leg.distance(), power, cap, sender, reception, receiver.frequencingType.receptionFloor,
                 channel, leg.dimensional(), leg.propagation());
     }
     private static RadioLinkMath.Result receive(double distance, double power, double cap, FrequencingType type,
@@ -66,7 +69,7 @@ public final class NativeRadioAdapter {
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional,
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
-                RadioSpace.policyFingerprint(),
+                RadioSpace.policyFingerprint(), RelayIntegrations.configurationStamp(),
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers);
     }
 }

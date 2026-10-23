@@ -1,0 +1,35 @@
+[
+  {
+    "module": "core",
+    "passed": true,
+    "jar": "simple-radio-repeaters-fabric-1.20.1-0.5.7-prototype.jar",
+    "bytes": 275357,
+    "sha256": "94cd7f93885c1a2374ce6c7574b3b21c80363cdae7058254b9bce220760560da",
+    "classes": 99,
+    "identical_to_release": true,
+    "addon_test_classes": 0,
+    "custom_bytecode_rewriting": false
+  },
+  {
+    "module": "foci",
+    "passed": true,
+    "jar": "simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.7-prototype.jar",
+    "bytes": 32145,
+    "sha256": "0ba3d02f347013dbde709252ff2054e71ee44cb1fe7f3903d575243d893aa791",
+    "classes": 7,
+    "identical_to_release": true,
+    "addon_test_classes": 0,
+    "custom_bytecode_rewriting": false
+  },
+  {
+    "module": "directional",
+    "passed": true,
+    "jar": "simple-radio-directional-antenna-fabric-1.20.1-0.2.8-prototype.jar",
+    "bytes": 263625,
+    "sha256": "f4f8725b6c0cfc2890f0f8bf2b4bfd9578a55302f3be2e440f0f601cc2b09b87",
+    "classes": 28,
+    "identical_to_release": true,
+    "addon_test_classes": 0,
+    "custom_bytecode_rewriting": false
+  }
+]

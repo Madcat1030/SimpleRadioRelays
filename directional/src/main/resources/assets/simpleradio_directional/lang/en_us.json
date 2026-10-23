@@ -3,14 +3,14 @@
   "block.simpleradio_directional.parabolic_part": "Parabolic Receiver Part",
   "itemGroup.simpleradio_directional": "Simple Radio Directional Antenna",
   "tooltip.simpleradio_directional.mount": "Attach to a vertical antenna with antenna above it. Requires a clear 3×3 area.",
-  "tooltip.simpleradio_directional.pattern": "Receive only: 100% bonus through ±30°; 50% at ±45°; zero at ±60°.",
+  "tooltip.simpleradio_directional.pattern": "Receive only: full directional boost through ±30°; half at ±45°; none at ±60°.",
   "tooltip.simpleradio_directional.aim": "Empty-hand click: turn 15° clockwise. Sneak-click: turn back. Stops at ±45°.",
   "message.simpleradio_directional.aim": "Receiver aim: %s° from mount",
   "block.simpleradio_directional.wide_angle_receiver": "Wide-Angle Receiver Array",
   "block.simpleradio_directional.wide_angle_part": "Wide-Angle Receiver Array Part",
-  "tooltip.simpleradio_directional.wide_pattern": "Receive only: 66% bonus through ±45°; 44% at ±60°; 22% at ±75°; zero at ±90°.",
+  "tooltip.simpleradio_directional.wide_pattern": "Receive only: 66% of full directional boost through ±45°; 44% at ±60°; 22% at ±75°; none at ±90°.",
   "handbook.simpleradio_directional.directional.title": "Directional Receivers",
   "handbook.simpleradio_directional.directional.text_0": "Directional Receivers adds two receiver arrays that attach to an existing tower's mast to improve reception.\n\nAttach one to a vertical mast with another antenna above it, and point it toward incoming signals. With a suitable tower, even a weak transceiver signal can be picked up over 3,000 blocks away.\n\nLeave its 3x3 mounting area clear. Empty-hand right-click turns the receiver 15 degrees; sneak-right-click turns it back. It can turn up to 45 degrees either way.",
-  "handbook.simpleradio_directional.directional.text_2": "Parabolic Receiver:\n100% boost through 30 degrees.\n50% at 45 degrees.\n0% at 60 degrees.\n\nAngles are measured to either side of the direction the receiver is aimed. The boost fades smoothly between these values.",
-  "handbook.simpleradio_directional.directional.text_4": "Wide-angle Receiver:\n66% boost through 45 degrees.\n44% at 60 degrees.\n22% at 75 degrees.\n0% at 90 degrees.\n\nReception outside the directed beam is unaffected. Overlapping receiver bonuses do not combine; the strongest bonus is used.\n\nDirectional Receivers improve reception, not outgoing transmission power."
+  "handbook.simpleradio_directional.directional.text_2": "Parabolic Receiver:\nFull directional reception boost through 30 degrees.\n50% of that boost at 45 degrees.\nNo extra boost at 60 degrees.\n\nAngles are measured to either side of the direction the receiver is aimed. The boost fades smoothly between these values.",
+  "handbook.simpleradio_directional.directional.text_4": "Wide-angle Receiver:\n66% of the full directional boost through 45 degrees.\n44% at 60 degrees.\n22% at 75 degrees.\nNo extra boost at 90 degrees.\n\nReception outside the directed beam is unaffected. Overlapping receiver bonuses do not combine; the strongest bonus is used.\n\nDirectional Receivers improve reception. They do not increase outgoing transmission power."
 }

@@ -59,6 +59,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
     }
     @Override public void onInitialize() {
         RepeatersConfig.load();
+        dev.paul.simpleradiorepeaters.radio.RelayIntegrations.initialize();
         Registry.register(BuiltInRegistries.BLOCK, id("relay"), RELAY);
         Registry.register(BuiltInRegistries.ITEM, id("relay"), new BlockItem(RELAY, new Item.Properties()));
         Registry.register(BuiltInRegistries.BLOCK, id("channel_bank"), CHANNEL_BANK);

@@ -2,9 +2,14 @@
   "required": true,
   "minVersion": "0.8",
   "package": "dev.paul.simpleradiodirectional.mixin",
-  "plugin": "dev.paul.simpleradiodirectional.mixin.DirectionalMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "simpleradio_directional.refmap.json",
-  "mixins": ["ReceiverBlockEntityMixin", "NativeReachMixin", "NativeTravelMixin", "RepeatersAdapterMixin", "RepeatersBlockEntityMixin"],
-  "injectors": { "defaultRequire": 1 }
+  "mixins": [
+    "ReceiverBlockEntityMixin",
+    "NativeReachMixin",
+    "NativeTravelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

@@ -1,172 +1,22 @@
-# Simple Radio Directional Antenna 0.2.6 prototype
+# Simple Radio Directional Antenna 0.2.8
 
-Fabric Minecraft 1.20.1 · Simple Radio **1.20.1-4.5.7.9** · Java 17+
+Adds two aimable receiver arrays for Simple Radio towers. **Repeaters and Dimensional Foci are optional.** With Repeaters installed, the same arrays also improve relay reception.
 
-Adds a mast-mounted **Parabolic Receiver** and a cheaper **Wide-Angle Receiver Array**. Both improve the attached station's reception in the direction they face. Their bonuses depend on the underlying antenna and do not increase outgoing transmitter power or repair inherited audio degradation.
+Use Fabric Minecraft 1.20.1, Java 17+, Fabric Loader 0.19.0+, Fabric API and Simple Radio **1.20.1-4.5.7.9** with its dependencies. Install on server and clients. Optional Repeaters integration requires core 0.5.7+.
 
-Replace the previous Directional Antenna JAR on both server and clients. Existing dishes keep their identity and aiming position.
+## Mount and aim
 
-0.2.6 narrows the parabolic to full bonus through ±30°, half at ±45° and zero at ±60°. The wide-angle array supplies 75% through ±45°, 50% at ±60° and zero at ±75°. Both use the same maximum-bonus scale and smooth interpolation between these anchors. This update retains the 0.2.5 models and shared mounts.
+Attach a receiver to a vertical antenna mast with another antenna above it. Leave a clear 3×3 panel area beside the mast. Empty-hand right-click turns it in 15° steps; sneak-right-click turns it back. It swivels up to 45° either way from its mounting direction. Opposite receivers share the mounting rings.
 
-0.2.5 removes overlapping rendered faces from the stepped dish, its rear supports, the wide-angle grille and the three retained dish appearances. The wide-angle array now uses whole model units and 1:1 UVs throughout; long bars are tiled instead of compressing their texture. Mast rings are square and symmetric, with inner faces one unit clear of the native mast planes. The lower grip moves up one unit and the upper grip down one unit.
+| Receiver | Full central area | Falloff anchors | No extra reception |
+| --- | --- | --- | --- |
+| Parabolic | Full directional boost through 30° | 50% at 45° | 60° and beyond |
+| Wide-angle | 66% of full boost through 45° | 44% at 60°, 22% at 75° | 90° and beyond |
 
-Receivers on opposite sides of one mast share a single ring pair. Each keeps its own arm and swivel. One receiver stores the visible-ring assignment in its `brackets` blockstate; removing it transfers the rings immediately. The existing block-entity validation pass restores the assignment after loading. It waits for missing neighboring chunks rather than loading them. Model layers are baked and selected through ordinary blockstates.
+Angles are measured to either side of the aimed direction. The bonus fades continuously between anchors. Overlapping receivers use the strongest bonus; they do not stack. Outside the beam, normal reception remains unchanged.
 
-0.2.4 makes a solid version of the original square-stepped receiver. Its 32 opaque reflector panels preserve the mesh design's outline and front bowl profile. Three-unit panels meet across the steps, forming a connected shell with pale metal fronts, darker backing, a steel perimeter and small copper binding straps. The feed, rear braces and paired mast clamps retain their existing geometry; two hidden hinge pieces move four units back to clear the solid surface. All default geometry uses whole units and one texture pixel per model unit (16 pixels per block).
+These devices improve **reception**, not transmit power. Full boost is the maximum directional reception allowance, not a literal doubling of the antenna score. The wider array trades strength for coverage.
 
-Three earlier appearances remain in the same JAR. In **Options → Resource Packs**, choose **Simple Radio: Stepped Mesh Receiver**, **Simple Radio: Octagonal Parabolic Receiver** or **Simple Radio: Refined Parabolic Receiver**, then press Done. Leave all three disabled for the solid stepped default. These are client appearance choices for the same block. Normal pack priority applies if several are enabled.
+The in-game Repeaters handbook gains a Directional Receivers chapter when both mods are installed. The arrays themselves work without the book or Repeaters.
 
-The mod works with base Simple Radio. Repeaters and Dimensional Foci are optional; this workspace supplies their 0.5.3 source, including the shared handbook. Install the Directional Antenna prototype JAR on server and clients alongside the base mod and its dependencies.
-
-## Reception pattern
-
-### Wide-angle array
-
-The array has a 90° primary arc: **±45° from its aim**. Throughout that arc it supplies **75% of the maximum directional reception bonus**. It fades smoothly to 50% at ±60°, then to zero at ±75°. Each shoulder segment uses smoothstep interpolation, with no discrete strength steps. Percentages use the same maximum as the parabolic, not a separate array maximum. They scale the added allowance, not the station's ordinary reception or its total power. Multiple arrays and dishes select the strongest applicable bonus; they do not add together.
-
-Its copper-framed open grilles, separate split receiving element, ceramic insulator, fixed mast clamps and swivelling head are actual Java block geometry with four 16×16 pixel textures. The visible reflector is approximately two blocks wide and two blocks high. Placement retains the common clear 3×3 selection/reservation plane for mounting and aiming.
-
-The new recipe uses two copper ingots, three iron bars and one native copper wire:
-
-```text
-Copper ingot   Iron bars      Copper ingot
-Iron bars      Empty          Iron bars
-Empty          Copper wire    Empty
-```
-
-### Parabolic receiver
-
-Angles are measured horizontally from the dish's aimed direction. The full-strength reception wedge is 60° wide: 30° to either side. A smooth shoulder extends another 30° past each edge, reaching half bonus at 45° and zero at 60°.
-
-| Angle from facing | Beyond the full-gain edge | Extra gain remaining |
-| ---: | ---: | ---: |
-| 0–30° | 0° | 100% |
-| 45° | 15° | 50% |
-| 60° and beyond | 30° and beyond | 0% |
-
-Only the extra gain fades. The station retains its ordinary omnidirectional reception everywhere. The pattern uses horizontal bearing; ordinary native distance and height loss still apply. Overlapping dishes use the strongest applicable bonus, rather than adding their gains.
-
-At full gain, the receiver's distance allowance reaches **75% of the equivalent tower's transmission radius**, unless ordinary reception is already stronger. With default native settings, that gives an ordinary fresh transceiver enough incoming power for clear reception throughout that region. The transceiver can sometimes be heard beyond it using its own remaining transmission range. This is a reception allowance, rather than a hard wall at a fixed radius.
-
-For a native station, the equivalent tower uses native Transmitter base power, the receiver's current antenna score and the native transmission loss. For a Relay, it uses that tower's first-relay departure power, including its catalyst and installed amplifier. Actual replies still depend on the outgoing tower packet's power and inherited audio quality. The dish preserves those normal limits.
-
-## Placement and removal
-
-### Horizontal aiming
-
-An empty-main-hand right-click on any part of the dish turns its reflector 15° clockwise as viewed from above. Sneak-right-click turns it counterclockwise. There are seven positions relative to the mounting face: **−45°, −30°, −15°, 0°, +15°, +30°, +45°**. The stops do not wrap around. An action-bar message reports the selected angle.
-
-The mast clamp and mounting arm stay fixed. The reflector, feed and full reception pattern swivel together; its wedge width and shoulder falloff remain the same. Aim changes immediately update receiver snapshots and invalidate cached relay connectivity. The aim survives chunk unload and server restart, including saved unloaded relays. Existing 0.1.0 dishes start straight out from their original mounting face.
-
-The original fixed 3×3 reservation and selection plane is retained. Leave clearance around the reflector for its visual sweep when building a housing. Rotating or mirroring a structure retains or mirrors its relative aim respectively.
-
-1. Build a native antenna and core, with a Receiver or Relay attached normally. Wired antenna extensions are supported.
-2. Right-click the **side of a vertical mast section** with the dish. The selected face is the direction the dish points.
-3. The mast must have an actual antenna block immediately above it. Top sections and horizontal-only arms cannot host a dish. Both native non-top vertical visual variants qualify.
-4. Keep the 3×3 vertical plane in front of that mast clear, including one row above and one row below the clicked section. Fluids and occupied cells prevent placement.
-
-The dish reserves nine blocks: one center and eight selection/collision parts. Breaking any part with a stone-tier or better pickaxe removes the assembly and drops one dish. Removing the supporting mast or the antenna above it detaches the dish. Pistons cannot move it. Mount it higher if the lower reservation row would overlap a Relay, Bank or other station hardware.
-
-No catalyst or upgrade is installed in the dish. The Receiver or Relay retains its existing catalyst and antenna requirements. A dish alone is not a radio station.
-
-Prototype recipe:
-
-```text
-Iron ingot     Nether quartz   Iron ingot
-Iron bars      Copper block    Iron bars
-Empty          Copper wire     Empty
-```
-
-The wire is Simple Radio's copper wire. The recipe and visual model can be changed independently of the reception code.
-
-## Repeaters and Dimensional Foci
-
-Optional hooks apply the same directional reception to handheld-to-relay, relay-to-relay and relay-to-native-Receiver legs. Changing a dish publishes its new immutable profile and immediately clears Repeaters graph/path caches through its existing public invalidation hook. Its revision also participates in the periodic configuration fingerprint. No full configuration check is added to voice-packet processing. The core mod itself is unchanged.
-
-The dish does not create dimensional access or a dish at a projected focus pocket. Its bonus applies to physical endpoints in the same actual dimension. Simple Radio's dimensional option, or Dimensional Foci's replacement rules and Nether attenuation, remain in control.
-
-Verified dish positions and relay-to-mast bindings are saved in `simpleradio_directional_dishes.dat`. This lets a persistent unloaded Relay retain its dish. A loaded chunk whose dish is absent loses that saved effect. Missing neighboring chunks cause a retry, rather than a forced chunk load or permanent disconnection.
-
-All scans and saved-data changes run on the main server thread. Audio hooks read immutable snapshots and perform numeric bearing/gain calculations. Native geometry scans are cached for up to 200 ticks, with dirty notifications prompting an earlier scan. Structural validation and saved-chunk reconciliation run every 20 ticks. Membership uses the exact native traversal, so a nearby, unconnected antenna cannot donate its dish.
-
-## Model kit
-
-Open the `.bbmodel` files directly in Blockbench. Their textures are embedded, so they do not depend on texture paths on this computer.
-
-- `art/model-kit/Parabolic-Receiver.bbmodel`: solid stepped dish, with embedded opaque textures and whole-unit geometry.
-- `art/model-kit/Parabolic-Receiver-Mesh.bbmodel`: preserved 0.2.3 mesh dish and native mesh texture.
-- `art/model-kit/Parabolic-Receiver-Octagonal.bbmodel`: retained eight-sided solid dish.
-- `art/model-kit/Parabolic-Receiver-Refined.bbmodel`: retained finer dish alternate.
-- `art/model-kit/Wide-Angle-Receiver.bbmodel`: the new receiver, with embedded textures and separate fixed-mount/swivel groups.
-- `art/model-kit/Native-Antenna-Column.bbmodel`: exact native supported-column variant.
-- `art/model-kit/Native-Antenna-Vertical.bbmodel`: exact native non-column vertical variant.
-- `art/model-kit/native-reference/`: the original two Java model JSONs and both original 16×16 textures, extracted losslessly from the pinned Simple Radio source JAR, with its GPL license.
-
-The native top variants are intentionally excluded. Native reference projects are separate from the dish, so their mast cubes cannot accidentally become part of the exported receiver.
-
-The dish's Java model is `src/main/resources/assets/simpleradio_directional/models/block/parabolic_receiver.json`. North is the base orientation: front points toward negative Z; the mast's block is one block behind the center, toward positive Z. The center block's normal coordinates are 0–16; the 3×3 reserved plane spans **X = −16…32 and Y = −16…32**. The mounting arm reaches into the supporting mast block. Keep the main dish inside that footprint when replacing the geometry. All other facings use blockstate rotations.
-
-Keep the export origin and texture references, replace the Java model, and rebuild. Keep the fixed cubes named `mast_clamp` and `mounting_arm`, or name replacement fixed cubes with a `mount_` prefix; all other cubes are part of the swivel. The reflector pivot is **[8, 8, 8]** in model units. The build splits the fixed mount and swivel from that single editable JSON and generates the 28 facing/aim combinations. Angled reflector quads are transformed once when resources bake and then cached; there is no per-frame block-entity renderer. Resource packs that replace the baked layers directly should override the generated `_mount` and `_head` model JSONs. Editing the visual model does not change collision/reservation cells.
-
-## Build and tests
-
-This source workspace includes core/Foci 0.5.3 so optional integration can compile and be tested against the actual API. The Directional Antenna runtime JAR does not bundle or require them.
-
-```sh
-./gradlew :directional:build :directional:prototypeJar
-./gradlew :directional:runGameTest
-./gradlew :directional:runGameTest -PwithRepeaters
-./gradlew :directional:runGameTest -PwithFoci
-```
-
-Use JDK 21 for Gradle; release bytecode targets Java 17. Runtime output is under `directional/build/libs/`; use the `-prototype.jar` to exclude addon GameTest fixtures. Names and debug data remain readable.
-
-Recreate the native mast references from the pinned base-mod source archive with:
-
-```sh
-python3 directional/tools/make_model_kit.py /path/to/simpleradio-fabric-1.20.1-4.5.7.9-sources.jar
-```
-
-Run `python3 directional/tools/make_receiver_assets.py` to regenerate all authored receivers and apply the final surface cleanup and common mounts. It runs the five named generators in dependency order, then trims interior/duplicate faces without stretching the remaining UVs. Running a single generator produces intermediate geometry; finish through the full pipeline before building a distribution. Manual edits should be made after generation. `art/model-kit/original-reference/` retains the original mesh JSON. The native-reference extractor leaves receiver registrations/resources alone.
-
-Full radio/server GameTest evidence is under `directional/validation/0.2.0/`; current appearance and shared-mount checks are under `0.2.5/`. Live microphone playback is outside automated checks.
-
-0.2.6 reception-curve validation is under `directional/validation/0.2.6/`. The existing angular and aiming fixtures use the new anchor angles. The native array check also measures both shoulders against the common maximum-bonus scale.
-
-For 0.2.0, all **18 unit tests**, all **18 standalone Directional Antenna Minecraft tests**, and all **91 combined addon Minecraft tests** pass. The new physical-array checks cover placement on a native mast, aiming from an outer panel, saved pattern identity, complete removal with one correct drop, and actual reception with half the dish's additional gain. The same four native headless tests listed below still fail; no addon test fails. The complete GameTest task therefore exits nonzero in both installations.
-
-The graphical client capture resolves all seven aimed models and all four textures. Prototype verification confirms the two receiver types' mining tags, embedded Blockbench textures, readable runtime names and exclusion of test/capture helpers. No core or Foci code changes are included.
-
-## Native model captures
-
-0.2.5 includes native previews of both receivers, a close-up of two receiver arms sharing one ring pair, all seven aiming positions for both receivers and the three retained dish appearances. The same launcher runs only the two new shared-mount GameTests through a QA-only selection helper. Reproduce on a desktop with `./gradlew :directional:runGameTest :directional:runClient -I directional/validation/0.2.5/server-check.gradle -I directional/validation/0.2.5/client-preview.gradle`. The prototype excludes all fixture and capture helpers.
-
-The geometric verifier checks actual transformed face polygons at seven aims, including opposite normals, both supported native mast variants and opposite receiver pairs. Both active receiver models use whole-unit coordinates and 1:1 UV density. Alternate dish appearances receive the same mount/surface fixes; the finer round alternative retains its original finer geometry style.
-
-0.2.4 captures show the solid stepped default on a native mast, front and rear details, a comparison with the preserved mesh, all seven aims and all three earlier appearances after real resource-pack reloads. Reproduce with `./gradlew :directional:runClient -I directional/validation/0.2.4/client-preview.gradle`. Evidence is in `validation/0.2.4/`. Images are raw Minecraft framebuffer captures of native model-preview sheets. Asset checks cover opacity, connected panel steps, the preserved outline/profile, whole-unit geometry, 1:1 UVs and each packaged alternate. This appearance update uses the existing unit checks; full server GameTests are not repeated.
-
-0.2.3 captures show the finished mesh on the native mast, front and back details, the original mesh reference alongside the finished design, all seven aims, and each retained solid alternate after enabling its actual built-in pack. Reproduce with `./gradlew :directional:runClient -I directional/validation/0.2.3/client-preview.gradle`. Evidence is in `validation/0.2.3/`. These are unretouched native Minecraft model-preview sheets. Asset checks cover the original panel outline/profile, native mesh material, whole-unit geometry, 1:1 UVs and both packaged alternates. The build uses the existing 18 unit checks; full server GameTests are not repeated for this visual update.
-
-Earlier 0.2.2 captures remain at `art/Parabolic-Receiver-0.2.2-Comparison.png`, `-Native-Preview.png`, `-Aiming.png` and `-Refined-Alternate.png`. Use the 0.2.3 capture script above for the current source tree and both retained solid appearances.
-
-The earlier 0.2.2 build and 18 unit checks passed. Its asset checks covered 1:1 UVs, whole-unit geometry, 0°/45° element angles and both packaged model sets. That release's server/radio classes were unchanged from 0.2.1; only client pack registration changed. Its original evidence remains in `validation/0.2.2/`.
-
-Earlier refined-dish captures remain at `art/Parabolic-Receiver-0.2.1-Native-Preview.png` and `art/Parabolic-Receiver-0.2.1-Aiming.png`, with their original evidence under `validation/0.2.1/`. Use the current 0.2.2 capture script above to reproduce both retained appearances from this source tree.
-
-`art/Wide-Angle-Receiver-0.2.0-Native-Preview.png` shows the actual model on the native mast, plus front and rear details. `art/Wide-Angle-Receiver-0.2.0-Aiming.png` shows all seven aims. These are unretouched Minecraft client framebuffer screenshots using its baked block models, texture atlas and item lighting. No image synthesis or external 3D renderer is used. This is a native model sheet rather than a screenshot of a placed-world scene.
-
-To reproduce the capture on a desktop with a normal display:
-
-```sh
-./gradlew :directional:runClient -I directional/validation/0.2.0/client-preview.gradle
-```
-
-The temporary capture mod is compiled outside the runtime source set. Its code is excluded from the distribution. `native-capture.json` records the raw screenshot hashes and successful model/texture checks. The array's source JSON is `models/block/wide_angle_receiver.json`; keep the `mount_` names on stationary parts and the swivel origin at [8,8,8]. `tools/make_wide_array.py` reproduces the authored geometry, textures, resource definitions and editable project.
-
-## Earlier 0.1.1 validation results
-
-All **15 unit tests pass**, including the baked reflector transforms for all 28 mounting/aim combinations, immutable quad reuse and the seven-step pattern. All **16 Directional Antenna Minecraft tests pass** with base Simple Radio alone. With Repeaters and Dimensional Foci installed, **all 80 addon Minecraft tests pass**. These include actual native reception after aiming, main/outer-panel interactions, end stops, blockstate and saved-data round trips, mirrors, and immediate invalidation of the real Repeaters network cache.
-
-The four previously recorded native headless failures remain: `SystemTest.shortCircuit`, `SystemTest.garbageCollection`, `SystemTest.closedSystem` and `SystemTest.openSystem`. Consequently the complete GameTest command exits with four native failures in both installations; no addon test fails. Their causes remain unresolved. These results do not establish a live-server voice problem.
-
-The runtime prototype excludes addon GameTest fixtures and their entrypoint, retains readable method names and Java 17 bytecode, and preserves every retained class/resource byte from the remapped build. Generated models resolve every facing/aim state to one fixed mount and one reflector. There was no graphical client session or live microphone playback in this run; client geometry was checked through baked-model unit tests. Earlier 0.1.0 production startup and real unload/reload evidence remains under its versioned validation directory.
+Editable Blockbench projects, native mast references and retained dish alternatives are in [the model kit](art/model-kit/README.md). See [development instructions](../docs/Development.md) for standalone and combined tests.

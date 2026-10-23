@@ -3,7 +3,7 @@ plugins { id 'fabric-loom' }
 evaluationDependsOn(':core')
 if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
 
-version = '0.2.7'
+version = '0.2.8'
 group = project.maven_group
 base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
 
@@ -100,20 +100,15 @@ tasks.named('sourcesJar') { dependsOn tasks.named('generateDishModels') }
 test { useJUnitPlatform() }
 jar { from(rootProject.file('LICENSE')) { rename { "${it}_${project.base.archivesName.get()}" } } }
 
-// Runtime copy excludes this module's GameTest fixtures. No shrinking or obfuscation.
-tasks.register('prototypeJar', Zip) {
-    dependsOn tasks.named('remapJar')
-    archiveFileName = "${base.archivesName.get()}-${project.version}-prototype.jar"
-    destinationDirectory = layout.buildDirectory.dir('libs')
-    from({ zipTree(tasks.named('remapJar').get().archiveFile.get().asFile) }) {
-        exclude 'dev/paul/simpleradiodirectional/gametest/**', 'fabric.mod.json'
-    }
-    doFirst {
-        def descriptor = new groovy.json.JsonSlurper().parse(file("$buildDir/resources/main/fabric.mod.json"))
-        descriptor.entrypoints.remove('fabric-gametest')
-        def output = file("$buildDir/prototype/fabric.mod.json")
-        output.parentFile.mkdirs()
-        output.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descriptor)) + '\n'
-    }
-    from(layout.buildDirectory.file('prototype/fabric.mod.json'))
+apply from: rootProject.file('tools/prototype.gradle')
+
+apply from: rootProject.file('tools/gametest.gradle')
+
+if (project.hasProperty('withRepeaters') || project.hasProperty('withFoci')) {
+    dependencies { gametestRuntimeOnly rootProject.project(':core').sourceSets.gametest.output }
+    loom.mods { simpleradio_repeaters_tests { sourceSet project(':core').sourceSets.gametest } }
+}
+if (project.hasProperty('withFoci')) {
+    dependencies { gametestRuntimeOnly rootProject.project(':foci').sourceSets.gametest.output }
+    loom.mods { simpleradio_repeaters_foci_tests { sourceSet project(':foci').sourceSets.gametest } }
 }

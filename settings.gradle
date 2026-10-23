@@ -3,6 +3,4 @@ pluginManagement {
 }
 rootProject.name = 'simple-radio-repeaters'
 
-include 'core', 'foci'
-
-include 'directional'
+include 'core', 'foci', 'directional'

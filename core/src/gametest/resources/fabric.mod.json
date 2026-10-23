@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleradio_repeaters_tests",
+  "version": "1.0.0",
+  "name": "Simple Radio Repeaters GameTests (development only)",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": [
+      "dev.paul.simpleradiorepeaters.gametest.RepeaterGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.RelayDiagnosticsGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.CatalystGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.SplitBoundaryGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.TransponderRoutingGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests"
+    ]
+  },
+  "depends": {
+    "simpleradio_repeaters": "*"
+  }
+}

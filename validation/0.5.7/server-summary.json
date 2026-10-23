@@ -1,0 +1,17 @@
+{
+  "core": {
+    "tests": 63,
+    "failures": 0,
+    "timestamp": "2026-10-23T21:24:00.480712505Z"
+  },
+  "directional-standalone": {
+    "tests": 20,
+    "failures": 0,
+    "timestamp": "2026-10-23T21:24:49.702117327Z"
+  },
+  "combined": {
+    "tests": 108,
+    "failures": 0,
+    "timestamp": "2026-10-23T21:26:07.059307785Z"
+  }
+}

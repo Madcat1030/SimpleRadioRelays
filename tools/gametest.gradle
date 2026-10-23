@@ -1,0 +1,28 @@
+// Test fixtures are a separate development mod, never part of remapJar or sourcesJar.
+fabricApi.configureTests {
+    createSourceSet = true
+    enableGameTests = false
+    enableClientGameTests = false
+}
+loom.runs.gameTest.source(sourceSets.gametest)
+
+// Select this workspace's tests; upstream's suite can be run without this helper.
+def qa = rootProject.file('tools/gametest')
+def compileFilter = tasks.register('compileGameTestFilter', JavaCompile) {
+    source fileTree(new File(qa, 'java')) { include '**/*.java' }
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = layout.buildDirectory.dir('gametest-filter/classes')
+    options.release = 17
+    options.compilerArgs.add('-proc:none')
+}
+def filterJar = tasks.register('gameTestFilterJar', Jar) {
+    dependsOn compileFilter
+    archiveFileName = 'addon-test-filter.jar'
+    destinationDirectory = layout.projectDirectory.dir('run/gametest/mods')
+    from compileFilter.flatMap { it.destinationDirectory }
+    from new File(qa, 'resources')
+}
+tasks.named('runGameTest') {
+    dependsOn tasks.named('gametestClasses'), filterJar
+    jvmArgs '-Djava.awt.headless=true'
+}

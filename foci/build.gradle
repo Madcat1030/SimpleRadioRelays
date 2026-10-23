@@ -48,14 +48,7 @@ loom {
             vmArg '-Dfabric-api.gametest'
             vmArg '-Dfabric-api.gametest.report-file=reports/gametest-report.xml'
         }
-        baseGameTest {
-            server()
-            name 'Simple Radio Baseline Game Tests'
-            runDir 'run/baseline'
-            vmArg '-Dfabric-api.gametest'
-            vmArg '-Dfabric-api.gametest.report-file=reports/gametest-report.xml'
-            vmArg '-Dfabric.debug.disableModIds=simpleradio_repeaters'
-        }
+
     }
 }
 
@@ -71,3 +64,8 @@ jar { from(rootProject.file('LICENSE')) { rename { "${it}_${project.base.archive
 
 // Optional distribution copy: ./gradlew prototypeJar
 apply from: rootProject.file('tools/prototype.gradle')
+
+apply from: rootProject.file('tools/gametest.gradle')
+
+dependencies { gametestImplementation rootProject.project(':core').sourceSets.gametest.output }
+loom.mods { simpleradio_repeaters_tests { sourceSet project(':core').sourceSets.gametest } }
