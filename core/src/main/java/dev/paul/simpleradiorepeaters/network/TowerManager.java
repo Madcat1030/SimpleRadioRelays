@@ -335,7 +335,7 @@ public final class TowerManager {
                 + " | antenna " + RelayPower.antennaScore(n.antennaScore(), n.attachment().antennaMultiplier())
                 + " at " + n.antennaBase().toShortString()
                 + " | catalyst " + n.catalystItem() + " (" + Math.round(n.efficiency() * 100) + "%)"
-                + " | " + n.attachment() + " | " + (n.transponder() == null ? "bank" : n.transponder().duplex() ? "duplex" : "simplex")
+                + " | " + n.attachment() + " | " + (n.transponder() == null ? "bank" : n.transponder().mode().name().toLowerCase(Locale.ROOT))
                 + " | " + n.channels().stream().sorted().toList()));
         return result;
     }

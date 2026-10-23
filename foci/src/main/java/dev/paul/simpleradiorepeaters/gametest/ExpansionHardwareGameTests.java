@@ -93,17 +93,17 @@ public class ExpansionHardwareGameTests implements FabricGameTest {
             check(extra.getCount() == 1 && before.equals(module.saveWithoutMetadata()), "Card clicks on the back must do nothing");
             player.setItemInHand(hand, ItemStack.EMPTY);
             SimpleRadioRepeaters.TRANSPONDER.use(module.getBlockState(), level, pos, player, hand, hit(pos, facing, 8, 8));
-            check(module.duplex() && module.getItem(0).getCount() == 1 && module.getItem(1).getCount() == 1,
+            check((module.mode() == TransponderChannels.Mode.DUPLEX) && module.getItem(0).getCount() == 1 && module.getItem(1).getCount() == 1,
                     "Clicking the center display must toggle direction without removing any card");
             // A card's boundary belongs to the card rather than the adjacent display.
             SimpleRadioRepeaters.TRANSPONDER.use(module.getBlockState(), level, pos, player, hand, hit(pos, facing, 10, 8));
-            check(module.duplex() && module.getItem(0).isEmpty() && !module.transponderChannels().ready(),
+            check((module.mode() == TransponderChannels.Mode.DUPLEX) && module.getItem(0).isEmpty() && !module.transponderChannels().ready(),
                     "The left-card edge must eject the card and leave the mode unchanged");
             player.setItemInHand(hand, ItemStack.EMPTY);
             SimpleRadioRepeaters.TRANSPONDER.use(module.getBlockState(), level, pos, player, hand, hit(pos, facing, 8, 1));
             check(!module.getItem(1).isEmpty(), "An empty front click outside controls must not eject cards");
             var restored = new TransponderBlockEntity(pos, module.getBlockState()); restored.load(module.saveWithoutMetadata());
-            check(restored.duplex() && restored.transponderChannels().equals(module.transponderChannels())
+            check((restored.mode() == TransponderChannels.Mode.DUPLEX) && restored.transponderChannels().equals(module.transponderChannels())
                     && restored.displayCards().size() == 3, "Card positions, mode and cached labels must survive NBT loading");
             level.setBlock(pos, SimpleRadioRepeaters.RELAY.defaultBlockState().setValue(RelayBlock.FACING, facing), 3);
             RelayBlockEntity relay = (RelayBlockEntity) level.getBlockEntity(pos);
@@ -197,9 +197,9 @@ public class ExpansionHardwareGameTests implements FabricGameTest {
             module.setItem(1, card(461)); relay.bankChanged();
             check(manager.isEligible(relay.relayId()), "A tuned pair and real antenna must activate it");
             CompoundTag oldRelay = relay.saveWithoutMetadata(); level.getChunkAt(pos).removeBlockEntity(pos);
-            module.setDuplex(true); module.setItem(2, card(462));
+            module.setMode(TransponderChannels.Mode.DUPLEX); module.setItem(2, card(462));
             TowerRecord latest = manager.snapshot(relay.relayId());
-            check(latest.transponder().duplex() && latest.transponder().rightBottom() != null && latest.attachment() == DimensionalFoci.END,
+            check((latest.transponder().mode() == TransponderChannels.Mode.DUPLEX) && latest.transponder().rightBottom() != null && latest.attachment() == DimensionalFoci.END,
                     "A loaded module must update its unloaded Relay's mode and ordered ports without losing its focus");
             check(TowerRecord.load(latest.save()).equals(latest), "The saved network snapshot must retain attachment and directional channels");
             CompoundTag latestModule = module.saveWithoutMetadata(); level.getChunkAt(pos.above()).removeBlockEntity(pos.above());

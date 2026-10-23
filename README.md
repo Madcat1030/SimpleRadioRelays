@@ -1,4 +1,6 @@
-# Simple Radio Repeaters 0.5.5
+# Simple Radio Repeaters 0.5.6
+
+0.5.6 updates the in-game guide to **Simple Radio Relays**, adds server-recipe illustrations and lets addons supply their own chapters. Transponders gain Multicast as their third mode. Directional Antenna 0.2.7 uses the new 66/44/22/0 wide-angle profile. See [the release notes](docs/Release-Notes-0.5.6.md) and [the chapter contribution format](docs/Handbook-Extensions.md).
 
 This workspace also includes the separate [Directional Antenna 0.2.6 prototype](directional/README.md), with the solid stepped receiver, wide-angle array, shared mounts and narrowed reception profiles. Earlier dish designs remain as appearance options. Its runtime does not require either addon.
 
@@ -78,12 +80,12 @@ Core settings now contain only `maxRelayHops: 64` and `persistentUnloadedTowers:
 
 - Card on a front slot: insert into that slot. Card elsewhere on the front: first available slot. Other faces ignore cards.
 - Empty hand on an occupied front card: remove that card. Background clicks leave cards alone.
-- Transponder center display: toggle simplex/duplex.
+- Transponder center display: cycle Simplex, Duplex and Multicast.
 - Catalyst or upgrade on Relay: insert if its matching socket is empty.
 - Empty hand on/near a front socket: remove that component. Other ordinary empty-hand clicks do nothing.
 - Sneak + empty hand on Relay: toggle power.
 
-A Bank repeats selected channels. A Transponder converts its left channel to its right channels in simplex, or both directions in duplex. It needs one tuned card on each side. Put the main frequency on both sides if it should also be repeated unchanged.
+A Bank repeats selected channels. A Transponder converts left to right in Simplex or both directions in Duplex. Multicast shares every selected channel with all selected channels, including itself. It needs one tuned card on each side. In Simplex/Duplex, put the main frequency on both sides if it should also be repeated unchanged.
 
 `/radiorepeaters status`, `/radiorepeaters list` and `/radiorepeaters refresh` retain their existing roles. `/radiorepeaters diagnose` writes a read-only report to `logs/latest.log`; hold the transmitting walkie/transceiver in the main hand for its RF probe. List/refresh/diagnose require operator level 2.
 

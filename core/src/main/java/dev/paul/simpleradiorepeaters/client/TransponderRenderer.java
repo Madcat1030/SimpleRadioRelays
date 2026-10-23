@@ -23,9 +23,11 @@ public final class TransponderRenderer implements BlockEntityRenderer<Transponde
             DeviceRendering.centeredText(font, card.label(), TransponderBlock.slotX(slot) + 2.5, TransponderBlock.slotY(slot) + 1.5,
                     0, 3, .8, .0065f, 0xffe0d8b8, pose, buffers);
         }
-        if (transponder.duplex()) {
-            arrow("\u2192", 8.8, pose, buffers); arrow("\u2190", 7.2, pose, buffers);
-        } else arrow("\u2192", 8, pose, buffers);
+        switch (transponder.mode()) {
+            case SIMPLEX -> arrow("\u2192", 8, pose, buffers);
+            case DUPLEX -> { arrow("\u2192", 8.8, pose, buffers); arrow("\u2190", 7.2, pose, buffers); }
+            case MULTICAST -> arrow("*", 8, pose, buffers);
+        }
         pose.popPose();
     }
     private void arrow(String arrow, double y, PoseStack pose, MultiBufferSource buffers) {

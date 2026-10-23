@@ -237,7 +237,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         });
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 130)
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 130, batch = "antenna_microphone")
     public void microphone_activity_does_not_recheck_an_unchanged_antenna(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);

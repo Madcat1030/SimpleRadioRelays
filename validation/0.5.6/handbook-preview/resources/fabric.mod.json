@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "handbook_checks",
+  "version": "1.0.0",
+  "name": "Handbook Checks (QA only)",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.paul.simpleradiorepeaters.client.HandbookPreviewClient"
+    ]
+  },
+  "depends": {
+    "simpleradio_repeaters": ">=0.5.6"
+  }
+}

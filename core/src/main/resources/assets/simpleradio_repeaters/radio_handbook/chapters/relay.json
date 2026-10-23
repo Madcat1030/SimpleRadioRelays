@@ -1,0 +1,12 @@
+{
+  "order": 20,
+  "title": "handbook.simpleradio_repeaters.relay.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:relay"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.relay.text_1"
+    }
+  ]
+}

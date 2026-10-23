@@ -290,6 +290,80 @@ public class TransponderRoutingGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void multicast_and_existing_modes_follow_the_full_channel_matrix(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
+        List<Frequency> channels = List.of(frequency(805, Frequency.Modulation.AMPLITUDE),
+                frequency(806, Frequency.Modulation.AMPLITUDE), frequency(806, Frequency.Modulation.FREQUENCY));
+        var keys = channels.stream().map(ChannelKey::from).toList(); BlockPos origin = helper.absolutePos(new BlockPos(2, 2, 2));
+        List<Tap> taps = new ArrayList<>();
+        var tower = new TowerRecord(UUID.randomUUID(), level.dimension().location().toString(), origin,
+                Set.copyOf(keys), true, RelayCatalysts.GILDED, true, 32, Set.of(), null, RelayAttachment.NONE,
+                new TransponderChannels(keys.get(0), keys.get(1), keys.get(2), TransponderChannels.Mode.SIMPLEX));
+        try {
+            for (int i = 0; i < 3; i++) taps.add(new Tap(level, origin.east(i + 1), channels.get(i)));
+            for (var mode : TransponderChannels.Mode.values()) {
+                var selected = new TransponderChannels(keys.get(0), keys.get(1), keys.get(2), mode);
+                var snapshot = tower.settings(selected.channels(), true, tower.catalystItem(), null, tower.attachment(), selected);
+                manager.updateSnapshot(snapshot);
+                check(TowerRecord.load(snapshot.save()).transponder().mode() == mode, "Saved relay routing must retain its mode");
+                for (int input = 0; input < 3; input++) {
+                    int[] before = taps.stream().mapToInt(t -> t.count).toArray();
+                    RadioSource packet = send(level, origin.north(3), channels.get(input));
+                    for (int output = 0; output < 3; output++) {
+                        boolean expected = input == output || mode == TransponderChannels.Mode.MULTICAST
+                                || input == 0 || (mode == TransponderChannels.Mode.DUPLEX && output == 0);
+                        check(taps.get(output).count == before[output] + (expected ? 1 : 0),
+                                mode + " must deliver exactly the allowed channel once: input=" + input + " output=" + output);
+                        if (expected) check(taps.get(output).last.data == packet.data
+                                        && taps.get(output).last.originalOwner.equals(packet.originalOwner),
+                                "Transponding must preserve encoded audio and stream ownership");
+                    }
+                }
+            }
+        } finally { for (Tap tap : taps) tap.close(level); manager.removeAt(tower.dimension(), tower.position()); }
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void panel_cycles_all_three_modes_and_preserves_older_world_settings(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel(); BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        var state = SimpleRadioRepeaters.TRANSPONDER.defaultBlockState().setValue(ChannelBankBlock.FACING, net.minecraft.core.Direction.NORTH);
+        level.setBlock(pos, state, 3); var module = (TransponderBlockEntity) level.getBlockEntity(pos);
+        var player = helper.makeMockPlayer(); player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        var hit = new net.minecraft.world.phys.BlockHitResult(pos.getCenter().add(0, 0, -.5), net.minecraft.core.Direction.NORTH, pos, false);
+        try {
+            check(module.mode() == TransponderChannels.Mode.SIMPLEX, "New modules must start in Simplex");
+            for (var expected : List.of(TransponderChannels.Mode.DUPLEX, TransponderChannels.Mode.MULTICAST, TransponderChannels.Mode.SIMPLEX)) {
+                SimpleRadioRepeaters.TRANSPONDER.use(state, level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                check(module.mode() == expected, "Front panel must cycle Simplex, Duplex, Multicast, Simplex");
+                var restored = new TransponderBlockEntity(pos, state); restored.load(module.saveWithoutMetadata());
+                check(restored.mode() == expected, "Module save and client update data must preserve every mode");
+            }
+            var legacy = module.saveWithoutMetadata(); legacy.remove("Mode"); legacy.putBoolean("Duplex", true);
+            module.load(legacy); check(module.mode() == TransponderChannels.Mode.DUPLEX, "Existing Duplex modules must stay Duplex");
+            legacy.putBoolean("Duplex", false); module.load(legacy);
+            check(module.mode() == TransponderChannels.Mode.SIMPLEX, "Existing Simplex modules must stay Simplex");
+        } finally { level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3); }
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void multicast_requires_both_card_sides_and_deduplicates_repeated_channels(GameTestHelper helper) {
+        ChannelKey a = ChannelKey.from(frequency(808, Frequency.Modulation.AMPLITUDE));
+        ChannelKey b = ChannelKey.from(frequency(809, Frequency.Modulation.AMPLITUDE));
+        var mode = TransponderChannels.Mode.MULTICAST;
+        check(new TransponderChannels(a, null, null, mode).ports().isEmpty()
+                        && new TransponderChannels(null, a, b, mode).ports().isEmpty(),
+                "Multicast must still require an RX card and at least one TX card");
+        var selected = new TransponderChannels(a, b, b, mode);
+        check(selected.ports().size() == 4 && Set.copyOf(selected.ports()).size() == 4,
+                "Two unique channels must create four unique Multicast ports, including unchanged channels");
+        var old = new TransponderChannels(a, b, null, true).save(); old.remove("Mode"); old.putBoolean("Duplex", true);
+        check(TransponderChannels.load(old).mode() == TransponderChannels.Mode.DUPLEX, "Saved tower records must retain old Duplex settings");
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void saved_am_transponder_returns_through_the_same_banks_with_ender_amplifiers(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); TowerManager manager = TowerManager.get(level.getServer());
         Frequency input = frequency(612, Frequency.Modulation.AMPLITUDE), output = frequency(613, Frequency.Modulation.AMPLITUDE);

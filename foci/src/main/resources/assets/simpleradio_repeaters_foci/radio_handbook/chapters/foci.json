@@ -1,0 +1,21 @@
+{
+  "order": 80,
+  "title": "handbook.simpleradio_repeaters_foci.foci.title",
+  "entries": [
+    {
+      "text": "handbook.simpleradio_repeaters_foci.foci.text_0"
+    },
+    {
+      "recipe": "simpleradio_repeaters:nether_focus"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters_foci.foci.text_2"
+    },
+    {
+      "recipe": "simpleradio_repeaters:end_focus"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters_foci.foci.text_4"
+    }
+  ]
+}

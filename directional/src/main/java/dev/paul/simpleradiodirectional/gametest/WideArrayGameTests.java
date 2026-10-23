@@ -72,8 +72,8 @@ public final class WideArrayGameTests implements FabricGameTest {
         double fullDishBonus = DirectionalMath.bonus(base, SimpleRadioFrequencing.TRANSMITTER.getTransmissionPower(frequency.getModulation())
                 + 32 * SimpleRadioFrequencing.TRANSMITTER.antennaAptitude, SimpleRadioFrequencing.TRANSMITTER.transmissionDiminishment, 1);
         double got = DirectionalReception.reception((float) base, receiver, from, frequency.getModulation());
-        check(Math.abs(got - (base + fullDishBonus * .75)) < .01, "Physical arrays must publish 75 percent of the shared maximum bonus");
-        for (double[] anchor : new double[][]{{45, .75}, {52.5, .625}, {60, .5}, {67.5, .25}, {75, 0}}) {
+        check(Math.abs(got - (base + fullDishBonus * .66)) < .01, "Physical arrays must publish 66 percent of the shared maximum bonus");
+        for (double[] anchor : new double[][]{{45, .66}, {52.5, .55}, {60, .44}, {67.5, .33}, {75, .22}, {82.5, .11}, {90, 0}}) {
             double radians = Math.toRadians(anchor[0]);
             var offAxis = new WorldlyPosition((float) (core.getX() + .5 + Math.sin(radians) * 2000),
                     core.getY(), (float) (core.getZ() + .5 - Math.cos(radians) * 2000), level);

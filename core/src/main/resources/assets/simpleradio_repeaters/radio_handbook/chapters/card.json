@@ -1,0 +1,12 @@
+{
+  "order": 50,
+  "title": "handbook.simpleradio_repeaters.card.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:frequency_card"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.card.text_1"
+    }
+  ]
+}

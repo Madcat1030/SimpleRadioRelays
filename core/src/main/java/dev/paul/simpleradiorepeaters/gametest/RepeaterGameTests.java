@@ -133,7 +133,7 @@ public class RepeaterGameTests implements FabricGameTest {
         });
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 150)
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 150, batch = "antenna_noops")
     public void in_world_noops_do_not_restart_antenna_verification(GameTestHelper helper) {
         ServerLevel level = helper.getLevel(); BlockPos core = helper.absolutePos(new BlockPos(2, 2, 2));
         level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);

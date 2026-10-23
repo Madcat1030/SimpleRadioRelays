@@ -1,0 +1,79 @@
+{
+  "core_version": "0.5.6",
+  "foci_version": "0.5.6",
+  "directional_version": "0.2.7",
+  "unit_tests": {
+    "core": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "foci": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "directional": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "server_tests": {
+    "core-only": {
+      "tests": 63,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "core-foci-directional": {
+      "tests": 108,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "directional-standalone": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "native_simple_radio_sha256": "667528f774ba38426ad8bcbea5db260ec0841316b38e56302cb47037445066e8",
+  "unchanged_model_and_texture_resources": 74,
+  "client_checks": {
+    "passed": true,
+    "native_font_and_screen": true,
+    "independent_addon_discovered": true,
+    "combinations": [
+      {
+        "foci": false,
+        "directional": false,
+        "chapters": 7,
+        "pages": 39
+      },
+      {
+        "foci": false,
+        "directional": true,
+        "chapters": 8,
+        "pages": 48
+      },
+      {
+        "foci": true,
+        "directional": false,
+        "chapters": 8,
+        "pages": 49
+      },
+      {
+        "foci": true,
+        "directional": true,
+        "chapters": 9,
+        "pages": 58
+      }
+    ],
+    "screenshots": 8
+  }
+}

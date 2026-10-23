@@ -1,0 +1,17 @@
+{
+  "core": {
+    "chapters": 7,
+    "own_namespace": true,
+    "all_text_and_recipes_present": true
+  },
+  "foci": {
+    "chapters": 1,
+    "own_namespace": true,
+    "all_text_and_recipes_present": true
+  },
+  "directional": {
+    "chapters": 1,
+    "own_namespace": true,
+    "all_text_and_recipes_present": true
+  }
+}

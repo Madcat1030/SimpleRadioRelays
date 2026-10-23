@@ -1,0 +1,12 @@
+{
+  "order": 30,
+  "title": "handbook.simpleradio_repeaters.bank.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:channel_bank"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.bank.text_1"
+    }
+  ]
+}

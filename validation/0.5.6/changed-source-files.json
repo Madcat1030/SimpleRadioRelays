@@ -1,0 +1,146 @@
+[
+  {
+    "path": "README.md",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/block/TransponderBlock.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/block/TransponderBlockEntity.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/client/HandbookBook.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/client/HandbookChapters.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/client/HandbookScreen.java",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/client/TransponderRenderer.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/gametest/TransponderRoutingGameTests.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/handbook/HandbookContents.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/network/TransponderChannels.java",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+    "status": "modified"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/amplifiers.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/bank.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/card.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/relay.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/start.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/transponder.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/main/resources/assets/simpleradio_repeaters/radio_handbook/chapters/troubleshooting.json",
+    "status": "added"
+  },
+  {
+    "path": "core/src/test/java/dev/paul/simpleradiorepeaters/handbook/HandbookContentsTest.java",
+    "status": "modified"
+  },
+  {
+    "path": "directional/build.gradle",
+    "status": "modified"
+  },
+  {
+    "path": "directional/src/main/java/dev/paul/simpleradiodirectional/gametest/WideArrayGameTests.java",
+    "status": "modified"
+  },
+  {
+    "path": "directional/src/main/java/dev/paul/simpleradiodirectional/radio/DishPattern.java",
+    "status": "modified"
+  },
+  {
+    "path": "directional/src/main/resources/assets/simpleradio_directional/lang/en_us.json",
+    "status": "modified"
+  },
+  {
+    "path": "directional/src/main/resources/assets/simpleradio_directional/radio_handbook/chapters/directional.json",
+    "status": "added"
+  },
+  {
+    "path": "directional/src/main/resources/fabric.mod.json",
+    "status": "modified"
+  },
+  {
+    "path": "directional/src/test/java/dev/paul/simpleradiodirectional/radio/DishPatternTest.java",
+    "status": "modified"
+  },
+  {
+    "path": "docs/Handbook-Extensions.md",
+    "status": "added"
+  },
+  {
+    "path": "docs/Release-Notes-0.5.6.md",
+    "status": "added"
+  },
+  {
+    "path": "docs/Simple-Radio-Repeaters-Documentation.md",
+    "status": "modified"
+  },
+  {
+    "path": "foci/src/main/java/dev/paul/simpleradiorepeaters/gametest/ExpansionHardwareGameTests.java",
+    "status": "modified"
+  },
+  {
+    "path": "foci/src/main/resources/assets/simpleradio_repeaters_foci/lang/en_us.json",
+    "status": "modified"
+  },
+  {
+    "path": "foci/src/main/resources/assets/simpleradio_repeaters_foci/radio_handbook/chapters/foci.json",
+    "status": "added"
+  },
+  {
+    "path": "gradle.properties",
+    "status": "modified"
+  }
+]

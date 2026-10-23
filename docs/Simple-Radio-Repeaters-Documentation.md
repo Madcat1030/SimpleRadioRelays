@@ -21,7 +21,7 @@ Tune Frequency Cards at the native radiosmithing station and insert them into th
 
 The Bank repeats each selected frequency/modulation independently. Duplicates select the same channel once. Blank cards occupy slots but do not activate a frequency. AM and FM remain separate channels. A Relay does not require a microphone, speaker or separate native RX/TX to repeat traffic. Native radios and wired stations join through their existing endpoints.
 
-The Transponder replaces the Bank. Its single left slot is the input in simplex; both right slots are outputs. Duplex also converts either right input to the left output. A tuned left card and at least one tuned right card are required. Right outputs do not directly cross-connect. Matching cards on both sides intentionally preserve a channel alongside another translated output. Converted traffic can continue through further relays and Transponders.
+The Transponder replaces the Bank. Its single left slot is the input in Simplex; both right slots are outputs. Duplex also converts either right input to the left output, without directly cross-connecting the right slots. Multicast shares each selected channel with every selected channel, including its unchanged channel. A tuned left card and at least one tuned right card are required in all modes. Matching cards on both sides preserve a channel in Simplex/Duplex. Converted traffic can continue through further relays and Transponders.
 
 ## In-world controls and display
 
@@ -32,7 +32,7 @@ The Transponder replaces the Bank. Its single left slot is the input in simplex;
 | Card on other face | No change |
 | Empty hand on occupied front card | Return that card |
 | Empty hand elsewhere on Bank | No change |
-| Empty hand on Transponder center display | Toggle simplex/duplex |
+| Empty hand on Transponder center display | Cycle Simplex, Duplex and Multicast |
 | Registered catalyst on Relay | Install in the empty catalyst socket |
 | Amplifier or focus on Relay | Install in the empty upgrade socket |
 | Empty hand on/near a front socket | Return that component only |

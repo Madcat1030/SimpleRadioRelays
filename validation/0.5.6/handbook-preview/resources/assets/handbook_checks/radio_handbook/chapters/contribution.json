@@ -1,0 +1,12 @@
+{
+  "order": 95,
+  "title": "handbook.checks.title",
+  "entries": [
+    {
+      "text": "handbook.checks.body"
+    },
+    {
+      "recipe": "minecraft:bread"
+    }
+  ]
+}

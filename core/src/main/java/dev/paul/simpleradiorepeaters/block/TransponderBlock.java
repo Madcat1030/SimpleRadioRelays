@@ -29,7 +29,7 @@ public final class TransponderBlock extends ChannelBankBlock {
             Vec3 local = BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation());
             if (local.x * 16 > 6 && local.x * 16 < 10 && local.y * 16 >= 6 && local.y * 16 <= 10
                     && level.getBlockEntity(pos) instanceof TransponderBlockEntity transponder) {
-                if (!level.isClientSide) transponder.setDuplex(!transponder.duplex());
+                if (!level.isClientSide) transponder.setMode(transponder.mode().next());
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
         }

@@ -1,0 +1,21 @@
+{
+  "order": 90,
+  "title": "handbook.simpleradio_directional.directional.title",
+  "entries": [
+    {
+      "text": "handbook.simpleradio_directional.directional.text_0"
+    },
+    {
+      "recipe": "simpleradio_directional:parabolic_receiver"
+    },
+    {
+      "text": "handbook.simpleradio_directional.directional.text_2"
+    },
+    {
+      "recipe": "simpleradio_directional:wide_angle_receiver"
+    },
+    {
+      "text": "handbook.simpleradio_directional.directional.text_4"
+    }
+  ]
+}

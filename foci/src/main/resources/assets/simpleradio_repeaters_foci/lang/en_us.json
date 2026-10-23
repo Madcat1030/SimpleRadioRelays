@@ -4,5 +4,9 @@
   "tooltip.simpleradio_repeaters.nether_focus": "Attach to an overworld Relay to project a weak signal high into the Nether. Attach to a Nether relay to improve signal reliability and reach.",
   "tooltip.simpleradio_repeaters.end_focus": "Attach to an overworld Relay to project a decent signal into the End, and vice versa.",
   "tooltip.simpleradio_repeaters.focus_policy": "Dimensional Foci replaces native dimensional radio: use a focus-equipped Relay to bridge dimensions.",
-  "itemGroup.simpleradio_repeaters_foci": "Dimensional Foci"
+  "itemGroup.simpleradio_repeaters_foci": "Dimensional Foci",
+  "handbook.simpleradio_repeaters_foci.foci.title": "Dimensional Foci",
+  "handbook.simpleradio_repeaters_foci.foci.text_0": "This Simple Radio Relays addon completely replaces Simple Radio's dimensional radio features.\n\nInstead of signals simply mapping to other dimensions, build a relay tower and install the desired Focus to project your radio network into another dimension.",
+  "handbook.simpleradio_repeaters_foci.foci.text_2": "Install a Nether Focus in an Overworld Relay to push its signal through the bedrock into the upper layers of the Nether.\n\nAttenuation is strong. FM transmissions fade quickly, and even AM may struggle to reach the lower levels without a larger antenna or more Relays in the Nether.\n\nInstall this Focus in a Nether Relay to improve local reach and reduce interference. A Nether Relay cannot reach the Overworld on its own, even with this Focus.\n\nTo bridge the two dimensions, leave the Nether and build a Nether Focus-equipped tower in the Overworld.\n\nThis Focus does nothing on a Relay in the End.",
+  "handbook.simpleradio_repeaters_foci.foci.text_4": "Install an End Focus in an Overworld Relay to project its signal into the End at matching coordinates.\n\nInstall it in an End Relay to project its signal back to the Overworld.\n\nThis Focus does nothing on a Relay in the Nether."
 }

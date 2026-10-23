@@ -1,0 +1,24 @@
+[
+  {
+    "module": "core",
+    "passed": true,
+    "jar": "simple-radio-repeaters-fabric-1.20.1-0.5.6-prototype.jar",
+    "bytes": 269315,
+    "sha256": "820399943adaf7e44c1e3de45a0a0141ad5604fd8049376f3ae993eff7b1d488",
+    "classes": 97,
+    "retained_methods_identical": 826,
+    "removed_test_helpers": 12,
+    "no_obfuscation": true
+  },
+  {
+    "module": "foci",
+    "passed": true,
+    "jar": "simple-radio-repeaters-dimensional-foci-fabric-1.20.1-0.5.6-prototype.jar",
+    "bytes": 32221,
+    "sha256": "783e0902398f4dbeddf67f534c8230b620d556d4734e34f33cf647dc6d22060e",
+    "classes": 7,
+    "retained_methods_identical": 33,
+    "removed_test_helpers": 0,
+    "no_obfuscation": true
+  }
+]

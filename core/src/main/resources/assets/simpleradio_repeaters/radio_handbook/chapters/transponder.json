@@ -1,0 +1,12 @@
+{
+  "order": 40,
+  "title": "handbook.simpleradio_repeaters.transponder.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:transponder"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.transponder.text_1"
+    }
+  ]
+}

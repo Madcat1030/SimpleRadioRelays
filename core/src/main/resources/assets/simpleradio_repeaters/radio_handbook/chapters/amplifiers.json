@@ -1,0 +1,21 @@
+{
+  "order": 60,
+  "title": "handbook.simpleradio_repeaters.amplifiers.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:copper_amplifier"
+    },
+    {
+      "recipe": "simpleradio_repeaters:redstone_amplifier"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.amplifiers.text_2"
+    },
+    {
+      "recipe": "simpleradio_repeaters:relay_amplifier"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.amplifiers.text_4"
+    }
+  ]
+}
