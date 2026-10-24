@@ -1,0 +1,20 @@
+[
+  {
+    "module": "core",
+    "tests": 55,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "module": "foci",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0
+  },
+  {
+    "module": "directional",
+    "tests": 17,
+    "failures": 0,
+    "errors": 0
+  }
+]

@@ -363,14 +363,30 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
                         : new AntennaScanner.Result(false, 0, Set.of(), corePos());
         boolean accepted =
                 scanReady && verification.accept(now, antenna.complete(), antenna.score());
-        if (accepted) {
-            antennaPower = antenna.score();
-            manager.publish(this, antenna);
-            super.setChanged();
-            dirty = false;
-        }
+        if (accepted) acceptAntenna(manager, antenna);
         nextRefresh = verification.nextAttempt(now);
         updateDisplayedState(manager);
+    }
+
+    /** A real wire mutation is authoritative; ordinary load scans retain their settling grace. */
+    public void wireChanged(TowerManager manager, boolean broken) {
+        if (!(level instanceof ServerLevel server)) return;
+        markDirty();
+        var antenna = AntennaScanner.scan(server, worldPosition, corePos());
+        if (antenna.complete() && (broken || antenna.score() > 0)) acceptAntenna(manager, antenna);
+        else if (broken) {
+            manager.invalidateAntenna(relayId);
+            antennaPower = 0;
+            super.setChanged();
+        }
+        updateDisplayedState(manager);
+    }
+
+    private void acceptAntenna(TowerManager manager, AntennaScanner.Result antenna) {
+        antennaPower = antenna.score();
+        manager.publish(this, antenna);
+        super.setChanged();
+        dirty = false;
     }
 
     private void updateDisplayedState(TowerManager manager) {

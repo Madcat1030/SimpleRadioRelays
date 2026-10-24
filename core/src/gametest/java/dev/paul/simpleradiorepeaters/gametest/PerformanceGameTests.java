@@ -84,8 +84,8 @@ public class PerformanceGameTests implements FabricGameTest {
             send(sender, new byte[]{1}); check(tap.count == 1, "Unprofiled nested route must deliver exactly once");
             float baselinePower = tap.last.transmissionPower; double baselineNoise = tap.last.computeSeverity();
             int baselineHops = ((RelaySourceState) tap.last).repeaters$getRelayCount();
-            refused(server, "radiorepeater test start", 0); refused(server, "radiorepeater test start 0", 4);
-            command(server, "radiorepeater test start"); refused(server, "radiorepeaters test start", 4);
+            refused(server, "radiorepeaters test start", 0); refused(server, "radiorepeaters test start 0", 4);
+            command(server, "radiorepeaters test start"); refused(server, "radiorepeaters test start", 4);
             var graph = manager.network(level, in); manager.updateSnapshot(tower);
             check(graph == manager.network(level, in), "Recording a no-op snapshot must retain network identity");
             for (int i = 0; i < 3; i++) {
@@ -101,7 +101,7 @@ public class PerformanceGameTests implements FabricGameTest {
             tap.receiver.antennaPower++; send(sender, new byte[]{7});
             TowerManager.resourcesReloaded(server, "performance_fixture_refresh"); send(sender, new byte[]{8});
             command(server, "radiorepeaters test stop"); check(!RelayPerformance.running(server), "Explicit stop must disable capture");
-            refused(server, "radiorepeater test stop", 4);
+            refused(server, "radiorepeaters test stop", 4);
             var report = report(before);
             check(count(report, "route_calls") >= 10 && count(report, "delivery_accepted") == 5, "Nested route calls and real accepted deliveries must be counted");
             check(count(report, "callback_rf_changes") >= 5 && count(report, "source_rf_repeats") > 0, "Capture must identify changed callback RF and stable subsequent packets");
@@ -118,7 +118,7 @@ public class PerformanceGameTests implements FabricGameTest {
             check(self > 0 && inclusive > self && Math.abs(self - phases) < .00001, "Exclusive phases must partition routing time without counting nested routing twice");
             check(!level.hasChunkAt(pos) && !level.hasChunkAt(peer.position()), "Profiling must not load saved tower terrain");
         } finally {
-            if (RelayPerformance.running(server)) command(server, "radiorepeater test stop");
+            if (RelayPerformance.running(server)) command(server, "radiorepeaters test stop");
             output.getReceivers().remove(tap.receiver); manager.removeAt(tower.dimension(), tower.position());
             manager.removeAt(peer.dimension(), peer.position());
         }
@@ -127,7 +127,9 @@ public class PerformanceGameTests implements FabricGameTest {
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "performance_timer", timeoutTicks = 3000)
     public void timed_capture_stops_on_elapsed_seconds_and_writes_an_idle_report(GameTestHelper helper) {
         var server = helper.getLevel().getServer(); Set<Path> before = reports();
-        command(server, "radiorepeater test start 1");
+        check(server.getCommands().getDispatcher().getRoot().getChild("radiorepeater") == null,
+                "Only the plural command root should be registered");
+        command(server, "radiorepeaters test start 1");
         helper.startSequence().thenWaitUntil(() -> helper.assertTrue(!RelayPerformance.running(server), "Timed capture must finish automatically"))
                 .thenExecute(() -> {
                     var report = report(before); check(report.get("stop_reason").getAsString().equals("duration_elapsed"), "Timer must identify its stop reason");
@@ -142,6 +144,6 @@ public class PerformanceGameTests implements FabricGameTest {
         command(server, "radiorepeaters test start"); RelayPerformance.stopping(server);
         check(!RelayPerformance.running(server), "Shutdown hook must release capture state");
         check(report(before).get("stop_reason").getAsString().equals("server_shutdown"), "Shutdown must save a complete report");
-        command(server, "radiorepeater test start"); command(server, "radiorepeater test stop"); helper.succeed();
+        command(server, "radiorepeaters test start"); command(server, "radiorepeaters test stop"); helper.succeed();
     }
 }

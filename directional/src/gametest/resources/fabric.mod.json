@@ -7,7 +7,8 @@
   "entrypoints": {
     "fabric-gametest": [
       "dev.paul.simpleradiodirectional.gametest.DirectionalGameTests",
-      "dev.paul.simpleradiodirectional.gametest.WideArrayGameTests"
+      "dev.paul.simpleradiodirectional.gametest.WideArrayGameTests",
+      "dev.paul.simpleradiodirectional.gametest.WiredAntennaGameTests"
     ]
   },
   "depends": {

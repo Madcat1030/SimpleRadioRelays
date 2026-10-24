@@ -17,6 +17,13 @@ public final class MastScanner {
         @Override public synchronized Throwable fillInStackTrace() { return this; }
     }
     private MastScanner() {}
+    public static boolean dependenciesAvailable(ServerLevel level, Set<Long> masts) {
+        for (long packed : masts) {
+            BlockPos pos = BlockPos.of(packed);
+            if (!level.hasChunkAt(pos) || !level.areEntitiesLoaded(ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4))) return false;
+        }
+        return true;
+    }
     public static Set<Long> scan(ServerLevel level, BlockPos core) {
         if (!level.getServer().isSameThread()) throw new IllegalStateException("Mast scans require the server thread");
         Set<Long> observed = new HashSet<>();

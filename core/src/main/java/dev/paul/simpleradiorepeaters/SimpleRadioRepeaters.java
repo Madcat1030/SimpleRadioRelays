@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.networking.v1.*;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
@@ -99,8 +100,10 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(RelayPerformance::tick);
         ServerChunkEvents.CHUNK_LOAD.register(TowerManager::chunkLoaded);
         ServerChunkEvents.CHUNK_UNLOAD.register(TowerManager::chunkUnloaded);
+        ServerEntityEvents.ENTITY_LOAD.register(TowerManager::wireLoaded);
+        ServerEntityEvents.ENTITY_UNLOAD.register(TowerManager::wireUnloaded);
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
-            var commands = dispatcher.register(literal("radiorepeaters")
+            dispatcher.register(literal("radiorepeaters")
                 .then(RelayPerformance.commands())
                 .then(literal("status").executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
@@ -126,7 +129,6 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                     context.getSource().sendSuccess(() -> Component.literal("Checking saved relays and card banks in loaded chunks and refreshing loaded antennas."), false);
                     return 1;
                 })));
-            dispatcher.register(literal("radiorepeater").redirect(commands));
         });
         LOGGER.info("Simple Radio Repeaters ready; persistent towers do not force-load chunks.");
     }

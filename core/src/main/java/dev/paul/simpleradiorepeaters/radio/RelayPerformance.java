@@ -108,11 +108,11 @@ public final class RelayPerformance {
     }
     private static CommandSyntaxException failure(String text) { return new SimpleCommandExceptionType(Component.literal(text)).create(); }
     private static int start(CommandContext<CommandSourceStack> context, int seconds) throws CommandSyntaxException {
-        if (active != null) throw failure("A radio performance test is already running. Use /radiorepeater test stop first.");
+        if (active != null) throw failure("A radio performance test is already running. Use /radiorepeaters test stop first.");
         MinecraftServer server = context.getSource().getServer(); active = new Capture(server, seconds, context.getSource());
         RelayGraph.observeCaches(RelayPerformance::cache);
         SimpleRadioRepeaters.LOGGER.info("[relay-test] START id={} seconds={} towers={}", active.id, seconds == 0 ? "manual" : seconds, active.initial.get("network"));
-        context.getSource().sendSuccess(() -> Component.literal("Radio performance test started" + (seconds == 0 ? "; use /radiorepeater test stop to save it." : " for " + seconds + " seconds; it will save automatically.")), false);
+        context.getSource().sendSuccess(() -> Component.literal("Radio performance test started" + (seconds == 0 ? "; use /radiorepeaters test stop to save it." : " for " + seconds + " seconds; it will save automatically.")), false);
         return 1;
     }
     public static void tick(MinecraftServer server) {

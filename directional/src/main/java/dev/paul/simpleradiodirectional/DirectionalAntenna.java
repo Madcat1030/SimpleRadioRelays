@@ -50,6 +50,8 @@ public final class DirectionalAntenna implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(DishManager::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(DishManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(DishManager::tick);
+        ServerEntityEvents.ENTITY_LOAD.register(DishManager::wireLoaded);
+        ServerEntityEvents.ENTITY_UNLOAD.register(DishManager::wireUnloaded);
         ServerBlockEntityEvents.BLOCK_ENTITY_UNLOAD.register((entity,level) -> {
             if (entity instanceof ReceiverBlockEntity receiver) {
                 if (receiver.receiver instanceof RadioReceiver router) DishManager.forget(router);

@@ -1,0 +1,17 @@
+[
+  {
+    "configuration": "core",
+    "tests": 63,
+    "failures": 0
+  },
+  {
+    "configuration": "standalone-directional",
+    "tests": 21,
+    "failures": 0
+  },
+  {
+    "configuration": "combined",
+    "tests": 109,
+    "failures": 0
+  }
+]

@@ -1,6 +1,8 @@
 package dev.paul.simpleradiorepeaters.network;
 
 import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
+import com.codinglitch.simpleradio.core.registry.entities.Wire;
+import com.codinglitch.simpleradio.radio.RadioRouter;
 
 import dev.paul.simpleradiorepeaters.*;
 import dev.paul.simpleradiorepeaters.block.*;
@@ -13,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.entity.Entity;
 
 import java.util.*;
 
@@ -40,6 +43,7 @@ public final class TowerManager {
     private final Map<Scope, Network> networks = new HashMap<>();
     private final Map<ChunkKey, Set<UUID>> towersByChunk = new HashMap<>();
     private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
+    private final Set<Wire> pendingWires = Collections.newSetFromMap(new IdentityHashMap<>());
     private int configStamp;
     public long forwardedFrames, receiverDeliveries;
 
@@ -74,6 +78,12 @@ public final class TowerManager {
     public static void tick(MinecraftServer server) {
         TowerManager manager = get(server);
         if (manager == null) return;
+        // ENTITY_LOAD runs before Wire.connect attaches both sockets. Inspect it after that call.
+        for (Wire wire : List.copyOf(manager.pendingWires)) {
+            manager.pendingWires.remove(wire);
+            if (wire.isAlive() && wire.level() instanceof ServerLevel level)
+                manager.wireChanged(level, wire, false);
+        }
         manager.reconcilePendingChunks();
         if (server.getTickCount() % 100 == 0) {
             manager.checkConfiguration();
@@ -172,6 +182,63 @@ public final class TowerManager {
         if (manager == null) return;
         manager.pendingChunks.remove(
                 new ChunkKey(level.dimension().location().toString(), chunk.getPos().toLong()));
+    }
+
+    public static void wireLoaded(Entity entity, ServerLevel level) {
+        TowerManager manager = get(level.getServer());
+        if (manager != null && entity instanceof Wire wire) manager.pendingWires.add(wire);
+    }
+
+    public static void wireUnloaded(Entity entity, ServerLevel level) {
+        TowerManager manager = get(level.getServer());
+        if (manager == null || !(entity instanceof Wire wire)) return;
+        manager.pendingWires.remove(wire);
+        var reason = wire.getRemovalReason();
+        // Tracking/chunk unload is not evidence that an antenna was disconnected.
+        if (reason != null && reason.shouldDestroy()) manager.wireChanged(level, wire, true);
+    }
+
+    private static Set<Long> wireEndpoints(ServerLevel level, Wire wire) {
+        Set<Long> endpoints = new HashSet<>();
+        for (var router : new RadioRouter[]{wire.getFromRouter(), wire.getToRouter()}) {
+            if (router != null && router.getLocation() != null && router.getLocation().level == level)
+                endpoints.add(router.getLocation().blockPos().asLong());
+        }
+        if (endpoints.isEmpty()) endpoints.add(wire.blockPosition().asLong());
+        return endpoints;
+    }
+
+    /** Native wires must not time out merely because a verified extension endpoint unloaded. */
+    public static boolean waitingForWireDependencies(Wire wire) {
+        if (!(wire.level() instanceof ServerLevel level)) return false;
+        if (wire.getFromRouter() != null && wire.getToRouter() != null) return false;
+        TowerManager manager = get(level.getServer());
+        if (manager == null) return false;
+        Set<Long> endpoints = wireEndpoints(level, wire);
+        for (TowerRecord record : manager.data.towers.values()) {
+            if (record.verified() && record.antennaScore() > 0
+                    && record.dimension().equals(level.dimension().location().toString())
+                    && !Collections.disjoint(record.footprint(), endpoints)
+                    && !AntennaScanner.dependenciesAvailable(level, record.footprint())) return true;
+        }
+        return false;
+    }
+
+    private void wireChanged(ServerLevel level, Wire wire, boolean broken) {
+        Set<Long> endpoints = wireEndpoints(level, wire);
+        if (endpoints.isEmpty()) return;
+        for (TowerRecord record : List.copyOf(data.towers.values())) {
+            if (!record.dimension().equals(level.dimension().location().toString())
+                    || Collections.disjoint(record.footprint(), endpoints)) continue;
+            RelayBlockEntity relay = loaded.get(record.id());
+            if (relay != null && !relay.isRemoved()) relay.wireChanged(this, broken);
+            else if (broken) put(record.invalidate()); // Persist the cut even if the box is unloaded.
+        }
+    }
+
+    public void invalidateAntenna(UUID id) {
+        TowerRecord record = data.towers.get(id);
+        if (record != null) put(record.invalidate());
     }
 
     /**

@@ -276,17 +276,56 @@ public class RepeaterGameTests implements FabricGameTest {
                     check(restored.getAntennaPower() == score && manager.isEligible(restored.relayId()), "Bank must recover without an enable toggle");
                     check(manager.snapshot(restored.relayId()).antennaBase().equals(remoteCore), "Restored wire scan must retain the same remote antenna origin");
                     check(restored.saveWithoutMetadata().getInt("AntennaScore") == score, "Refreshed score must be saved in the block entity");
-                    wire.burnOut(); restored.markDirty(); // Explicit refresh; do not patch upstream cut-wire notifications.
-                    helper.runAfterDelay(30, () -> {
-                        check(manager.isEligible(restored.relayId()), "One settled empty scan must not discard the cache");
-                    });
-                    helper.runAfterDelay(250, () -> {
-                        check(!manager.isEligible(restored.relayId()), "A genuinely removed wire must eventually stop relaying");
-                        check(manager.snapshot(restored.relayId()).antennaScore() == 0, "Confirmed disconnection must publish a zero score");
-                        level.setBlock(restored.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
-                        for (ChunkPos chunk : fixtureChunks) level.setChunkForced(chunk.x, chunk.z, false);
-                        helper.succeed();
-                    });
+                    TowerRecord connected = manager.snapshot(restored.relayId());
+                    BlockPos unavailable = core.offset(20000, 0, 0);
+                    check(!level.hasChunkAt(unavailable), "The simulated missing dependency must be unloaded");
+                    Set<Long> footprint = new HashSet<>(connected.footprint());
+                    footprint.add(unavailable.asLong());
+                    manager.updateSnapshot(new TowerRecord(connected.id(), connected.dimension(), connected.position(), connected.channels(),
+                            connected.enabled(), connected.catalystItem(), connected.verified(), connected.antennaScore(), footprint,
+                            connected.cardBank(), connected.attachment(), connected.transponder(), connected.antennaBase()));
+                    far.deactivate(); // Reproduce a missing endpoint router while its historical chunk is unavailable.
+                    check(wire.getToRouter() == null, "The unloaded endpoint must be absent from the native router table");
+                    int beforeTimeoutChunks = level.getChunkSource().getLoadedChunksCount();
+                    for (int i = 0; i < com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.wire.invalidDeathTime + 3; i++) wire.tick();
+                    check(wire.isAlive() && manager.isEligible(restored.relayId()), "An unloaded endpoint must not expire a verified extension");
+                    check(beforeTimeoutChunks == level.getChunkSource().getLoadedChunksCount(), "Timeout protection must not load missing chunks");
+                    far.activate(); wire.tick(); manager.updateSnapshot(connected);
+                    wire.remove(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
+                    check(manager.isEligible(restored.relayId()), "Normal wire unloading must preserve the saved connection");
+                    Wire replacement = Wire.connect(near, far, level);
+                    check(replacement != null, "The unloaded wire must reconnect");
+                    far.deactivate();
+                    for (int i = 0; i < com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.wire.invalidDeathTime + 3; i++) replacement.tick();
+                    check(!replacement.isAlive() && !manager.isEligible(restored.relayId()),
+                            "A genuinely missing router with all dependencies loaded must still expire normally");
+                    far.activate();
+                    replacement = Wire.connect(near, far, level);
+                    check(replacement != null, "The wire must reconnect after a genuine native expiry");
+                    TowerManager.tick(level.getServer());
+                    check(manager.isEligible(restored.relayId()), "Reconnecting a valid extension must restore eligibility");
+                    replacement.burnOut();
+                    check(!manager.isEligible(restored.relayId()), "An actual wire cut must stop relaying in the same call");
+                    check(manager.snapshot(restored.relayId()).antennaScore() == 0, "A loaded disconnected antenna must publish zero immediately");
+                    restored.setRemoved(); // Leaving immediately must not revive the former connection.
+                    check(!TowerRecord.load(manager.snapshot(restored.relayId()).save()).eligible(),
+                            "The broken state must survive unload and saved-data roundtrip");
+                    // Also cut the extension after its relay box has already unloaded.
+                    restored.clearRemoved();
+                    RelayBlockEntity.tick(level, restored.getBlockPos(), restored.getBlockState(), restored);
+                    Wire remoteCut = Wire.connect(near, far, level);
+                    check(remoteCut != null, "The extension must reconnect for the unloaded-box test");
+                    TowerManager.tick(level.getServer());
+                    check(manager.isEligible(restored.relayId()), "A new wire must restore eligibility without a ten-second wait");
+                    restored.setRemoved();
+                    int chunks = level.getChunkSource().getLoadedChunksCount();
+                    remoteCut.burnOut();
+                    check(!TowerRecord.load(manager.snapshot(restored.relayId()).save()).eligible(),
+                            "A cut must invalidate the saved tower even when its relay box is unloaded");
+                    check(chunks == level.getChunkSource().getLoadedChunksCount(), "Wire cut handling must not load chunks");
+                    level.setBlock(restored.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+                    for (ChunkPos chunk : fixtureChunks) level.setChunkForced(chunk.x, chunk.z, false);
+                    helper.succeed();
                 });
             });
         });
