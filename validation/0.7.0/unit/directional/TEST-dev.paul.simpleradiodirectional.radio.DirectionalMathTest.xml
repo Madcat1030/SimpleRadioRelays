@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-25T08:59:50.793Z" hostname="24d83bd1fa56" time="0.013">
+  <properties/>
+  <testcase name="cardinalDirectionsAndForwardArcAgree()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <testcase name="defaultThirtyTwoPointAntennaHasModestTowerScaledAllowance()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <testcase name="shoulderIsMonotoneSymmetricAndContinuous()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.003"/>
+  <testcase name="nonfiniteAndUnlimitedNativeLossAreSafe()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.0"/>
+  <testcase name="alreadyStrongerNativeReceptionIsNeverReduced()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <testcase name="thirtyDegreesPastTheEdgeHasNoBonus()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <testcase name="fullCoreIncludesBothEdges()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <testcase name="fifteenDegreesPastTheEdgeIsHalfGain()" classname="dev.paul.simpleradiodirectional.radio.DirectionalMathTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

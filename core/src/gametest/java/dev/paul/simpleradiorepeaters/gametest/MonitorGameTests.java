@@ -1,0 +1,215 @@
+package dev.paul.simpleradiorepeaters.gametest;
+
+import com.codinglitch.simpleradio.central.Frequency;
+import com.codinglitch.simpleradio.core.registry.SimpleRadioBlocks;
+import dev.paul.simpleradiorepeaters.*;
+import dev.paul.simpleradiorepeaters.block.*;
+import dev.paul.simpleradiorepeaters.monitor.*;
+import dev.paul.simpleradiorepeaters.network.*;
+import dev.paul.simpleradiorepeaters.radio.*;
+import dev.paul.simpleradiorepeaters.terrain.*;
+import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.minecraft.core.*;
+import net.minecraft.gametest.framework.*;
+import net.minecraft.nbt.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.*;
+import java.nio.file.*;
+import java.util.*;
+
+public class MonitorGameTests implements FabricGameTest {
+    private static final ChannelKey CHANNEL = new ChannelKey("098.21", "AM"), OTHER = new ChannelKey("098.22", "AM");
+    private static void check(boolean value, String message) { if (!value) throw new GameTestAssertException(message); }
+    private static ItemStack card(ChannelKey channel) {
+        var card = new ItemStack(SimpleRadioRepeaters.CARD);
+        SimpleRadioRepeaters.CARD.setFrequency(card, channel.frequency(), channel.mode()); return card;
+    }
+    private static TowerRecord node(ServerLevel world, BlockPos base, Set<ChannelKey> channels, TransponderChannels ports) {
+        return new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), base.south(17), channels, true,
+                RelayCatalysts.GILDED, true, 64, Set.of(), null, RelayAttachment.NONE, ports, base);
+    }
+    private static List<TowerRecord> targets(ServerLevel world, TowerRecord home) {
+        var base = home.antennaBase();
+        return List.of(node(world, base.east(1000), Set.of(CHANNEL), new TransponderChannels(CHANNEL, OTHER, CHANNEL, TransponderChannels.Mode.MULTICAST)),
+                node(world, base.north(1500), Set.of(), new TransponderChannels(OTHER, CHANNEL, null, false)),
+                node(world, base.offset(1400, 0, 3400), Set.of(), new TransponderChannels(CHANNEL, OTHER, null, false)),
+                node(world, base.west(200_000), Set.of(CHANNEL), null),
+                node(world, base.south(1000), Set.of(new ChannelKey(CHANNEL.frequency(), "FM")), null));
+    }
+    private static void remove(TowerManager manager, Collection<TowerRecord> records) {
+        records.forEach(record -> manager.removeAt(record.dimension(), record.position()));
+    }
+    private static RelayMonitorBlockEntity place(ServerLevel world, BlockPos core, Direction facing) {
+        world.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        for (int i = 1; i <= 3; i++) world.setBlock(core.above(i), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        BlockPos relayPos = core.relative(facing), pos = relayPos.above();
+        world.setBlock(relayPos, SimpleRadioRepeaters.RELAY.defaultBlockState().setValue(RelayBlock.FACING, facing), 3);
+        world.setBlock(pos, SimpleRadioRepeaters.RELAY_MONITOR.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
+        ((RelayBlockEntity) world.getBlockEntity(relayPos)).installCatalyst(new ItemStack(Items.GILDED_BLACKSTONE), true);
+        return (RelayMonitorBlockEntity) world.getBlockEntity(pos);
+    }
+    private static BlockHitResult hit(BlockPos pos, Direction facing, double x, double y) {
+        Vec3 local = switch (facing) {
+            case EAST -> new Vec3(1, y, x); case SOUTH -> new Vec3(1 - x, y, 1);
+            case WEST -> new Vec3(0, y, 1 - x); default -> new Vec3(x, y, 0);
+        };
+        return new BlockHitResult(local.add(pos.getX(), pos.getY(), pos.getZ()), facing, pos, false);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_survey")
+    public void surveyCountsUniqueNodesAndUsesTransponderInputAndOutputRoles(GameTestHelper helper) {
+        var world = helper.getLevel(); var manager = TowerManager.get(world.getServer());
+        var home = node(world, new BlockPos(2_400_000, 64, -2_400_000), Set.of(), null);
+        var targets = targets(world, home); manager.updateSnapshot(home); targets.forEach(manager::updateSnapshot);
+        try {
+            var result = RelaySurvey.scan(world.getServer(), manager, home, CHANNEL);
+            check(result.tx() == 2 && result.rx() == 2 && result.other() == 2 && result.entries().size() == 3,
+                    "Counts must include one node per tower, distinguish simplex roles and exclude FM from an AM card");
+            check(result.origin().equals(home.antennaBase()) && !result.origin().equals(home.position()), "Overview coordinates must identify the antenna base");
+            check(result.entries().get(0).directionLabel().equals("TX/RX") && result.entries().get(1).directionLabel().equals("RX only")
+                            && result.entries().get(2).directionLabel().equals("TX only"), "Heard entries must precede approximate TX-only entries");
+            check(result.entries().get(2).position() == null && result.entries().get(2).bearing().equals("SSE"),
+                    "A TX-only result must omit coordinates and use the sixteen-point bearing");
+            for (var target : targets) check(!world.hasChunkAt(target.position()), "Surveying saved targets must not load their chunks");
+            helper.succeed();
+        } finally { remove(manager, targets); remove(manager, List.of(home)); }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140, batch = "monitor_physical")
+    public void monitorIsPassiveAndItsRealPagesAndCompassBindingSurviveNativeTracking(GameTestHelper helper) {
+        var world = helper.getLevel(); var manager = TowerManager.get(world.getServer());
+        var monitor = place(world, helper.absolutePos(new BlockPos(3, 2, 3)), Direction.NORTH);
+        var pages = new LinkedHashMap<String, String>(); pages.put("empty", monitor.getUpdateTag().toString());
+        helper.runAfterDelay(40, () -> {
+            var relay = monitor.relay(); var before = manager.snapshot(relay.relayId());
+            check(before != null && before.hardwareReady(), "The monitor fixture needs a verified mast and catalyst");
+            check(String.join(" ", monitor.lines()).equals("Insert tuned card for Relay diagnostics") && monitor.reading() == null,
+                    "An empty monitor must show only the requested prompt and perform no survey");
+            var home = new TowerRecord(before.id(), before.dimension(), before.position(), Set.of(), true, before.catalystItem(), true,
+                    64, before.footprint(), before.cardBank(), before.attachment(), null, before.antennaBase());
+            manager.updateSnapshot(home); var targets = targets(world, home); targets.forEach(manager::updateSnapshot);
+            var player = helper.makeMockPlayer(); player.setPos(monitor.getBlockPos().getCenter());
+            try {
+                var incoming = card(CHANNEL); player.setItemInHand(InteractionHand.MAIN_HAND, incoming);
+                var screen = hit(monitor.getBlockPos(), Direction.NORTH, .5, .625);
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(incoming.isEmpty() && monitor.reading() != null && monitor.reading().tx() == 2 && monitor.reading().rx() == 2,
+                        "A tuned card on the front must fill the sole slot and open the overview");
+                check(relay.channels().isEmpty() && !manager.isEligible(relay.relayId())
+                                && manager.network(world, CHANNEL).towers().stream().noneMatch(t -> t.id().equals(home.id())),
+                        "A monitor card must never become a forwarding port");
+                var cached = monitor.reading(); monitor.refresh(); check(monitor.reading() == cached, "An unchanged revision/card must reuse its survey");
+                pages.put("overview", monitor.getUpdateTag().toString());
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                for (String name : List.of("both", "rx", "tx")) {
+                    SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                    pages.put(name, monitor.getUpdateTag().toString());
+                }
+                check(monitor.lines().get(0).contains("TX only") && monitor.lines().contains("SSE"), "The final target page must be the SSE TX-only entry");
+                String payload = monitor.getUpdateTag().toString(); var destination = targets.get(2);
+                check(!payload.contains(String.valueOf(destination.antennaBase().getX())) && !payload.contains(String.valueOf(destination.antennaBase().getZ())),
+                        "Exact TX-only coordinates must not be included anywhere in the client update tag");
+                var compass = new ItemStack(Items.COMPASS); compass.getOrCreateTag().putString("CustomTest", "keep");
+                player.setItemInHand(InteractionHand.MAIN_HAND, compass); var page = monitor.lines();
+                check(SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen).consumesAction()
+                                && monitor.lines().equals(page), "Using a compass must bind without cycling");
+                check(NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase())
+                                && compass.getTag().getString(CompassItem.TAG_LODESTONE_DIMENSION).equals(destination.dimension())
+                                && !compass.getTag().getBoolean(CompassItem.TAG_LODESTONE_TRACKED)
+                                && compass.getTag().getString("CustomTest").equals("keep"), "TX-only compass binding must use the real antenna base and preserve unrelated item data");
+                var restored = ItemStack.of(compass.save(new CompoundTag()));
+                Items.COMPASS.inventoryTick(restored, world, player, 0, false);
+                check(restored.getTag().contains(CompassItem.TAG_LODESTONE_POS) && !world.hasChunkAt(destination.antennaBase()),
+                        "A saved compass must retain its target without a lodestone or target-chunk load");
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); monitor.nextPage();
+                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Cycling past the last target must return to the overview");
+                var stack = new ItemStack(Items.COMPASS, 3); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+                check(monitor.bindCompass(player, InteractionHand.MAIN_HAND) && stack.getCount() == 2 && !stack.hasTag(), "Only one compass in a stack may be bound");
+                boolean found = false;
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    var item = player.getInventory().getItem(i);
+                    if (item.is(Items.COMPASS) && item.hasTag() && item.getTag().contains(CompassItem.TAG_LODESTONE_POS))
+                        found |= NbtUtils.readBlockPos(item.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(home.antennaBase());
+                }
+                check(found, "The overview must bind the single new compass to this tower");
+                var offhand = new ItemStack(Items.COMPASS); player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                player.setItemInHand(InteractionHand.OFF_HAND, offhand); page = monitor.lines();
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(offhand.hasTag() && monitor.lines().equals(page), "An offhand compass with an empty main hand must bind instead of cycling");
+                var saved = monitor.saveWithoutMetadata(); check(!saved.contains("MonitorLines"), "Derived survey pages must not be persisted as stale world data");
+                monitor.load(saved); monitor.refresh(); check(!manager.snapshot(home.id()).eligible() && monitor.reading() != null,
+                        "Reloading a monitor inventory must retain passivity and rebuild its derived display");
+                java.nio.file.Files.writeString(Path.of("monitor-preview-pages.json"), new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(pages));
+                helper.succeed();
+            } catch (Exception e) { throw new RuntimeException(e); }
+            finally { remove(manager, targets); world.removeBlock(monitor.getBlockPos(), false); world.removeBlock(relay.getBlockPos(), false); }
+        });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_clicks")
+    public void cardAndScreenHitRegionsRespectAllFourFacingsAndDoNotExposeHopperSlots(GameTestHelper helper) {
+        var world = helper.getLevel(); var player = helper.makeMockPlayer();
+        for (var facing : Direction.Plane.HORIZONTAL) {
+            var pos = helper.absolutePos(new BlockPos(3, 2, 3));
+            world.setBlock(pos, SimpleRadioRepeaters.RELAY_MONITOR.defaultBlockState().setValue(ChannelBankBlock.FACING, facing), 3);
+            var monitor = (RelayMonitorBlockEntity) world.getBlockEntity(pos);
+            var held = card(CHANNEL); player.setItemInHand(InteractionHand.MAIN_HAND, held);
+            var back = new BlockHitResult(pos.getCenter(), facing.getOpposite(), pos, false);
+            SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, pos, player, InteractionHand.MAIN_HAND, back);
+            check(!held.isEmpty() && monitor.isEmpty(), "A card on any non-front face must do nothing");
+            SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, pos, player, InteractionHand.MAIN_HAND, hit(pos, facing, .5, .15625));
+            check(held.isEmpty() && !monitor.isEmpty(), "The front slot must accept exactly one card in every orientation");
+            for (var side : Direction.values()) check(monitor.getSlotsForFace(side).length == 0, "Hoppers must have no exposed monitor slots");
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, pos, player, InteractionHand.MAIN_HAND, hit(pos, facing, .1, .3));
+            check(!monitor.isEmpty(), "An empty-hand background click must not eject the card");
+            SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, pos, player, InteractionHand.MAIN_HAND, hit(pos, facing, .5, .15625));
+            check(monitor.isEmpty(), "Clicking the card must eject it in every orientation");
+            world.removeBlock(pos, false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_loot")
+    public void monitorHasPickaxeTagsLootAndAnAvailableRecipe(GameTestHelper helper) {
+        var state = SimpleRadioRepeaters.RELAY_MONITOR.defaultBlockState();
+        check(new ItemStack(Items.IRON_PICKAXE).isCorrectToolForDrops(state), "A normal pickaxe must be able to harvest the monitor");
+        var world = helper.getLevel(); var pos = helper.absolutePos(BlockPos.ZERO);
+        var drops = Block.getDrops(state, world, pos, null, helper.makeMockPlayer(), new ItemStack(Items.IRON_PICKAXE));
+        check(drops.stream().anyMatch(s -> s.is(SimpleRadioRepeaters.RELAY_MONITOR.asItem())), "Breaking the monitor must drop its block");
+        check(world.getRecipeManager().byKey(SimpleRadioRepeaters.id("relay_monitor")).isPresent(), "The monitor must have a synced crafting recipe");
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 300, batch = "monitor_terrain")
+    public void monitorUsesTheSharedTerrainProfileAndReportsTheActualExtraDistancePercentage(GameTestHelper helper) {
+        var world = helper.getLevel(); var manager = TowerManager.get(world.getServer());
+        var cfg = RepeatersConfig.INSTANCE.terrain; var replacement = new RepeatersConfig.Terrain(); replacement.maxElevationAntennaBonus = 0;
+        RepeatersConfig.INSTANCE.terrain = replacement; TerrainManager.reconfigure(world.getServer());
+        var channel = new ChannelKey("098.26", "AM"); BlockPos base = new BlockPos(2_500_000, 64, -2_500_000);
+        var home = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), base.north(), Set.of(), true,
+                RelayCatalysts.GILDED, true, 64, Set.of(), null, RelayAttachment.NONE, null, base, new BlockPos(base.getX(), 200, base.getZ()));
+        var other = new TowerRecord(UUID.randomUUID(), home.dimension(), base.east(1000).north(), Set.of(channel), true,
+                RelayCatalysts.GILDED, true, 64, Set.of(), null, RelayAttachment.NONE, null, base.east(1000), home.antennaTip().east(1000));
+        manager.updateSnapshot(home); manager.updateSnapshot(other);
+        check(RelaySurvey.scan(world.getServer(), manager, home, channel).pending() == 1, "Initial unknown terrain must be identified as pending mapping");
+        helper.runAfterDelay(210, () -> {
+            try {
+                var profiles = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
+                var key = TerrainProfiles.Key.between(base.getX(), base.getZ(), base.getX() + 1000, base.getZ(), 64, 1024);
+                profiles.put(key, new int[]{217, 217});
+                var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
+                check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
+                        "Sixteen blocks below the sampled ground must display +25%, using the shared saved profile");
+                check(!world.hasChunkAt(base) && !world.hasChunkAt(other.antennaBase()), "Diagnostic terrain inspection must not load endpoints");
+                helper.succeed();
+            } finally {
+                remove(manager, List.of(home, other)); RepeatersConfig.INSTANCE.terrain = cfg; TerrainManager.reconfigure(world.getServer());
+            }
+        });
+    }
+}

@@ -1,0 +1,6 @@
+{
+  "integer_voxel_geometry": true,
+  "one_texel_per_model_unit": true,
+  "overlapping_coplanar_faces": [],
+  "faces_checked": 40
+}

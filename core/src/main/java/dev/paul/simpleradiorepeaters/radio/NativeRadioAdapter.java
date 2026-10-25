@@ -17,7 +17,7 @@ public final class NativeRadioAdapter {
         FrequencingType type = SimpleRadioFrequencing.TRANSMITTER;
         return (float) (type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude);
     }
-    private static double antennaScore(TowerRecord tower) {
+    public static double antennaScore(TowerRecord tower) {
         return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
                 * dev.paul.simpleradiorepeaters.terrain.TerrainManager.elevationMultiplier(tower);
     }

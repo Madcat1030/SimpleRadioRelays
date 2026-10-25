@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.RepeatersConfigTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-25T08:59:43.694Z" hostname="24d83bd1fa56" time="0.098">
+  <properties/>
+  <testcase name="undergroundCurveAndSamplingBudgetsAreValidated()" classname="dev.paul.simpleradiorepeaters.RepeatersConfigTest" time="0.022"/>
+  <testcase name="oldDefaultsMigrateButCustomSettingsSurvive()" classname="dev.paul.simpleradiorepeaters.RepeatersConfigTest" time="0.05"/>
+  <testcase name="malformedConfigurationIsRejectedRatherThanReplacedWithDefaults()" classname="dev.paul.simpleradiorepeaters.RepeatersConfigTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

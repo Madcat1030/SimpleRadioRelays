@@ -45,6 +45,7 @@ public final class TowerManager {
     private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
     private final Set<Wire> pendingWires = Collections.newSetFromMap(new IdentityHashMap<>());
     private int configStamp;
+    private long revision;
     public long forwardedFrames, receiverDeliveries;
 
     private TowerManager(MinecraftServer server, TowerSavedData data) {
@@ -52,6 +53,14 @@ public final class TowerManager {
         this.data = data;
         configStamp = NativeRadioAdapter.configurationStamp();
         for (TowerRecord record : data.towers.values()) index(record);
+    }
+
+    private void invalidateNetworks() { networks.clear(); revision++; }
+    public long revision() { return revision; }
+    /** Current operational forwarding nodes; passive monitor attachments are excluded. */
+    public List<TowerRecord> activeTowers() {
+        return data.towers.values().stream().filter(t -> t.eligible()
+                && (RepeatersConfig.INSTANCE.persistentUnloadedTowers || loaded.containsKey(t.id()))).toList();
     }
 
     public static TowerManager get(MinecraftServer server) {
@@ -101,7 +110,7 @@ public final class TowerManager {
         TowerManager manager = get(server);
         if (manager == null) return;
         RelayPerformance.invalidated(server, reason, manager.networks.size(), null, null);
-        manager.networks.clear();
+        manager.invalidateNetworks();
         manager.configStamp = NativeRadioAdapter.configurationStamp();
     }
 
@@ -111,7 +120,7 @@ public final class TowerManager {
             RelayPerformance.invalidated(
                     server, "rf_configuration_changed", networks.size(), null, null);
             configStamp = stamp;
-            networks.clear();
+            invalidateNetworks();
         }
     }
 
@@ -130,7 +139,7 @@ public final class TowerManager {
         if (old != null) unindex(old);
         data.towers.put(node.id(), node);
         data.setDirty();
-        networks.clear();
+        invalidateNetworks();
         index(node);
         pendingChunks.addAll(chunkKeys(node));
     }
@@ -169,7 +178,7 @@ public final class TowerManager {
         unindex(record);
         loaded.remove(id);
         data.setDirty();
-        networks.clear();
+        invalidateNetworks();
     }
 
     public static void chunkLoaded(ServerLevel level, LevelChunk chunk) {
@@ -350,7 +359,7 @@ public final class TowerManager {
                         level.dimension().location().toString(),
                         new ChunkPos(bank.getBlockPos()).toLong());
         Set<ChannelKey> channels = new TreeSet<>();
-        for (var card : bank.cardStates()) {
+        for (var card : bank.routingCards()) {
             ChannelKey channel = card.channel();
             if (channel != null) channels.add(channel);
         }
@@ -386,7 +395,7 @@ public final class TowerManager {
         if (previous == null && !RepeatersConfig.INSTANCE.persistentUnloadedTowers) {
             RelayPerformance.invalidated(
                     server, "nonpersistent_relay_loaded", networks.size(), null, saved);
-            networks.clear();
+            invalidateNetworks();
         }
         if (previous != relay) {
             RelayPerformance.count(RelayPerformance.Counter.RELAY_LOADS);
@@ -411,7 +420,7 @@ public final class TowerManager {
                     networks.size(),
                     data.towers.get(relay.relayId()),
                     null);
-            networks.clear();
+            invalidateNetworks();
         }
     }
 

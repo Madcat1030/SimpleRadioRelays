@@ -13,7 +13,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 
 public final class RelayRenderer implements BlockEntityRenderer<RelayBlockEntity> {
-    private static final String[] STATUS = {"READY", "NO ANT", "NO CAT", "NO CARD", "OFF", "SCAN", "CHECK", "NO BANK", "WAIT BANK"};
+    private static final String[] STATUS = {"READY", "NO ANT", "NO CAT", "NO CARD", "OFF", "SCAN", "CHECK", "NO BANK", "WAIT BANK", "MONITOR"};
     private final Font font;
     public RelayRenderer(BlockEntityRendererProvider.Context context) { font = context.getFont(); }
     @Override public void render(RelayBlockEntity relay, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {

@@ -4,8 +4,8 @@ Build radio infrastructure that carries conversations between distant settlement
 
 | Mod | Adds | Requires |
 | --- | --- | --- |
-| Repeaters 0.6.1 | Relays, Repeater Banks, Transponders, Frequency Cards and amplifiers | Simple Radio |
-| Dimensional Foci 0.6.1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
+| Repeaters 0.7.0 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+| Dimensional Foci 0.7.0 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
 | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
 
 ## Install
@@ -28,6 +28,8 @@ Each relay gives the signal fresh transmit power, limited by its catalyst and ac
 
 Overworld relay links use coarse, saved terrain profiles. Taller masts can clear intervening hills. Ordinary device links keep their existing behavior unless the server enables terrain checks. See [terrain settings](docs/Terrain-and-Elevation.md).
 
+Plug a [Relay Monitor](docs/Relay-Monitor.md) on top instead to survey one channel without forwarding it. Cycle its screen with an empty hand, or use a compass to mark the selected tower.
+
 Craft a book with Simple Radio copper wire to get **Simple Radio Relays**, the in-game guide. Installed addons contribute their own chapters. Saved relay towers continue working while unloaded without force-loading chunks.
 
-See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.6.1.md), or [building and testing](docs/Development.md).
+See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.0.md), or [building and testing](docs/Development.md).

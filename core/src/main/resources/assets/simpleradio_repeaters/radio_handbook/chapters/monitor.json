@@ -1,0 +1,12 @@
+{
+  "order": 45,
+  "title": "handbook.simpleradio_repeaters.monitor.title",
+  "entries": [
+    {
+      "recipe": "simpleradio_repeaters:relay_monitor"
+    },
+    {
+      "text": "handbook.simpleradio_repeaters.monitor.text"
+    }
+  ]
+}

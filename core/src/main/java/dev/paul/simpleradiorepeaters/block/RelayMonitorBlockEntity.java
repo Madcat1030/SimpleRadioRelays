@@ -1,0 +1,145 @@
+package dev.paul.simpleradiorepeaters.block;
+
+import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
+import dev.paul.simpleradiorepeaters.item.CardState;
+import dev.paul.simpleradiorepeaters.monitor.*;
+import dev.paul.simpleradiorepeaters.network.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
+import java.util.*;
+
+/** The client receives only the visible text page. Exact TX-only coordinates stay server-side. */
+public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
+    private static final List<String> INSERT_CARD = List.of("Insert tuned card", "for Relay diagnostics");
+    private List<String> lines = INSERT_CARD;
+    @Nullable private RelaySurvey.Result reading;
+    @Nullable private UUID selected, lastRelay;
+    @Nullable private ChannelKey lastChannel;
+    private long lastRevision = Long.MIN_VALUE;
+
+    public RelayMonitorBlockEntity(BlockPos pos, BlockState state) { super(SimpleRadioRepeaters.RELAY_MONITOR_ENTITY, 1, pos, state); }
+    @Override public List<CardState> routingCards() { return List.of(); }
+    public List<String> lines() { return lines; }
+    @Nullable public RelaySurvey.Result reading() { return reading; }
+    public static void tick(Level level, BlockPos pos, BlockState state, RelayMonitorBlockEntity monitor) {
+        ChannelBankBlockEntity.tick(level, pos, state, monitor);
+        ChannelKey channel = CardState.of(monitor.getItem(0)).channel();
+        if (level.getGameTime() % 20 == 0 || !Objects.equals(channel, monitor.lastChannel)) monitor.refresh();
+    }
+    public void refresh() {
+        if (!(level instanceof ServerLevel server)) return;
+        TowerManager manager = TowerManager.get(server.getServer());
+        var relay = relay(); ChannelKey channel = CardState.of(getItem(0)).channel();
+        UUID id = relay == null ? null : relay.relayId();
+        long revision = manager == null ? -1 : manager.revision();
+        if (revision == lastRevision && Objects.equals(channel, lastChannel) && Objects.equals(id, lastRelay)) return;
+        if (!Objects.equals(channel, lastChannel) || !Objects.equals(id, lastRelay)) selected = null;
+        lastChannel = channel; lastRelay = id; lastRevision = revision;
+        reading = null;
+        if (channel == null) { setLines(INSERT_CARD); return; }
+        if (relay == null || manager == null) { setLines(List.of("RELAY MONITOR", "Attach atop a Relay")); return; }
+        TowerRecord home = manager.snapshot(id);
+        if (home == null || !home.hardwareReady()) {
+            String status = !relay.enabled() ? "RELAY OFF" : !relay.hasCatalyst() ? "INSERT CATALYST"
+                    : relay.getAntennaPower() <= 0 ? "NO ANTENNA" : "CHECK ANTENNA";
+            setLines(List.of("RELAY MONITOR", channel.frequency() + " " + channel.modulation(), status)); return;
+        }
+        reading = RelaySurvey.scan(server.getServer(), manager, home, channel);
+        if (selected != null && reading.entries().stream().noneMatch(e -> e.id().equals(selected))) selected = null;
+        updateDisplay();
+    }
+    public void nextPage() {
+        refresh();
+        if (reading == null || reading.entries().isEmpty()) return;
+        int current = selectedIndex();
+        selected = current + 1 >= reading.entries().size() ? null : reading.entries().get(current + 1).id();
+        updateDisplay();
+    }
+    private int selectedIndex() {
+        if (reading != null && selected != null)
+            for (int i = 0; i < reading.entries().size(); i++) if (reading.entries().get(i).id().equals(selected)) return i;
+        return -1;
+    }
+    private static String dimension(String id) {
+        return switch (id) {
+            case "minecraft:overworld" -> "Overworld"; case "minecraft:the_nether" -> "Nether";
+            case "minecraft:the_end" -> "The End"; default -> id;
+        };
+    }
+    private static String coordinates(BlockPos pos) { return "X " + pos.getX() + " Y " + pos.getY() + " Z " + pos.getZ(); }
+    private void updateDisplay() {
+        if (reading == null) return;
+        List<String> text = new ArrayList<>();
+        String channel = reading.channel().frequency() + " " + reading.channel().modulation();
+        int index = selectedIndex();
+        if (index < 0) {
+            text.add("TX OVERVIEW  " + channel);
+            text.add(dimension(reading.dimension())); text.add(coordinates(reading.origin()));
+            text.add(String.format(Locale.ROOT, "ANT %.1f", reading.antenna()));
+            text.add("TX " + reading.tx() + "   RX " + reading.rx());
+            text.add("Other nodes " + reading.other());
+            text.add(reading.pending() > 0 ? "SCAN " + reading.pending() + " paths" : "Nominal direct links");
+        } else {
+            var entry = reading.entries().get(index);
+            text.add(channel + "  " + entry.directionLabel()); text.add(dimension(entry.dimension()));
+            if (entry.rx()) {
+                text.add(coordinates(Objects.requireNonNull(entry.position())));
+                text.add(String.format(Locale.ROOT, "%s %.0f blocks", entry.mapped() ? "Mapped" : "Distance", entry.distance()));
+                text.add(String.format(Locale.ROOT, "Terrain +%.1f%%", entry.terrainPercent()));
+            } else {
+                text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
+            }
+            text.add("Screen " + (index + 2) + "/" + (reading.entries().size() + 1));
+        }
+        setLines(List.copyOf(text));
+    }
+    private void setLines(List<String> value) {
+        if (value.equals(lines)) return;
+        lines = value;
+        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+    }
+    public boolean bindCompass(Player player, InteractionHand hand) {
+        UUID requested = selected;
+        refresh();
+        if (!(level instanceof ServerLevel server) || reading == null || !player.getItemInHand(hand).is(Items.COMPASS)) return false;
+        if (requested != null && !requested.equals(selected)) {
+            player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_target_gone"), true); return false;
+        }
+        TowerManager manager = TowerManager.get(server.getServer());
+        TowerRecord target = manager == null ? null : manager.snapshot(selected == null ? lastRelay : selected);
+        if (target == null) return false;
+        ItemStack held = player.getItemInHand(hand), bound = held.copy(); bound.setCount(1);
+        CompoundTag tag = bound.getOrCreateTag();
+        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(target.antennaBase()));
+        tag.putString(CompassItem.TAG_LODESTONE_DIMENSION, target.dimension());
+        tag.putBoolean(CompassItem.TAG_LODESTONE_TRACKED, false);
+        if (held.getCount() == 1) held.setTag(tag);
+        else {
+            if (!player.getAbilities().instabuild) held.shrink(1);
+            give(player, bound);
+        }
+        player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_bound", dimension(target.dimension())), true);
+        return true;
+    }
+    @Override public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag(); ListTag text = new ListTag();
+        lines.forEach(line -> text.add(StringTag.valueOf(line))); tag.put("MonitorLines", text);
+        return tag;
+    }
+    @Override public void load(CompoundTag tag) {
+        super.load(tag);
+        var text = tag.getList("MonitorLines", Tag.TAG_STRING); List<String> value = new ArrayList<>();
+        for (int i = 0; i < Math.min(8, text.size()); i++) value.add(text.getString(i));
+        lines = value.isEmpty() ? INSERT_CARD : List.copyOf(value);
+        reading = null; selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
+    }
+}

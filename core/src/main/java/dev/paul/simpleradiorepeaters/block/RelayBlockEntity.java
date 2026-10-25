@@ -34,7 +34,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
             SCANNING = 5,
             CHECKING = 6,
             NO_BANK = 7,
-            WAITING_FOR_BANK = 8;
+            WAITING_FOR_BANK = 8,
+            MONITOR = 9;
 
     private UUID relayId = UUID.randomUUID();
     private ItemStack catalyst = ItemStack.EMPTY;
@@ -236,7 +237,7 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
                 return;
             }
             CardBankRef current = new CardBankRef(bank.getBlockPos(), bank.bankId());
-            List<CardState> cards = bank.cardStates();
+            List<CardState> cards = bank.routingCards();
             TransponderChannels routing = bank.transponderChannels();
             if (!current.equals(cardBank)
                     || !cards.equals(cachedCards)
@@ -396,6 +397,8 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
         if (!enabled) status = OFF;
         else if (!hasCatalyst()) status = NO_CATALYST;
         else if (cardBank == null) status = NO_BANK;
+        else if (findAssignedBank() instanceof RelayMonitorBlockEntity)
+            status = dirty ? CHECKING : antennaPower <= 0 ? NO_ANTENNA : MONITOR;
         else if (channels().isEmpty() || (transponder != null && !transponder.ready()))
             status = NO_CARD;
         else if (bankPending) status = WAITING_FOR_BANK;

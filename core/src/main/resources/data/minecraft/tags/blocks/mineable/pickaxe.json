@@ -3,6 +3,7 @@
   "values": [
     "simpleradio_repeaters:relay",
     "simpleradio_repeaters:channel_bank",
-    "simpleradio_repeaters:transponder"
+    "simpleradio_repeaters:transponder",
+    "simpleradio_repeaters:relay_monitor"
   ]
 }

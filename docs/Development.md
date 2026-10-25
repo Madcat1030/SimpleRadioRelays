@@ -52,3 +52,10 @@ Relay ground profiles are referenced by registered physical mast columns; they a
 Full-mode preflight uses the actual native source type/power or the relay departure power and the existing reception integrations before admitting terrain work. Device scalar entries expire by inactivity instead of packet traversal order; the protective capacity fallback uses ordinary propagation and is counted explicitly. Sampling has separate relay/device queues, a time budget with a count ceiling, and 3:1 relay priority. Native hooks remain MixinExtras expression modifications.
 
 The attenuation curve averages extra-distance fractions. Keep this distinction explicit: a 100% extra-distance penalty gives approximately half range; it is not a 100% loss of power or range. Profile persistence, native/relay RF parity and capacity tests must exercise both clear and buried paths.
+
+
+## Relay Monitor (0.7.0)
+
+Passive card attachments override `routingCards()` to return no forwarding cards. Both the loaded Relay refresh and authoritative controller reconciliation use that method, so a monitor cannot become a saved relay node. Hardware readiness is separate from forwarding eligibility.
+
+`RelaySurvey` predicts direct first-departure links through the existing `RadioSpace`, `NativeRadioAdapter` and `TerrainManager` APIs. It does not create native frequencies or emit sources. `TowerManager.revision()` changes only on actual network invalidation; each monitor reuses its survey until the card, attached relay or revision changes. The client receives the current text page and card inventory, with no exact TX-only location. Compass binding resolves the selected node server-side and writes a static vanilla lodestone target with validation disabled.

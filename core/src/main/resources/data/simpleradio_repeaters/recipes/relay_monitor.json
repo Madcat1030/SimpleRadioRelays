@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "IGI",
+    "RCR",
+    "IWI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "simpleradio:receiving_module"
+    },
+    "C": {
+      "item": "minecraft:compass"
+    },
+    "W": {
+      "item": "simpleradio:copper_wire"
+    }
+  },
+  "result": {
+    "item": "simpleradio_repeaters:relay_monitor",
+    "count": 1
+  }
+}

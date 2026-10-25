@@ -1,0 +1,20 @@
+[
+  "README.md",
+  "core/src/gametest/resources/fabric.mod.json",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/SimpleRadioRepeaters.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/block/ChannelBankBlockEntity.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlockEntity.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/client/RelayRenderer.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/client/RepeatersClient.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerRecord.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.java",
+  "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+  "core/src/main/resources/data/minecraft/tags/blocks/mineable/pickaxe.json",
+  "core/src/main/resources/data/minecraft/tags/blocks/needs_stone_tool.json",
+  "core/src/test/java/dev/paul/simpleradiorepeaters/handbook/HandbookContentsTest.java",
+  "docs/Development.md",
+  "docs/Terrain-and-Elevation.md",
+  "gradle.properties",
+  "tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java"
+]

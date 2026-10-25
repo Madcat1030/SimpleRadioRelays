@@ -1,0 +1,23 @@
+gradle.projectsEvaluated {
+    def project=gradle.rootProject.project(':core')
+    def qa=new File(project.rootDir,'validation/0.7.0/preview')
+    def compile=project.tasks.register('compileMonitorPreview',JavaCompile) {
+        dependsOn project.tasks.named('classes')
+        source project.fileTree(new File(qa,'java')) {include '**/*.java'}
+        classpath=project.sourceSets.main.runtimeClasspath
+        destinationDirectory=new File(qa,'classes')
+        options.release=17
+    }
+    def jar=project.tasks.register('monitorPreviewJar',Jar) {
+        dependsOn compile
+        archiveFileName='relay-monitor-native-preview.jar'
+        destinationDirectory=project.file('run/mods')
+        from new File(qa,'classes')
+        from new File(qa,'resources')
+    }
+    project.tasks.named('runClient') {
+        dependsOn jar
+        jvmArgs '-Dradiorepeaters.preview.pages='+project.file('run/gametest/monitor-preview-pages.json').absolutePath
+    }
+    project.tasks.matching {it.name=='downloadAssets'}.configureEach {enabled=false}
+}

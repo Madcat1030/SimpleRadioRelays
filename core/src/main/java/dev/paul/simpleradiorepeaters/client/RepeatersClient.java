@@ -14,9 +14,11 @@ public final class RepeatersClient implements ClientModInitializer {
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.RELAY_ENTITY, RelayRenderer::new);
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.CHANNEL_BANK_ENTITY, ChannelBankRenderer::new);
         BlockEntityRendererRegistry.register(SimpleRadioRepeaters.TRANSPONDER_ENTITY, TransponderRenderer::new);
+        BlockEntityRendererRegistry.register(SimpleRadioRepeaters.RELAY_MONITOR_ENTITY, RelayMonitorRenderer::new);
         ModelLoadingPlugin.register(context -> {
             context.addModels(ChannelBankRenderer.CARDS);
             context.addModels(TransponderRenderer.CARDS);
+            context.addModels(RelayMonitorRenderer.CARD);
         });
         ClientPlayNetworking.registerGlobalReceiver(SimpleRadioRepeaters.CATALYST_CATALOG, (client, handler, packet, sender) -> {
             int count = packet.readVarInt(); List<ResourceLocation> items = new ArrayList<>();

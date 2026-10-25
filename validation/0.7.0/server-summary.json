@@ -1,0 +1,12 @@
+[
+  {
+    "suite": "core",
+    "tests": 81,
+    "failures": 0
+  },
+  {
+    "suite": "directional",
+    "tests": 127,
+    "failures": 0
+  }
+]

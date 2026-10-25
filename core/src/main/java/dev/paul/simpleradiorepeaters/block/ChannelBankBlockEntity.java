@@ -36,6 +36,8 @@ public class ChannelBankBlockEntity extends BlockEntity implements WorldlyContai
     @Nullable public TransponderChannels transponderChannels() { return null; }
     public UUID bankId() { return bankId; }
     public List<CardState> cardStates() { return items.stream().map(CardState::of).toList(); }
+    /** Passive diagnostic attachments own a card but never contribute forwarding channels. */
+    public List<CardState> routingCards() { return cardStates(); }
     /** Lazily derived client display data; no ItemStack or tuning parsing on subsequent frames. */
     public List<CardDisplay> displayCards() {
         if (displayCards == null) {

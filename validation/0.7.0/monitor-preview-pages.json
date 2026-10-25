@@ -1,0 +1,7 @@
+{
+  "empty": "{CardBankId:[I;469128854,-58307329,-1588125707,787672727],Items:[],MonitorLines:[\"Insert tuned card\",\"for Relay diagnostics\"]}",
+  "overview": "{CardBankId:[I;469128854,-58307329,-1588125707,787672727],Items:[{Count:1b,Slot:0b,id:\"simpleradio_repeaters:frequency_card\",tag:{frequency:\"098.21\",modulation:\"AM\"}}],MonitorLines:[\"TX OVERVIEW  098.21 AM\",\"Overworld\",\"X 51 Y -58 Z 94\",\"ANT 64.0\",\"TX 2   RX 2\",\"Other nodes 2\",\"Nominal direct links\"]}",
+  "both": "{CardBankId:[I;469128854,-58307329,-1588125707,787672727],Items:[{Count:1b,Slot:0b,id:\"simpleradio_repeaters:frequency_card\",tag:{frequency:\"098.21\",modulation:\"AM\"}}],MonitorLines:[\"098.21 AM  TX/RX\",\"Overworld\",\"X 1051 Y -58 Z 94\",\"Distance 1000 blocks\",\"Terrain +0.0%\",\"Screen 2/4\"]}",
+  "rx": "{CardBankId:[I;469128854,-58307329,-1588125707,787672727],Items:[{Count:1b,Slot:0b,id:\"simpleradio_repeaters:frequency_card\",tag:{frequency:\"098.21\",modulation:\"AM\"}}],MonitorLines:[\"098.21 AM  RX only\",\"Overworld\",\"X 51 Y -58 Z -1406\",\"Distance 1500 blocks\",\"Terrain +0.0%\",\"Screen 3/4\"]}",
+  "tx": "{CardBankId:[I;469128854,-58307329,-1588125707,787672727],Items:[{Count:1b,Slot:0b,id:\"simpleradio_repeaters:frequency_card\",tag:{frequency:\"098.21\",modulation:\"AM\"}}],MonitorLines:[\"098.21 AM  TX only\",\"Overworld\",\"SSE\",\"~3500 blocks\",\"Screen 4/4\"]}"
+}

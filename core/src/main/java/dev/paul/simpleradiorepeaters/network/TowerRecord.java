@@ -46,7 +46,8 @@ public record TowerRecord(UUID id, String dimension, BlockPos position, Set<Chan
     }
     public boolean catalyst() { return RelayCatalysts.registered(catalystItem); }
     public double efficiency() { return RelayCatalysts.efficiency(catalystItem); }
-    public boolean eligible() { return enabled && catalyst() && verified && antennaScore > 0 && !channels.isEmpty()
+    public boolean hardwareReady() { return enabled && catalyst() && verified && antennaScore > 0; }
+    public boolean eligible() { return hardwareReady() && !channels.isEmpty()
             && (transponder == null || transponder.ready()); }
     public List<TransponderChannels.Port> ports() {
         return transponder == null ? channels.stream().sorted().map(channel -> new TransponderChannels.Port(channel, channel)).toList()

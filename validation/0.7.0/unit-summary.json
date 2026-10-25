@@ -1,0 +1,23 @@
+[
+  {
+    "module": "core",
+    "tests": 75,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "module": "foci",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "module": "directional",
+    "tests": 17,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+]

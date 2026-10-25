@@ -42,6 +42,8 @@ public final class SimpleRadioRepeaters implements ModInitializer {
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final TransponderBlock TRANSPONDER = new TransponderBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
+    public static final RelayMonitorBlock RELAY_MONITOR = new RelayMonitorBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.METAL).strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK));
     public static final FrequencyCardItem CARD = new FrequencyCardItem(new Item.Properties().stacksTo(1));
     public static final HandbookItem HANDBOOK = new HandbookItem();
     public static final RelayAttachmentItem COPPER_AMPLIFIER = new RelayAttachmentItem(RelayAttachment.COPPER_AMPLIFIER);
@@ -50,6 +52,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
     public static BlockEntityType<RelayBlockEntity> RELAY_ENTITY;
     public static BlockEntityType<ChannelBankBlockEntity> CHANNEL_BANK_ENTITY;
     public static BlockEntityType<TransponderBlockEntity> TRANSPONDER_ENTITY;
+    public static BlockEntityType<RelayMonitorBlockEntity> RELAY_MONITOR_ENTITY;
 
     public static ResourceLocation id(String path) { return new ResourceLocation(ID, path); }
     public static final ResourceLocation CATALYST_CATALOG = id("catalysts");
@@ -67,6 +70,8 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         Registry.register(BuiltInRegistries.ITEM, id("channel_bank"), new BlockItem(CHANNEL_BANK, new Item.Properties()));
         Registry.register(BuiltInRegistries.BLOCK, id("transponder"), TRANSPONDER);
         Registry.register(BuiltInRegistries.ITEM, id("transponder"), new BlockItem(TRANSPONDER, new Item.Properties()));
+        Registry.register(BuiltInRegistries.BLOCK, id("relay_monitor"), RELAY_MONITOR);
+        Registry.register(BuiltInRegistries.ITEM, id("relay_monitor"), new BlockItem(RELAY_MONITOR, new Item.Properties()));
         Registry.register(BuiltInRegistries.ITEM, id("frequency_card"), CARD);
         Registry.register(BuiltInRegistries.ITEM, id("handbook"), HANDBOOK);
         Registry.register(BuiltInRegistries.ITEM, id("copper_amplifier"), COPPER_AMPLIFIER);
@@ -78,11 +83,13 @@ public final class SimpleRadioRepeaters implements ModInitializer {
                 FabricBlockEntityTypeBuilder.create(ChannelBankBlockEntity::new, CHANNEL_BANK).build());
         TRANSPONDER_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("transponder"),
                 FabricBlockEntityTypeBuilder.create(TransponderBlockEntity::new, TRANSPONDER).build());
+        RELAY_MONITOR_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("relay_monitor"),
+                FabricBlockEntityTypeBuilder.create(RelayMonitorBlockEntity::new, RELAY_MONITOR).build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id("repeaters"), FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.simpleradio_repeaters"))
                 .icon(() -> new ItemStack(RELAY))
                 .displayItems((parameters, output) -> {
-                    output.accept(HANDBOOK); output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(TRANSPONDER); output.accept(CARD);
+                    output.accept(HANDBOOK); output.accept(RELAY); output.accept(CHANNEL_BANK); output.accept(TRANSPONDER); output.accept(RELAY_MONITOR); output.accept(CARD);
                     output.accept(COPPER_AMPLIFIER); output.accept(REDSTONE_AMPLIFIER); output.accept(RELAY_AMPLIFIER);
                 }).build());
         ServerLifecycleEvents.SERVER_STARTED.register(TowerManager::start);

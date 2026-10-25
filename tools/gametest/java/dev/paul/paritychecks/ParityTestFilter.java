@@ -11,7 +11,7 @@ import java.util.Set;
 public abstract class ParityTestFilter {
     private static final Set<String> CLASSES = Set.of("repeatergametests", "relaydiagnosticsgametests", "catalystgametests",
         "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests",
-        "antennaorigingametests", "performancegametests", "terraingametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
+        "antennaorigingametests", "performancegametests", "terraingametests", "monitorgametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
     @Inject(method="getAllTestFunctions",at=@At("RETURN"),cancellable=true,remap=false)
     private static void parityChecks(CallbackInfoReturnable<Collection<TestFunction>> result) {
         result.setReturnValue(result.getReturnValue().stream().filter(test -> {

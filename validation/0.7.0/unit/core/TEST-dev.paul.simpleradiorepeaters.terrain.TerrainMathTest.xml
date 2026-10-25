@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-25T08:59:44.725Z" hostname="24d83bd1fa56" time="0.014">
+  <properties/>
+  <testcase name="aSlopingRayUsesEachSamplesPosition()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="deviceMovementMustExceedSixteenBlocks()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="clearTouchingAndBuriedPathsHaveBoundedSmoothLoss()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="theDeviceFreeRadiusIncludesItsBoundary()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="samplingDensityDoesNotMultiplyThePenalty()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="sparseSamplesHaveAHardWorkBound()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="samplingBudgetYieldsAsServerTicksBecomeBusy()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="swappingEndpointsPreservesTheTerrainResult()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="undergroundPenaltiesAddDistanceAndCannotBecomeNonFinite()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="aMountainAcrossTheLinkCanBeClearedByHigherMasts()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="elevationBonusHasNoBelowSeaPenaltyAndCannotGrowBeyondTheCap()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="threeModesHaveOneDefaultAndStableConfigurationValues()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.004"/>
+  <testcase name="aFiveHundredBlockMountainIsWeightedAcrossTheWholeTwoThousandBlockPath()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="aboveGroundAndUndergroundHaveTheRequestedSeparateAnchors()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
