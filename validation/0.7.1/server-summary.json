@@ -1,0 +1,10 @@
+{
+  "core": {
+    "tests": 83,
+    "failures": 0
+  },
+  "combined": {
+    "tests": 129,
+    "failures": 0
+  }
+}

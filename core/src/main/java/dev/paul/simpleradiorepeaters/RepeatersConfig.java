@@ -4,8 +4,12 @@ import com.google.gson.*;
 import net.fabricmc.loader.api.FabricLoader;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RepeatersConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger("simpleradio_repeaters");
     public static RepeatersConfig INSTANCE = new RepeatersConfig();
     public int maxRelayHops = 64;
     public boolean persistentUnloadedTowers = true;
@@ -66,20 +70,28 @@ public final class RepeatersConfig {
         loaded.terrain.formatVersion = 2;
         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
         loaded.terrain.validate();
+        if (terrain != null && (terrain.has("clearance") || terrain.has("buriedLoss")))
+            LOGGER.warn("Terrain settings 'clearance' and 'buriedLoss' are no longer used; review 'nearGroundHeight', 'nearGroundLoss' and 'undergroundLosses'.");
         return loaded;
     }
     public static boolean load() {
-        var path = FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json");
-        var gson = new GsonBuilder().setPrettyPrinting().create();
+        return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));
+    }
+    static boolean load(Path path) {
+        RepeatersConfig loaded;
         try {
-            RepeatersConfig loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, gson.toJson(loaded) + "\n");
-            INSTANCE = loaded;
-            return true;
+            loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
         } catch (Exception e) {
-            SimpleRadioRepeaters.LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
+            LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
             return false;
         }
+        INSTANCE = loaded;
+        try {
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(loaded) + "\n");
+        } catch (Exception e) {
+            LOGGER.warn("Repeater configuration is active, but its normalized file could not be saved to {}", path, e);
+        }
+        return true;
     }
 }

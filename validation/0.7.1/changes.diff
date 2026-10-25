@@ -1,0 +1,375 @@
+--- 0.7.0/README.md
++++ 0.7.1/README.md
+@@ -4,8 +4,8 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.0 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+-| Dimensional Foci 0.7.0 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
++| Repeaters 0.7.1 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Dimensional Foci 0.7.1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+ ## Install
+--- 0.7.0/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/TerrainGameTests.java
++++ 0.7.1/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/TerrainGameTests.java
+@@ -344,6 +344,100 @@
+         }
+     }
+ 
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_device_overflow_diagnostics")
++    public void readOnlyDeviceDiagnosticsMatchLivePropagationAtTheSafetyCeiling(GameTestHelper helper) {
++        var world = helper.getLevel(); var old = configure(world, false, true);
++        TerrainManager.clear(world.getServer());
++        var frequency = frequency("097.98");
++        var sender = new RadioTransmitter(frequency, position(world, 2_400_000, 1000, -2_400_000))
++                .frequencingType(SimpleRadioFrequencing.TRANSMITTER);
++        var source = packet(sender);
++        var home = tower(world, sender.getLocation().blockPos(), sender.getLocation().blockPos().above(2), sender.reference, 32);
++        var overflow = new RadioReceiver(frequency, position(world, 2_400_700, 1000, -2_400_000))
++                .frequencingType(SimpleRadioFrequencing.RECEIVER);
++        var target = tower(world, overflow.getLocation().blockPos(), overflow.getLocation().blockPos().above(2), overflow.reference, 32);
++        var leg = RadioSpace.between(RadioSpace.physical(world, new Vec3(sender.getLocation())),
++                RadioSpace.physical(world, new Vec3(overflow.getLocation())), false);
++        try {
++            check(Double.isInfinite(TerrainManager.observedEgressLoss(leg, home, overflow)),
++                    "A genuinely unmeasured device path must still be shown as pending below the ceiling");
++            for (int i = 0; i < 16_384; i++) {
++                var receiver = new RadioReceiver(frequency, position(world, 2_400_700 + i % 16, 1000, -2_400_000))
++                        .frequencingType(SimpleRadioFrequencing.RECEIVER);
++                TerrainManager.nativeLoss(sender, receiver, source, -1);
++            }
++            check(counter("device_results") == 16_384, "The fixture must fill the real retained-device limit");
++            long jobs = counter("pending_device_checks"), columns = counter("sampled_columns"), fallbacks = counter("device_capacity_fallbacks");
++            check(TerrainManager.observedIngressLoss(leg, sender.reference, target) == 0
++                            && TerrainManager.observedEgressLoss(leg, home, overflow) == 0,
++                    "Read-only ingress and egress diagnostics must show the live no-terrain capacity fallback");
++            check(counter("device_capacity_fallbacks") == fallbacks, "Observing the fallback must not count it as a live attempt");
++            check(TerrainManager.nativeLoss(sender, overflow, source, -1) == 0
++                            && TerrainManager.ingressLoss(leg, sender.reference, target) == 0
++                            && TerrainManager.egressLoss(leg, home, overflow) == 0,
++                    "Native and relay device paths must use the same capacity fallback as diagnostics");
++            check(counter("device_results") == 16_384 && counter("pending_device_checks") == jobs
++                            && counter("sampled_columns") == columns,
++                    "Overflow and observation must create no extra state, jobs or height queries");
++            helper.succeed();
++        } finally { restore(world, old); TerrainManager.clear(world.getServer()); }
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 260, batch = "terrain_mapping_marker")
++    public void fullQueueMarkersClearWhenAPathLeavesTheGraphWithoutDroppingOtherWork(GameTestHelper helper) {
++        var world = helper.getLevel(); var old = configure(world, true, false); var manager = TowerManager.get(world.getServer());
++        var records = new ArrayList<TowerRecord>();
++        var channel = ChannelKey.from(frequency("097.99"));
++        var background = ChannelKey.from(frequency("097.89"));
++        var base = new BlockPos(2_500_000, 1000, -2_500_000);
++        var a = tower(world, base, base.above(2), UUID.randomUUID(), 32)
++                .settings(Set.of(channel, background), true, RelayCatalysts.GILDED, null);
++        var b = tower(world, base.east(800), base.east(800).above(2), UUID.randomUUID(), 32)
++                .settings(Set.of(channel), true, RelayCatalysts.GILDED, null);
++        records.add(a); records.add(b);
++        for (int i = 0; i < 128; i++) {
++            BlockPos other = base.north(800 + i * 16);
++            records.add(tower(world, other, other.above(2), UUID.randomUUID(), 32)
++                    .settings(Set.of(background), true, RelayCatalysts.GILDED, null));
++        }
++        records.forEach(manager::updateSnapshot);
++        helper.runAfterDelay(210, () -> {
++            try {
++                TerrainManager.clear(world.getServer());
++                var origin = RadioSpace.sites(world.getServer(), a, false).get(0);
++                for (var other : records.subList(2, records.size())) {
++                    var leg = RadioSpace.between(origin, RadioSpace.sites(world.getServer(), other, false).get(0), false);
++                    TerrainManager.relayLoss(leg, a, other);
++                }
++                check(counter("pending_relay_profiles") == 128, "The fixture must fill the real relay sampling queue");
++                var initial = manager.network(world, channel);
++                check(TerrainManager.mappingState(b.id()) == 1,
++                        "An initial viable path must be marked pending even when its job cannot enter the full queue");
++                manager.network(world, background);
++                check(manager.network(world, channel) == initial && TerrainManager.mappingState(b.id()) == 1,
++                        "Building another channel must not erase the first cached graph's mapping marker");
++                BlockPos distant = base.east(50_000);
++                manager.updateSnapshot(tower(world, distant, distant.above(2), b.id(), 32)
++                        .settings(Set.of(channel), true, RelayCatalysts.GILDED, null));
++                var rebuilt = manager.network(world, channel);
++                check(rebuilt.edges().stream().allMatch(List::isEmpty), "The moved antenna must be beyond ordinary radio reach");
++                check(TerrainManager.mappingState(b.id()) == 0,
++                        "A path no longer considered by the rebuilt graph must not leave a permanent SCAN or CHECK marker");
++                manager.inspectNetwork(world, channel);
++                check(TerrainManager.mappingState(b.id()) == 0, "Read-only diagnostics must not restore obsolete pending markers");
++                check(counter("pending_relay_profiles") == 128,
++                        "Clearing obsolete display markers must preserve other queued terrain work");
++                helper.succeed();
++            } finally {
++                records.forEach(record -> {
++                    var live = manager.snapshot(record.id());
++                    if (live != null) manager.removeAt(live.dimension(), live.position());
++                });
++                restore(world, old); TerrainManager.clear(world.getServer());
++            }
++        });
++    }
++
+     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_profile_capacity")
+     public void activeProfilesBeyondTheOldLimitPersistAndOnlyOrphanedMastPathsArePruned(GameTestHelper helper) {
+         var data = new TerrainProfiles(); data.initialize(helper.getLevel().getSeed());
+--- 0.7.0/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
++++ 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
+@@ -4,8 +4,12 @@
+ import net.fabricmc.loader.api.FabricLoader;
+ import java.io.IOException;
+ import java.nio.file.Files;
++import java.nio.file.Path;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ public final class RepeatersConfig {
++    private static final Logger LOGGER = LoggerFactory.getLogger("simpleradio_repeaters");
+     public static RepeatersConfig INSTANCE = new RepeatersConfig();
+     public int maxRelayHops = 64;
+     public boolean persistentUnloadedTowers = true;
+@@ -66,20 +70,28 @@
+         loaded.terrain.formatVersion = 2;
+         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
+         loaded.terrain.validate();
++        if (terrain != null && (terrain.has("clearance") || terrain.has("buriedLoss")))
++            LOGGER.warn("Terrain settings 'clearance' and 'buriedLoss' are no longer used; review 'nearGroundHeight', 'nearGroundLoss' and 'undergroundLosses'.");
+         return loaded;
+     }
+     public static boolean load() {
+-        var path = FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json");
+-        var gson = new GsonBuilder().setPrettyPrinting().create();
++        return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));
++    }
++    static boolean load(Path path) {
++        RepeatersConfig loaded;
+         try {
+-            RepeatersConfig loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
+-            Files.createDirectories(path.getParent());
+-            Files.writeString(path, gson.toJson(loaded) + "\n");
+-            INSTANCE = loaded;
+-            return true;
++            loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
+         } catch (Exception e) {
+-            SimpleRadioRepeaters.LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
++            LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
+             return false;
+         }
++        INSTANCE = loaded;
++        try {
++            Files.createDirectories(path.getParent());
++            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(loaded) + "\n");
++        } catch (Exception e) {
++            LOGGER.warn("Repeater configuration is active, but its normalized file could not be saved to {}", path, e);
++        }
++        return true;
+     }
+ }
+--- 0.7.0/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
++++ 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
+@@ -55,7 +55,10 @@
+         for (TowerRecord record : data.towers.values()) index(record);
+     }
+ 
+-    private void invalidateNetworks() { networks.clear(); revision++; }
++    private void invalidateNetworks() {
++        networks.clear(); revision++;
++        dev.paul.simpleradiorepeaters.terrain.TerrainManager.invalidateMapping(server);
++    }
+     public long revision() { return revision; }
+     /** Current operational forwarding nodes; passive monitor attachments are excluded. */
+     public List<TowerRecord> activeTowers() {
+--- 0.7.0/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
++++ 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
+@@ -87,7 +87,7 @@
+         return TerrainMath.profileLoss(heights, ay, by, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
+     }
+ 
+-    /** Existing links keep their committed penalty during remapping; new links wait in SCAN. */
++    /** Existing links keep their committed penalty during remapping; new links await their first profile. */
+     public static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to) {
+         return relayLoss(leg, from, to, true);
+     }
+@@ -99,26 +99,26 @@
+         var pair = RelayPair.of(from.id(), to.id());
+         RelayState state = request ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
+         if (!m.tips.containsKey(from.id()) || !m.tips.containsKey(to.id())) {
+-            if (state != null) state.waitingForTip = true;
++            if (request && state != null) state.waitingForTip = true;
+             return previousLoss(leg.distance(), state);
+         }
+         var a = tip(from, leg.from()); var b = tip(to, leg.to()); var cfg = RepeatersConfig.INSTANCE.terrain;
+         var key = TerrainProfiles.Key.between(Mth.floor(a.x), Mth.floor(a.z), Mth.floor(b.x), Mth.floor(b.z), cfg.sampleSpacing, cfg.maxSamplesPerPath);
+-        if (state != null) state.waitingForTip = false;
++        if (request && state != null) state.waitingForTip = false;
+         if (m.failed.contains(key)) {
+-            if (state != null) { state.loss = 0; state.pending = null; }
++            if (request && state != null) { state.loss = 0; state.pending = null; }
+             return 0;
+         }
+         int[] heights = m.profiles.get(key);
+         boolean forward = key.startsAt(Mth.floor(a.x), Mth.floor(a.z));
+         double ay = forward ? a.y : b.y, by = forward ? b.y : a.y;
+         if (heights == null) {
+-            if (state != null) state.pending = key;
++            if (request && state != null) state.pending = key;
+             if (request) m.enqueueRelay(key, leg.from().level());
+             int[] previous = m.profiles.previous(key);
+             if (previous != null) {
+                 double loss = fraction(previous, ay, by);
+-                if (state != null) state.loss = loss;
++                if (request && state != null) state.loss = loss;
+                 return TerrainMath.extraDistance(leg.distance(), loss);
+             }
+             return previousLoss(leg.distance(), state);
+@@ -126,7 +126,7 @@
+         var ray = new Ray(key, ay, by);
+         double loss = m.rays.computeIfAbsent(ray, ignored -> fraction(heights, ay, by));
+         trim(m.rays, MAX_RAYS);
+-        if (state != null) { state.loss = loss; state.pending = null; }
++        if (request && state != null) { state.loss = loss; state.pending = null; }
+         return TerrainMath.extraDistance(leg.distance(), loss);
+     }
+     private static double previousLoss(double distance, RelayState state) {
+@@ -156,6 +156,12 @@
+         return result;
+     }
+ 
++    /** A new graph will mark its viable paths again; results and queued sampling remain intact. */
++    public static void invalidateMapping(MinecraftServer server) {
++        var m = current; if (m == null || m.server != server) return;
++        m.relayStates.values().forEach(state -> { state.pending = null; state.waitingForTip = false; });
++    }
++
+     public static double ingressLoss(RadioSpace.Leg leg, UUID sender, TowerRecord receiver) {
+         if (!RepeatersConfig.INSTANCE.terrain.mode.pointToPoint()) return 0;
+         return deviceLoss(leg, sender, receiver.id(), leg.from().position(), tip(receiver, leg.to()));
+@@ -174,7 +180,8 @@
+         var m = current;
+         if (m == null || !RepeatersConfig.INSTANCE.terrain.mode.pointToPoint() || !overworld(leg) || TerrainMath.free(a.distanceToSqr(b))) return 0;
+         var state = m.devices.get(new DeviceKey(from, to));
+-        return state == null ? Double.POSITIVE_INFINITY : TerrainMath.extraDistance(leg.distance(), state.loss);
++        if (state != null) return TerrainMath.extraDistance(leg.distance(), state.loss);
++        return m.devices.size() >= MAX_DEVICE_LINKS ? 0 : Double.POSITIVE_INFINITY;
+     }
+     /** Retained for native diagnostics and addons; real routing supplies the actual packet below. */
+     public static double nativeLoss(RadioTransmitter sender, RadioReceiver receiver) {
+--- 0.7.0/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.7.1/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -36,7 +36,7 @@
+   "handbook.simpleradio_repeaters.troubleshooting.title": "Troubleshooting & Tips",
+   "handbook.simpleradio_repeaters.troubleshooting.text_0": "Make sure your Relay shows READY and a positive ANT value, and that a Catalyst is installed.\n\nYou need at least one tuned Frequency Card in a Repeater Bank, or at least one RX card and one TX card in a Transponder.\n\nBeing able to talk from near Relay Tower 1 to a receiver near Relay Tower 2 does not guarantee that a signal from further away, such as Tower 5 or 6, can make the same jump.\n\nImprove the antenna, install an amplifier, or build more intermediary Relays to help weaker signals travel further.",
+   "handbook.simpleradio_repeaters.terrain.title": "Terrain & Elevation",
+-  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nNear-ground signals receive at most a one-percent distance penalty above the surface. Below ground, the extra distance rises: 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at sixty-four, 150% at ninety-six and 200% at one hundred twenty-eight. Penalties are averaged along the path, not multiplied for every sample. A path entirely sixty-four blocks below ground has about half its normal range; one at one hundred twenty-eight has about one-third.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nSCAN includes mapping a new terrain path. CHECK keeps the previous verified result while an update is prepared. Breaking a wire or removing a tower still disconnects it immediately.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
++  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nNear-ground signals receive at most a one-percent distance penalty above the surface. Below ground, the extra distance rises: 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at sixty-four, 150% at ninety-six and 200% at one hundred twenty-eight. Penalties are averaged along the path, not multiplied for every sample. A path entirely sixty-four blocks below ground has about half its normal range; one at one hundred twenty-eight has about one-third.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nDuring terrain mapping, SCAN means there are no working links or previous terrain results yet. CHECK means mapping is pending while working links or previous results remain available. Existing paths keep their last verified penalty; a new path still waits for its first measurement, even if the Relay says CHECK. Breaking a wire or removing a tower still disconnects it immediately.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
+   "block.simpleradio_repeaters.relay_monitor": "Relay Monitor",
+   "tooltip.simpleradio_repeaters.monitor": "Plug into the top of a Relay. Insert a tuned card to survey direct links; use a compass on the screen to mark a tower.",
+   "message.simpleradio_repeaters.monitor_bound": "Compass bound to relay in %s.",
+--- 0.7.0/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
++++ 0.7.1/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
+@@ -1,9 +1,57 @@
+ package dev.paul.simpleradiorepeaters;
+ 
+ import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++import java.nio.file.*;
++import java.util.Map;
++import java.util.zip.ZipEntry;
++import java.util.zip.ZipOutputStream;
+ import static org.junit.jupiter.api.Assertions.*;
+ 
+ class RepeatersConfigTest {
++    @TempDir Path directory;
++
++    @Test void validReadOnlyConfigIsAppliedWithoutRequiringANormalizationSave() throws Exception {
++        Path archive = directory.resolve("read-only.jar");
++        String json = "{\"maxRelayHops\":23,\"persistentUnloadedTowers\":false,\"terrain\":{\"mode\":\"off\"}}";
++        // A multi-release ZIP view is genuinely read-only, even when tests run as root.
++        try (var zip = new ZipOutputStream(Files.newOutputStream(archive))) {
++            zip.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
++            zip.write("Manifest-Version: 1.0\nMulti-Release: true\n\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
++            zip.closeEntry();
++            zip.putNextEntry(new ZipEntry("simpleradio-repeaters.json"));
++            zip.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
++        }
++        var previous = RepeatersConfig.INSTANCE;
++        try (var fs = FileSystems.newFileSystem(archive, Map.of("multi-release", "runtime"))) {
++            assertTrue(fs.isReadOnly());
++            Path config = fs.getPath("/simpleradio-repeaters.json");
++            assertThrows(ReadOnlyFileSystemException.class, () -> Files.writeString(config, json));
++            RepeatersConfig.INSTANCE = new RepeatersConfig();
++            assertTrue(RepeatersConfig.load(config));
++            assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.OFF, RepeatersConfig.INSTANCE.terrain.mode);
++            assertEquals(23, RepeatersConfig.INSTANCE.maxRelayHops);
++            assertFalse(RepeatersConfig.INSTANCE.persistentUnloadedTowers);
++            assertEquals(json, Files.readString(config));
++        } finally { RepeatersConfig.INSTANCE = previous; }
++    }
++
++    @Test void writableConfigNormalizesButMalformedConfigKeepsSettingsAndFile() throws Exception {
++        Path config = directory.resolve("simpleradio-repeaters.json");
++        var previous = RepeatersConfig.INSTANCE;
++        try {
++            Files.writeString(config, "{\"maxRelayHops\":999,\"terrain\":{\"mode\":\"off\"}}");
++            assertTrue(RepeatersConfig.load(config));
++            assertEquals(128, RepeatersConfig.INSTANCE.maxRelayHops);
++            assertTrue(Files.readString(config).contains("\"formatVersion\": 2"));
++            var live = RepeatersConfig.INSTANCE;
++            Files.writeString(config, "{invalid");
++            assertFalse(RepeatersConfig.load(config));
++            assertSame(live, RepeatersConfig.INSTANCE);
++            assertEquals("{invalid", Files.readString(config));
++        } finally { RepeatersConfig.INSTANCE = previous; }
++    }
++
+     @Test void oldDefaultsMigrateButCustomSettingsSurvive() {
+         var migrated = RepeatersConfig.parse("{\"terrain\":{\"nearGroundLoss\":0.1,\"samplesPerTick\":4,\"clearance\":32,\"buriedLoss\":0.35}}");
+         assertEquals(.01, migrated.terrain.nearGroundLoss);
+--- 0.7.0/docs/Terrain-and-Elevation.md
++++ 0.7.1/docs/Terrain-and-Elevation.md
+@@ -1,4 +1,4 @@
+-# Terrain and elevation — Repeaters 0.7.0
++# Terrain and elevation — Repeaters 0.7.1
+ 
+ Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
+ 
+@@ -12,7 +12,7 @@
+ | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
+ | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
+ 
+-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.0 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
++The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.1 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+ 
+ ## Attenuation
+ 
+@@ -47,7 +47,7 @@
+ - Removing a tower needs no new height queries.
+ - `/reload` preserves measured terrain profiles and still refreshes radio resources and the catalyst catalog.
+ 
+-Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. New paths show **SCAN** while waiting for their first verified terrain result. Existing paths retain their previous environmental penalty during remapping and show **CHECK**. This display does not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
++Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
+ 
+ Explicit `terrain clear` keeps the last in-memory penalties while measuring replacements. Changing sample resolution can also use the saved previous resolution until its replacement completes. A normal restart already has the saved profiles; if a restart interrupts a remap and no usable profile exists, the first check must finish again. Old records without a verified mast tip retain ordinary propagation until visited and scanned.
+ 
+@@ -90,7 +90,9 @@
+ 
+ The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
+ 
+-On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above.
++On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above; loading a config that still contains either key logs a warning.
++
++A valid configuration takes effect even when its file cannot be rewritten, including read-only mounts. A failed normalization save logs a warning. An unreadable or malformed configuration still fails to load and leaves the current settings unchanged.
+ 
+ Operator commands:
+ 
+--- 0.7.0/gradle.properties
++++ 0.7.1/gradle.properties
+@@ -1,6 +1,6 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.0
++mod_version=0.7.1
+ maven_group=dev.paul.simpleradiorepeaters
+ archives_base_name=simple-radio-repeaters-fabric-1.20.1

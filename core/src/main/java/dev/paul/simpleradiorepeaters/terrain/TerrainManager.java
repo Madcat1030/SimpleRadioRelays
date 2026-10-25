@@ -87,7 +87,7 @@ public final class TerrainManager {
         return TerrainMath.profileLoss(heights, ay, by, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
     }
 
-    /** Existing links keep their committed penalty during remapping; new links wait in SCAN. */
+    /** Existing links keep their committed penalty during remapping; new links await their first profile. */
     public static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to) {
         return relayLoss(leg, from, to, true);
     }
@@ -99,26 +99,26 @@ public final class TerrainManager {
         var pair = RelayPair.of(from.id(), to.id());
         RelayState state = request ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
         if (!m.tips.containsKey(from.id()) || !m.tips.containsKey(to.id())) {
-            if (state != null) state.waitingForTip = true;
+            if (request && state != null) state.waitingForTip = true;
             return previousLoss(leg.distance(), state);
         }
         var a = tip(from, leg.from()); var b = tip(to, leg.to()); var cfg = RepeatersConfig.INSTANCE.terrain;
         var key = TerrainProfiles.Key.between(Mth.floor(a.x), Mth.floor(a.z), Mth.floor(b.x), Mth.floor(b.z), cfg.sampleSpacing, cfg.maxSamplesPerPath);
-        if (state != null) state.waitingForTip = false;
+        if (request && state != null) state.waitingForTip = false;
         if (m.failed.contains(key)) {
-            if (state != null) { state.loss = 0; state.pending = null; }
+            if (request && state != null) { state.loss = 0; state.pending = null; }
             return 0;
         }
         int[] heights = m.profiles.get(key);
         boolean forward = key.startsAt(Mth.floor(a.x), Mth.floor(a.z));
         double ay = forward ? a.y : b.y, by = forward ? b.y : a.y;
         if (heights == null) {
-            if (state != null) state.pending = key;
+            if (request && state != null) state.pending = key;
             if (request) m.enqueueRelay(key, leg.from().level());
             int[] previous = m.profiles.previous(key);
             if (previous != null) {
                 double loss = fraction(previous, ay, by);
-                if (state != null) state.loss = loss;
+                if (request && state != null) state.loss = loss;
                 return TerrainMath.extraDistance(leg.distance(), loss);
             }
             return previousLoss(leg.distance(), state);
@@ -126,7 +126,7 @@ public final class TerrainManager {
         var ray = new Ray(key, ay, by);
         double loss = m.rays.computeIfAbsent(ray, ignored -> fraction(heights, ay, by));
         trim(m.rays, MAX_RAYS);
-        if (state != null) { state.loss = loss; state.pending = null; }
+        if (request && state != null) { state.loss = loss; state.pending = null; }
         return TerrainMath.extraDistance(leg.distance(), loss);
     }
     private static double previousLoss(double distance, RelayState state) {
@@ -156,6 +156,12 @@ public final class TerrainManager {
         return result;
     }
 
+    /** A new graph will mark its viable paths again; results and queued sampling remain intact. */
+    public static void invalidateMapping(MinecraftServer server) {
+        var m = current; if (m == null || m.server != server) return;
+        m.relayStates.values().forEach(state -> { state.pending = null; state.waitingForTip = false; });
+    }
+
     public static double ingressLoss(RadioSpace.Leg leg, UUID sender, TowerRecord receiver) {
         if (!RepeatersConfig.INSTANCE.terrain.mode.pointToPoint()) return 0;
         return deviceLoss(leg, sender, receiver.id(), leg.from().position(), tip(receiver, leg.to()));
@@ -174,7 +180,8 @@ public final class TerrainManager {
         var m = current;
         if (m == null || !RepeatersConfig.INSTANCE.terrain.mode.pointToPoint() || !overworld(leg) || TerrainMath.free(a.distanceToSqr(b))) return 0;
         var state = m.devices.get(new DeviceKey(from, to));
-        return state == null ? Double.POSITIVE_INFINITY : TerrainMath.extraDistance(leg.distance(), state.loss);
+        if (state != null) return TerrainMath.extraDistance(leg.distance(), state.loss);
+        return m.devices.size() >= MAX_DEVICE_LINKS ? 0 : Double.POSITIVE_INFINITY;
     }
     /** Retained for native diagnostics and addons; real routing supplies the actual packet below. */
     public static double nativeLoss(RadioTransmitter sender, RadioReceiver receiver) {

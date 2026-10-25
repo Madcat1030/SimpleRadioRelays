@@ -55,7 +55,10 @@ public final class TowerManager {
         for (TowerRecord record : data.towers.values()) index(record);
     }
 
-    private void invalidateNetworks() { networks.clear(); revision++; }
+    private void invalidateNetworks() {
+        networks.clear(); revision++;
+        dev.paul.simpleradiorepeaters.terrain.TerrainManager.invalidateMapping(server);
+    }
     public long revision() { return revision; }
     /** Current operational forwarding nodes; passive monitor attachments are excluded. */
     public List<TowerRecord> activeTowers() {

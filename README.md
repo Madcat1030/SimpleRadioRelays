@@ -4,8 +4,8 @@ Build radio infrastructure that carries conversations between distant settlement
 
 | Mod | Adds | Requires |
 | --- | --- | --- |
-| Repeaters 0.7.0 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
-| Dimensional Foci 0.7.0 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
+| Repeaters 0.7.1 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+| Dimensional Foci 0.7.1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
 | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
 
 ## Install

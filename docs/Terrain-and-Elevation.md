@@ -1,4 +1,4 @@
-# Terrain and elevation — Repeaters 0.7.0
+# Terrain and elevation — Repeaters 0.7.1
 
 Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
 
@@ -12,7 +12,7 @@ Set `terrain.mode` in `config/simpleradio-repeaters.json`:
 | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
 | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
 
-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.0 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.1 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
 
 ## Attenuation
 
@@ -47,7 +47,7 @@ Samples normally lie 64 blocks apart, including both endpoints. Very long paths 
 - Removing a tower needs no new height queries.
 - `/reload` preserves measured terrain profiles and still refreshes radio resources and the catalyst catalog.
 
-Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. New paths show **SCAN** while waiting for their first verified terrain result. Existing paths retain their previous environmental penalty during remapping and show **CHECK**. This display does not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
+Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
 
 Explicit `terrain clear` keeps the last in-memory penalties while measuring replacements. Changing sample resolution can also use the saved previous resolution until its replacement completes. A normal restart already has the saved profiles; if a restart interrupts a remap and no usable profile exists, the first check must finish again. Old records without a verified mast tip retain ordinary propagation until visited and scanned.
 
@@ -90,7 +90,9 @@ Active and pending results are not evicted by packet traversal order. Idle entri
 
 The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
 
-On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above.
+On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above; loading a config that still contains either key logs a warning.
+
+A valid configuration takes effect even when its file cannot be rewritten, including read-only mounts. A failed normalization save logs a warning. An unreadable or malformed configuration still fails to load and leaves the current settings unchanged.
 
 Operator commands:
 

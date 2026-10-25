@@ -344,6 +344,100 @@ public class TerrainGameTests implements FabricGameTest {
         }
     }
 
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_device_overflow_diagnostics")
+    public void readOnlyDeviceDiagnosticsMatchLivePropagationAtTheSafetyCeiling(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, false, true);
+        TerrainManager.clear(world.getServer());
+        var frequency = frequency("097.98");
+        var sender = new RadioTransmitter(frequency, position(world, 2_400_000, 1000, -2_400_000))
+                .frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+        var source = packet(sender);
+        var home = tower(world, sender.getLocation().blockPos(), sender.getLocation().blockPos().above(2), sender.reference, 32);
+        var overflow = new RadioReceiver(frequency, position(world, 2_400_700, 1000, -2_400_000))
+                .frequencingType(SimpleRadioFrequencing.RECEIVER);
+        var target = tower(world, overflow.getLocation().blockPos(), overflow.getLocation().blockPos().above(2), overflow.reference, 32);
+        var leg = RadioSpace.between(RadioSpace.physical(world, new Vec3(sender.getLocation())),
+                RadioSpace.physical(world, new Vec3(overflow.getLocation())), false);
+        try {
+            check(Double.isInfinite(TerrainManager.observedEgressLoss(leg, home, overflow)),
+                    "A genuinely unmeasured device path must still be shown as pending below the ceiling");
+            for (int i = 0; i < 16_384; i++) {
+                var receiver = new RadioReceiver(frequency, position(world, 2_400_700 + i % 16, 1000, -2_400_000))
+                        .frequencingType(SimpleRadioFrequencing.RECEIVER);
+                TerrainManager.nativeLoss(sender, receiver, source, -1);
+            }
+            check(counter("device_results") == 16_384, "The fixture must fill the real retained-device limit");
+            long jobs = counter("pending_device_checks"), columns = counter("sampled_columns"), fallbacks = counter("device_capacity_fallbacks");
+            check(TerrainManager.observedIngressLoss(leg, sender.reference, target) == 0
+                            && TerrainManager.observedEgressLoss(leg, home, overflow) == 0,
+                    "Read-only ingress and egress diagnostics must show the live no-terrain capacity fallback");
+            check(counter("device_capacity_fallbacks") == fallbacks, "Observing the fallback must not count it as a live attempt");
+            check(TerrainManager.nativeLoss(sender, overflow, source, -1) == 0
+                            && TerrainManager.ingressLoss(leg, sender.reference, target) == 0
+                            && TerrainManager.egressLoss(leg, home, overflow) == 0,
+                    "Native and relay device paths must use the same capacity fallback as diagnostics");
+            check(counter("device_results") == 16_384 && counter("pending_device_checks") == jobs
+                            && counter("sampled_columns") == columns,
+                    "Overflow and observation must create no extra state, jobs or height queries");
+            helper.succeed();
+        } finally { restore(world, old); TerrainManager.clear(world.getServer()); }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 260, batch = "terrain_mapping_marker")
+    public void fullQueueMarkersClearWhenAPathLeavesTheGraphWithoutDroppingOtherWork(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, true, false); var manager = TowerManager.get(world.getServer());
+        var records = new ArrayList<TowerRecord>();
+        var channel = ChannelKey.from(frequency("097.99"));
+        var background = ChannelKey.from(frequency("097.89"));
+        var base = new BlockPos(2_500_000, 1000, -2_500_000);
+        var a = tower(world, base, base.above(2), UUID.randomUUID(), 32)
+                .settings(Set.of(channel, background), true, RelayCatalysts.GILDED, null);
+        var b = tower(world, base.east(800), base.east(800).above(2), UUID.randomUUID(), 32)
+                .settings(Set.of(channel), true, RelayCatalysts.GILDED, null);
+        records.add(a); records.add(b);
+        for (int i = 0; i < 128; i++) {
+            BlockPos other = base.north(800 + i * 16);
+            records.add(tower(world, other, other.above(2), UUID.randomUUID(), 32)
+                    .settings(Set.of(background), true, RelayCatalysts.GILDED, null));
+        }
+        records.forEach(manager::updateSnapshot);
+        helper.runAfterDelay(210, () -> {
+            try {
+                TerrainManager.clear(world.getServer());
+                var origin = RadioSpace.sites(world.getServer(), a, false).get(0);
+                for (var other : records.subList(2, records.size())) {
+                    var leg = RadioSpace.between(origin, RadioSpace.sites(world.getServer(), other, false).get(0), false);
+                    TerrainManager.relayLoss(leg, a, other);
+                }
+                check(counter("pending_relay_profiles") == 128, "The fixture must fill the real relay sampling queue");
+                var initial = manager.network(world, channel);
+                check(TerrainManager.mappingState(b.id()) == 1,
+                        "An initial viable path must be marked pending even when its job cannot enter the full queue");
+                manager.network(world, background);
+                check(manager.network(world, channel) == initial && TerrainManager.mappingState(b.id()) == 1,
+                        "Building another channel must not erase the first cached graph's mapping marker");
+                BlockPos distant = base.east(50_000);
+                manager.updateSnapshot(tower(world, distant, distant.above(2), b.id(), 32)
+                        .settings(Set.of(channel), true, RelayCatalysts.GILDED, null));
+                var rebuilt = manager.network(world, channel);
+                check(rebuilt.edges().stream().allMatch(List::isEmpty), "The moved antenna must be beyond ordinary radio reach");
+                check(TerrainManager.mappingState(b.id()) == 0,
+                        "A path no longer considered by the rebuilt graph must not leave a permanent SCAN or CHECK marker");
+                manager.inspectNetwork(world, channel);
+                check(TerrainManager.mappingState(b.id()) == 0, "Read-only diagnostics must not restore obsolete pending markers");
+                check(counter("pending_relay_profiles") == 128,
+                        "Clearing obsolete display markers must preserve other queued terrain work");
+                helper.succeed();
+            } finally {
+                records.forEach(record -> {
+                    var live = manager.snapshot(record.id());
+                    if (live != null) manager.removeAt(live.dimension(), live.position());
+                });
+                restore(world, old); TerrainManager.clear(world.getServer());
+            }
+        });
+    }
+
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_profile_capacity")
     public void activeProfilesBeyondTheOldLimitPersistAndOnlyOrphanedMastPathsArePruned(GameTestHelper helper) {
         var data = new TerrainProfiles(); data.initialize(helper.getLevel().getSeed());

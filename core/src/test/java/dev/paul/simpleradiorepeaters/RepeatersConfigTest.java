@@ -1,9 +1,57 @@
 package dev.paul.simpleradiorepeaters;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.*;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RepeatersConfigTest {
+    @TempDir Path directory;
+
+    @Test void validReadOnlyConfigIsAppliedWithoutRequiringANormalizationSave() throws Exception {
+        Path archive = directory.resolve("read-only.jar");
+        String json = "{\"maxRelayHops\":23,\"persistentUnloadedTowers\":false,\"terrain\":{\"mode\":\"off\"}}";
+        // A multi-release ZIP view is genuinely read-only, even when tests run as root.
+        try (var zip = new ZipOutputStream(Files.newOutputStream(archive))) {
+            zip.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+            zip.write("Manifest-Version: 1.0\nMulti-Release: true\n\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zip.closeEntry();
+            zip.putNextEntry(new ZipEntry("simpleradio-repeaters.json"));
+            zip.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        var previous = RepeatersConfig.INSTANCE;
+        try (var fs = FileSystems.newFileSystem(archive, Map.of("multi-release", "runtime"))) {
+            assertTrue(fs.isReadOnly());
+            Path config = fs.getPath("/simpleradio-repeaters.json");
+            assertThrows(ReadOnlyFileSystemException.class, () -> Files.writeString(config, json));
+            RepeatersConfig.INSTANCE = new RepeatersConfig();
+            assertTrue(RepeatersConfig.load(config));
+            assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.OFF, RepeatersConfig.INSTANCE.terrain.mode);
+            assertEquals(23, RepeatersConfig.INSTANCE.maxRelayHops);
+            assertFalse(RepeatersConfig.INSTANCE.persistentUnloadedTowers);
+            assertEquals(json, Files.readString(config));
+        } finally { RepeatersConfig.INSTANCE = previous; }
+    }
+
+    @Test void writableConfigNormalizesButMalformedConfigKeepsSettingsAndFile() throws Exception {
+        Path config = directory.resolve("simpleradio-repeaters.json");
+        var previous = RepeatersConfig.INSTANCE;
+        try {
+            Files.writeString(config, "{\"maxRelayHops\":999,\"terrain\":{\"mode\":\"off\"}}");
+            assertTrue(RepeatersConfig.load(config));
+            assertEquals(128, RepeatersConfig.INSTANCE.maxRelayHops);
+            assertTrue(Files.readString(config).contains("\"formatVersion\": 2"));
+            var live = RepeatersConfig.INSTANCE;
+            Files.writeString(config, "{invalid");
+            assertFalse(RepeatersConfig.load(config));
+            assertSame(live, RepeatersConfig.INSTANCE);
+            assertEquals("{invalid", Files.readString(config));
+        } finally { RepeatersConfig.INSTANCE = previous; }
+    }
+
     @Test void oldDefaultsMigrateButCustomSettingsSurvive() {
         var migrated = RepeatersConfig.parse("{\"terrain\":{\"nearGroundLoss\":0.1,\"samplesPerTick\":4,\"clearance\":32,\"buriedLoss\":0.35}}");
         assertEquals(.01, migrated.terrain.nearGroundLoss);
