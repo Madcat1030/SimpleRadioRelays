@@ -1,0 +1,16 @@
+[
+  "README.md",
+  "core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/AntennaMutationGameTests.java",
+  "core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java",
+  "core/src/gametest/resources/fabric.mod.json",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlockEntity.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/mixin/AntennaBlockChangeMixin.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+  "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+  "core/src/main/resources/simpleradio_repeaters.mixins.json",
+  "docs/Development.md",
+  "docs/Release-Notes-0.7.4.md",
+  "docs/Terrain-and-Elevation.md",
+  "gradle.properties",
+  "tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java"
+]

@@ -2,6 +2,8 @@ package dev.paul.simpleradiorepeaters.network;
 
 import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
 import com.codinglitch.simpleradio.core.registry.entities.Wire;
+import com.codinglitch.simpleradio.central.Antennal;
+import com.codinglitch.simpleradio.core.registry.blocks.InsulatorBlock;
 import com.codinglitch.simpleradio.radio.RadioRouter;
 
 import dev.paul.simpleradiorepeaters.*;
@@ -16,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.*;
 
@@ -36,12 +39,15 @@ public final class TowerManager {
             boolean nativeCrossDimensional) {}
 
     private record ChunkKey(String dimension, long position) {}
+    private record AntennaChange(boolean broken, int tick) {}
 
     private final MinecraftServer server;
     private final TowerSavedData data;
     private final Map<UUID, RelayBlockEntity> loaded = new HashMap<>();
     private final Map<Scope, Network> networks = new HashMap<>();
     private final Map<ChunkKey, Set<UUID>> towersByChunk = new HashMap<>();
+    private final Map<ChunkKey, Set<UUID>> antennasByChunk = new HashMap<>();
+    private final Map<UUID, AntennaChange> pendingAntennaChanges = new LinkedHashMap<>();
     private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
     private final Set<Wire> pendingWires = Collections.newSetFromMap(new IdentityHashMap<>());
     private int configStamp;
@@ -99,6 +105,7 @@ public final class TowerManager {
                 manager.wireChanged(level, wire, false);
         }
         manager.reconcilePendingChunks();
+        manager.refreshChangedAntennas();
         dev.paul.simpleradiorepeaters.terrain.TerrainManager.tick(server, manager.data.towers.values());
         if (server.getTickCount() % 100 == 0) {
             manager.checkConfiguration();
@@ -165,12 +172,60 @@ public final class TowerManager {
     private void index(TowerRecord record) {
         for (ChunkKey key : chunkKeys(record))
             towersByChunk.computeIfAbsent(key, ignored -> new HashSet<>()).add(record.id());
+        for (ChunkKey key : antennaChunks(record))
+            antennasByChunk.computeIfAbsent(key, ignored -> new HashSet<>()).add(record.id());
     }
 
     private void unindex(TowerRecord record) {
         for (ChunkKey key : chunkKeys(record)) {
             Set<UUID> ids = towersByChunk.get(key);
             if (ids != null && ids.remove(record.id()) && ids.isEmpty()) towersByChunk.remove(key);
+        }
+        for (ChunkKey key : antennaChunks(record)) {
+            Set<UUID> ids = antennasByChunk.get(key);
+            if (ids != null && ids.remove(record.id()) && ids.isEmpty()) antennasByChunk.remove(key);
+        }
+    }
+
+    private static Set<ChunkKey> antennaChunks(TowerRecord record) {
+        Set<ChunkKey> chunks = new HashSet<>();
+        for (long packed : record.footprint())
+            chunks.add(new ChunkKey(record.dimension(), new ChunkPos(BlockPos.of(packed)).toLong()));
+        chunks.add(new ChunkKey(record.dimension(), new ChunkPos(record.antennaBase()).toLong()));
+        return chunks;
+    }
+
+    /** Persist known structural destruction now; coalesce guarded geometry scans until tick end. */
+    public static void blockChanged(ServerLevel level, BlockPos pos, BlockState previous) {
+        var server = level.getServer();
+        if (!server.isSameThread()) return;
+        var manager = get(server); if (manager == null) return;
+        var affected = manager.antennasByChunk.get(new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong()));
+        if (affected == null) return;
+        for (UUID id : List.copyOf(affected)) {
+            var record = manager.data.towers.get(id);
+            if (record == null || !(record.footprint().contains(pos.asLong()) || pos.equals(record.antennaBase())
+                    || pos.equals(record.antennaBase().above()))) continue;
+            var relay = manager.loaded.get(id);
+            boolean removed = previous.getBlock() instanceof Antennal || previous.getBlock() instanceof InsulatorBlock
+                    || pos.equals(record.antennaBase()) || relay != null && pos.equals(relay.corePos());
+            manager.pendingAntennaChanges.merge(id, new AntennaChange(removed, server.getTickCount()),
+                    (a, b) -> new AntennaChange(a.broken() || b.broken(), Math.min(a.tick(), b.tick())));
+            if (removed && record.verified()) manager.put(record.invalidate());
+        }
+    }
+
+    private void refreshChangedAntennas() {
+        if (pendingAntennaChanges.isEmpty()) return;
+        for (var entry : new LinkedHashMap<>(pendingAntennaChanges).entrySet()) {
+            // Let zero-delay native antenna block ticks settle before reading their geometry.
+            if (server.getTickCount() <= entry.getValue().tick()) continue;
+            pendingAntennaChanges.remove(entry.getKey());
+            var record = data.towers.get(entry.getKey()); var relay = loaded.get(entry.getKey());
+            if (record == null || relay == null || relay.isRemoved()) continue;
+            if (!entry.getValue().broken() && !AntennaScanner.dependenciesAvailable((ServerLevel) relay.getLevel(), record.footprint()))
+                relay.markDirty();
+            else relay.antennaBlocksChanged(this, entry.getValue().broken());
         }
     }
 
@@ -180,6 +235,7 @@ public final class TowerManager {
         RelayPerformance.invalidated(server, "tower_removed", networks.size(), record, null);
         unindex(record);
         loaded.remove(id);
+        pendingAntennaChanges.remove(id);
         data.setDirty();
         invalidateNetworks();
     }

@@ -1,0 +1,14 @@
+[
+  "assets/simpleradio_repeaters/lang/en_us.json",
+  "dev/paul/simpleradiorepeaters/block/RelayBlockEntity.class",
+  "dev/paul/simpleradiorepeaters/mixin/AntennaBlockChangeMixin.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager$AntennaChange.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager$ChunkKey.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager$Inspection.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager$Network.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager$Scope.class",
+  "dev/paul/simpleradiorepeaters/network/TowerManager.class",
+  "fabric.mod.json",
+  "simpleradio_repeaters.mixins.json",
+  "simpleradio_repeaters.refmap.json"
+]

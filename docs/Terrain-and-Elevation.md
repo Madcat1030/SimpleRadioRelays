@@ -1,4 +1,4 @@
-# Terrain and elevation — Repeaters 0.7.3
+# Terrain and elevation — Repeaters 0.7.4
 
 Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
 
@@ -48,7 +48,7 @@ Samples normally lie 64 blocks apart, including both endpoints. Very long paths 
 - Removing a tower needs no new height queries.
 - `/reload` preserves measured terrain profiles and still refreshes radio resources and the catalyst catalog.
 
-Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
+Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, confirmed antenna/core breaks, tower removal and channel changes still affect eligibility immediately. Confirmed block edits get a coalesced geometry rescan after native block ticks settle; the 200-tick boundary still controls mast-tip terrain publication.
 
 Explicit `terrain clear` keeps the last in-memory penalties while measuring replacements. Changing sample resolution can also use the saved previous resolution until its replacement completes. A normal restart already has the saved profiles; if a restart interrupts a remap and no usable profile exists, the first check must finish again. Old records without a verified mast tip retain ordinary propagation until visited and scanned.
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-25T20:14:48.435Z" hostname="2960719e65e1" time="0.011">
+  <properties/>
+  <testcase name="identicalPayloadFramesRemainDistinct()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002"/>
+  <testcase name="separateEntrancesMergeWithoutDuplicatingRecipients()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.002"/>
+  <testcase name="hopBudgetKeepsUsefulShorterAlternatives()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aDirectedLinkDoesNotInventAReturnPath()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="cutoffAndReceptionFloorMatchNativeRules()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aDiamondSelectsTheBestPathOnce()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="ingressNoiseCannotBeRepairedAndPrefersFewerHops()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="ringsTerminateAndUseTheShortestEqualQualityRoute()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="finalLegMustKeepAShorterNoisierAlternative()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="eachLegUsesTheSenderCountAndCanStopAnOtherwiseConnectedChain()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aLiveSubOnePercentHopRemainsInTheGraph()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="aChainReachesBeyondAnyIndividualTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <testcase name="oppositeSidesNeedTheTower()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.001"/>
+  <testcase name="wiredReentryStartsAtTheNextCountAndSharesTheBudget()" classname="dev.paul.simpleradiorepeaters.radio.RelayGraphTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

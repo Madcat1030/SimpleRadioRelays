@@ -59,3 +59,8 @@ The attenuation curve averages extra-distance fractions. Keep this distinction e
 Passive card attachments override `routingCards()` to return no forwarding cards. Both the loaded Relay refresh and authoritative controller reconciliation use that method, so a monitor cannot become a saved relay node. Hardware readiness is separate from forwarding eligibility.
 
 `RelaySurvey` predicts direct first-departure links through the existing `RadioSpace`, `NativeRadioAdapter` and `TerrainManager` APIs. It does not create native frequencies or emit sources. `TowerManager.revision()` changes only on actual network invalidation; each monitor reuses its survey until the card, attached relay or revision changes. The client receives the current text page and card inventory, with no exact TX-only location. Compass binding resolves the selected node server-side and writes a static vanilla lodestone target with validation disabled.
+
+
+## Confirmed antenna edits (0.7.4)
+
+`AntennaBlockChangeMixin` observes successful block-identity replacements through `LevelChunk.setBlockState`. It does not run for chunk unloading or ordinary property changes such as transmitter activity flags. `TowerManager` narrows those events through a chunk index and the saved footprint. Known structural destruction immediately persists an invalid record; geometry scans are coalesced and wait until the next server tick so zero-delay native antenna ticks can settle. Confirmed complete scans may publish zero immediately. Non-destructive changes still wait when historical dependencies are unavailable. The existing wire lifecycle path and periodic restoration verification keep their original semantics.

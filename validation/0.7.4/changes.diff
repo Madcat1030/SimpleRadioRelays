@@ -1,0 +1,418 @@
+--- 0.7.3/README.md
++++ 0.7.4/README.md
+@@ -4,7 +4,7 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.3 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Repeaters 0.7.4 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+ | Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+--- 0.7.3/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/AntennaMutationGameTests.java
++++ 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/AntennaMutationGameTests.java
+@@ -0,0 +1,131 @@
++package dev.paul.simpleradiorepeaters.gametest;
++
++import com.codinglitch.simpleradio.central.Frequency;
++import com.codinglitch.simpleradio.core.registry.SimpleRadioBlocks;
++import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
++import dev.paul.simpleradiorepeaters.block.*;
++import dev.paul.simpleradiorepeaters.network.*;
++import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
++import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
++import net.minecraft.core.*;
++import net.minecraft.gametest.framework.*;
++import net.minecraft.world.item.*;
++import net.minecraft.world.level.block.Blocks;
++import java.util.*;
++
++public class AntennaMutationGameTests implements FabricGameTest {
++    private static void check(boolean value, String message) { if (!value) throw new GameTestAssertException(message); }
++    private static RelayBlockEntity fixture(GameTestHelper helper, String number) {
++        var world = helper.getLevel(); var core = helper.absolutePos(new BlockPos(3, 2, 3));
++        world.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
++        world.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
++        var box = core.east();
++        world.setBlock(box, SimpleRadioRepeaters.RELAY.defaultBlockState().setValue(RelayBlock.FACING, Direction.EAST), 3);
++        world.setBlock(box.above(), SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
++        var relay = (RelayBlockEntity) world.getBlockEntity(box);
++        relay.installCatalyst(new ItemStack(Items.GILDED_BLACKSTONE), true);
++        var card = new ItemStack(SimpleRadioRepeaters.CARD);
++        SimpleRadioRepeaters.CARD.setFrequency(card, number, Frequency.Modulation.AMPLITUDE);
++        ((ChannelBankBlockEntity) world.getBlockEntity(box.above())).insert(0, card, true);
++        return relay;
++    }
++    private static void ready(GameTestHelper helper, RelayBlockEntity relay, Runnable action) {
++        var manager = TowerManager.get(helper.getLevel().getServer());
++        helper.startSequence().thenWaitUntil(() -> check(manager.isEligible(relay.relayId()), "Fixture must be verified"))
++                .thenWaitUntil(() -> {
++                    long phase = helper.getLevel().getGameTime() % 200;
++                    check(phase >= 40 && phase <= 150, "Exercise edits away from the periodic scan boundary");
++                }).thenExecute(action);
++    }
++    private static void cleanup(GameTestHelper helper, RelayBlockEntity relay) {
++        var world = helper.getLevel();
++        world.removeBlock(relay.getBlockPos().above(), false); world.removeBlock(relay.getBlockPos(), false);
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 450, batch = "antenna_real_edits")
++    public void breakingRebuildingAndTrimmingAMastUpdateWithoutThePeriodicBoundary(GameTestHelper helper) {
++        var world = helper.getLevel(); var relay = fixture(helper, "098.41"); var manager = TowerManager.get(world.getServer());
++        ready(helper, relay, () -> {
++            check(relay.getAntennaPower() == 2, "A single mast must have native strength two");
++            world.removeBlock(relay.corePos().above(), false);
++            check(!manager.isEligible(relay.relayId()), "A confirmed mast break must invalidate routing in the same call");
++            check(!TowerRecord.load(manager.snapshot(relay.relayId()).save()).eligible(), "The broken state must persist before the next scan");
++            helper.runAfterDelay(3, () -> {
++                check(relay.getAntennaPower() == 0 && relay.displayStatus() == 1, "A complete empty scan must publish NO ANT without a second ten-second vote");
++                world.setBlock(relay.corePos().above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
++                helper.runAfterDelay(3, () -> {
++                    check(manager.isEligible(relay.relayId()) && relay.getAntennaPower() == 2, "Rebuilding the mast must restore it within a few ticks");
++                    world.setBlock(relay.corePos().above(2), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
++                    helper.runAfterDelay(3, () -> {
++                        int taller = AntennaScanner.scan(world, relay.getBlockPos(), relay.corePos()).score();
++                        check(taller > 2 && relay.getAntennaPower() == taller, "A mast addition must settle through native block ticks before publishing its real score");
++                        world.removeBlock(relay.corePos().above(2), false);
++                        check(!manager.isEligible(relay.relayId()), "A structural trim must invalidate the old higher-power routes immediately");
++                        helper.runAfterDelay(3, () -> {
++                            check(manager.isEligible(relay.relayId()) && relay.getAntennaPower() == 2, "Trimming must promptly publish the smaller surviving antenna");
++                            world.removeBlock(relay.corePos(), false);
++                            check(!manager.isEligible(relay.relayId()), "Removing the antenna's support core must also invalidate immediately");
++                            cleanup(helper, relay); helper.succeed();
++                        });
++                    });
++                });
++            });
++        });
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 400, batch = "antenna_chunk_unload")
++    public void unloadingWithoutBlockReplacementKeepsTheVerifiedAntennaAndGraph(GameTestHelper helper) {
++        var world = helper.getLevel(); var relay = fixture(helper, "098.42"); var manager = TowerManager.get(world.getServer());
++        ready(helper, relay, () -> {
++            var saved = manager.snapshot(relay.relayId()); var channel = relay.channels().iterator().next();
++            var network = manager.network(world, channel);
++            relay.setRemoved();
++            ServerChunkEvents.CHUNK_UNLOAD.invoker().onChunkUnload(world, world.getChunkAt(relay.getBlockPos()));
++            helper.runAfterDelay(3, () -> {
++                check(manager.snapshot(relay.relayId()).equals(saved) && manager.isEligible(relay.relayId()),
++                        "Entity/chunk unloading without a block mutation must retain the verified saved antenna");
++                check(manager.network(world, channel) == network, "An ordinary unload must preserve the cached graph");
++                cleanup(helper, relay); helper.succeed();
++            });
++        });
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 400, batch = "antenna_saved_break")
++    public void breakingTheMastWithItsRelayUnloadedInvalidatesTheSavedRecord(GameTestHelper helper) {
++        var world = helper.getLevel(); var relay = fixture(helper, "098.43"); var manager = TowerManager.get(world.getServer());
++        ready(helper, relay, () -> {
++            relay.setRemoved();
++            check(manager.isEligible(relay.relayId()), "An unload alone must preserve the tower");
++            world.removeBlock(relay.corePos().above(), false);
++            check(!manager.isEligible(relay.relayId()), "The loaded mast's actual removal must also invalidate an unloaded relay box");
++            helper.runAfterDelay(3, () -> {
++                check(!TowerRecord.load(manager.snapshot(relay.relayId()).save()).eligible(), "Saving after leaving must not resurrect the removed mast");
++                cleanup(helper, relay); helper.succeed();
++            });
++        });
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 400, batch = "antenna_missing_dependencies")
++    public void missingDependenciesKeepGraceUntilAnActualMastIsBroken(GameTestHelper helper) {
++        var world = helper.getLevel(); var relay = fixture(helper, "098.44"); var manager = TowerManager.get(world.getServer());
++        ready(helper, relay, () -> {
++            var saved = manager.snapshot(relay.relayId()); var unavailable = relay.corePos().east(20_000);
++            check(!world.hasChunkAt(unavailable), "Historical dependency must begin unloaded");
++            var footprint = new HashSet<>(saved.footprint()); footprint.add(unavailable.asLong());
++            manager.updateSnapshot(new TowerRecord(saved.id(), saved.dimension(), saved.position(), saved.channels(), saved.enabled(),
++                    saved.catalystItem(), saved.verified(), saved.antennaScore(), footprint, saved.cardBank(), saved.attachment(),
++                    saved.transponder(), saved.antennaBase(), saved.antennaTip()));
++            world.setBlock(relay.corePos().north(), Blocks.STONE.defaultBlockState(), 3);
++            helper.runAfterDelay(3, () -> {
++                check(manager.isEligible(relay.relayId()) && relay.getAntennaPower() == 2 && !world.hasChunkAt(unavailable),
++                        "A nearby edit cannot turn unavailable historical dependencies into a false disconnection or load them");
++                world.removeBlock(relay.corePos().above(), false);
++                check(!manager.isEligible(relay.relayId()), "Known destruction must override grace even if another historical chunk is unavailable");
++                helper.runAfterDelay(3, () -> {
++                    check(!manager.isEligible(relay.relayId()) && !world.hasChunkAt(unavailable), "The destroyed installation must stay inactive without loading remote chunks");
++                    cleanup(helper, relay); helper.succeed();
++                });
++            });
++        });
++    }
++}
+--- 0.7.3/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java
++++ 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java
+@@ -259,7 +259,8 @@
+             }
+             level.setBlock(core, Blocks.AIR.defaultBlockState(), 3);
+             RelayBlockEntity.tick(level, relay.getBlockPos(), relay.getBlockState(), relay);
+-            check(relay.displayStatus() == 6, "Removing the actual core must still schedule antenna verification");
++            check(!manager.isEligible(relay.relayId()) && relay.displayStatus() != RelayBlockEntity.READY,
++                    "Confirmed core destruction must stop routing immediately instead of keeping an eligible CHECK state");
+             level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+             level.setBlock(microphone, Blocks.AIR.defaultBlockState(), 3);
+             helper.succeed();
+--- 0.7.3/core/src/gametest/resources/fabric.mod.json
++++ 0.7.4/core/src/gametest/resources/fabric.mod.json
+@@ -14,6 +14,7 @@
+       "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests",
++      "dev.paul.simpleradiorepeaters.gametest.AntennaMutationGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.TerrainGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.MonitorGameTests"
+--- 0.7.3/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlockEntity.java
++++ 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlockEntity.java
+@@ -371,10 +371,19 @@
+ 
+     /** A real wire mutation is authoritative; ordinary load scans retain their settling grace. */
+     public void wireChanged(TowerManager manager, boolean broken) {
++        refreshAfterMutation(manager, broken, broken);
++    }
++
++    /** Block replacements are confirmed edits, so a complete empty scan needs no second vote. */
++    public void antennaBlocksChanged(TowerManager manager, boolean broken) {
++        refreshAfterMutation(manager, true, broken);
++    }
++
++    private void refreshAfterMutation(TowerManager manager, boolean acceptEmpty, boolean broken) {
+         if (!(level instanceof ServerLevel server)) return;
+         markDirty();
+         var antenna = AntennaScanner.scan(server, worldPosition, corePos());
+-        if (antenna.complete() && (broken || antenna.score() > 0)) acceptAntenna(manager, antenna);
++        if (antenna.complete() && (acceptEmpty || antenna.score() > 0)) acceptAntenna(manager, antenna);
+         else if (broken) {
+             manager.invalidateAntenna(relayId);
+             antennaPower = 0;
+--- 0.7.3/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/AntennaBlockChangeMixin.java
++++ 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/AntennaBlockChangeMixin.java
+@@ -0,0 +1,24 @@
++package dev.paul.simpleradiorepeaters.mixin;
++
++import dev.paul.simpleradiorepeaters.network.TowerManager;
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.LevelChunk;
++import org.spongepowered.asm.mixin.*;
++import org.spongepowered.asm.mixin.injection.*;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
++
++/** Actual block replacement only; unloading a chunk does not call setBlockState. */
++@Mixin(LevelChunk.class)
++public abstract class AntennaBlockChangeMixin {
++    @Inject(method = "setBlockState", at = @At("RETURN"))
++    private void repeaters$blockReplaced(BlockPos pos, BlockState state, boolean moved,
++                                         CallbackInfoReturnable<BlockState> result) {
++        BlockState previous = result.getReturnValue();
++        if (previous != null && previous.getBlock() != state.getBlock()
++                && ((LevelChunk) (Object) this).getLevel() instanceof ServerLevel server
++                && ((LevelChunk) (Object) this).getBlockState(pos).getBlock() != previous.getBlock())
++            TowerManager.blockChanged(server, pos, previous);
++    }
++}
+--- 0.7.3/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
++++ 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
+@@ -2,6 +2,8 @@
+ 
+ import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
+ import com.codinglitch.simpleradio.core.registry.entities.Wire;
++import com.codinglitch.simpleradio.central.Antennal;
++import com.codinglitch.simpleradio.core.registry.blocks.InsulatorBlock;
+ import com.codinglitch.simpleradio.radio.RadioRouter;
+ 
+ import dev.paul.simpleradiorepeaters.*;
+@@ -16,6 +18,7 @@
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.block.state.BlockState;
+ 
+ import java.util.*;
+ 
+@@ -36,12 +39,15 @@
+             boolean nativeCrossDimensional) {}
+ 
+     private record ChunkKey(String dimension, long position) {}
++    private record AntennaChange(boolean broken, int tick) {}
+ 
+     private final MinecraftServer server;
+     private final TowerSavedData data;
+     private final Map<UUID, RelayBlockEntity> loaded = new HashMap<>();
+     private final Map<Scope, Network> networks = new HashMap<>();
+     private final Map<ChunkKey, Set<UUID>> towersByChunk = new HashMap<>();
++    private final Map<ChunkKey, Set<UUID>> antennasByChunk = new HashMap<>();
++    private final Map<UUID, AntennaChange> pendingAntennaChanges = new LinkedHashMap<>();
+     private final Set<ChunkKey> pendingChunks = new LinkedHashSet<>();
+     private final Set<Wire> pendingWires = Collections.newSetFromMap(new IdentityHashMap<>());
+     private int configStamp;
+@@ -99,6 +105,7 @@
+                 manager.wireChanged(level, wire, false);
+         }
+         manager.reconcilePendingChunks();
++        manager.refreshChangedAntennas();
+         dev.paul.simpleradiorepeaters.terrain.TerrainManager.tick(server, manager.data.towers.values());
+         if (server.getTickCount() % 100 == 0) {
+             manager.checkConfiguration();
+@@ -165,12 +172,60 @@
+     private void index(TowerRecord record) {
+         for (ChunkKey key : chunkKeys(record))
+             towersByChunk.computeIfAbsent(key, ignored -> new HashSet<>()).add(record.id());
++        for (ChunkKey key : antennaChunks(record))
++            antennasByChunk.computeIfAbsent(key, ignored -> new HashSet<>()).add(record.id());
+     }
+ 
+     private void unindex(TowerRecord record) {
+         for (ChunkKey key : chunkKeys(record)) {
+             Set<UUID> ids = towersByChunk.get(key);
+             if (ids != null && ids.remove(record.id()) && ids.isEmpty()) towersByChunk.remove(key);
++        }
++        for (ChunkKey key : antennaChunks(record)) {
++            Set<UUID> ids = antennasByChunk.get(key);
++            if (ids != null && ids.remove(record.id()) && ids.isEmpty()) antennasByChunk.remove(key);
++        }
++    }
++
++    private static Set<ChunkKey> antennaChunks(TowerRecord record) {
++        Set<ChunkKey> chunks = new HashSet<>();
++        for (long packed : record.footprint())
++            chunks.add(new ChunkKey(record.dimension(), new ChunkPos(BlockPos.of(packed)).toLong()));
++        chunks.add(new ChunkKey(record.dimension(), new ChunkPos(record.antennaBase()).toLong()));
++        return chunks;
++    }
++
++    /** Persist known structural destruction now; coalesce guarded geometry scans until tick end. */
++    public static void blockChanged(ServerLevel level, BlockPos pos, BlockState previous) {
++        var server = level.getServer();
++        if (!server.isSameThread()) return;
++        var manager = get(server); if (manager == null) return;
++        var affected = manager.antennasByChunk.get(new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong()));
++        if (affected == null) return;
++        for (UUID id : List.copyOf(affected)) {
++            var record = manager.data.towers.get(id);
++            if (record == null || !(record.footprint().contains(pos.asLong()) || pos.equals(record.antennaBase())
++                    || pos.equals(record.antennaBase().above()))) continue;
++            var relay = manager.loaded.get(id);
++            boolean removed = previous.getBlock() instanceof Antennal || previous.getBlock() instanceof InsulatorBlock
++                    || pos.equals(record.antennaBase()) || relay != null && pos.equals(relay.corePos());
++            manager.pendingAntennaChanges.merge(id, new AntennaChange(removed, server.getTickCount()),
++                    (a, b) -> new AntennaChange(a.broken() || b.broken(), Math.min(a.tick(), b.tick())));
++            if (removed && record.verified()) manager.put(record.invalidate());
++        }
++    }
++
++    private void refreshChangedAntennas() {
++        if (pendingAntennaChanges.isEmpty()) return;
++        for (var entry : new LinkedHashMap<>(pendingAntennaChanges).entrySet()) {
++            // Let zero-delay native antenna block ticks settle before reading their geometry.
++            if (server.getTickCount() <= entry.getValue().tick()) continue;
++            pendingAntennaChanges.remove(entry.getKey());
++            var record = data.towers.get(entry.getKey()); var relay = loaded.get(entry.getKey());
++            if (record == null || relay == null || relay.isRemoved()) continue;
++            if (!entry.getValue().broken() && !AntennaScanner.dependenciesAvailable((ServerLevel) relay.getLevel(), record.footprint()))
++                relay.markDirty();
++            else relay.antennaBlocksChanged(this, entry.getValue().broken());
+         }
+     }
+ 
+@@ -180,6 +235,7 @@
+         RelayPerformance.invalidated(server, "tower_removed", networks.size(), record, null);
+         unindex(record);
+         loaded.remove(id);
++        pendingAntennaChanges.remove(id);
+         data.setDirty();
+         invalidateNetworks();
+     }
+--- 0.7.3/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.7.4/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -36,7 +36,7 @@
+   "handbook.simpleradio_repeaters.troubleshooting.title": "Troubleshooting & Tips",
+   "handbook.simpleradio_repeaters.troubleshooting.text_0": "Make sure your Relay shows READY and a positive ANT value, and that a Catalyst is installed.\n\nYou need at least one tuned Frequency Card in a Repeater Bank, or at least one RX card and one TX card in a Transponder.\n\nBeing able to talk from near Relay Tower 1 to a receiver near Relay Tower 2 does not guarantee that a signal from further away, such as Tower 5 or 6, can make the same jump.\n\nImprove the antenna, install an amplifier, or build more intermediary Relays to help weaker signals travel further.",
+   "handbook.simpleradio_repeaters.terrain.title": "Terrain & Elevation",
+-  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nExtra distance rises as the signal approaches the estimated ground: zero at eight blocks above, 1% at two blocks above and 5% at the surface. Below ground, it rises to 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at forty-eight, 200% at sixty-four and 300% at one hundred twenty-eight. Values fade smoothly between these points and cap at 300%. Penalties are averaged along the path, not multiplied for every sample. A path entirely forty-eight blocks below ground has about half its normal range; one at sixty-four has about one-third, and one at one hundred twenty-eight or deeper has about one-quarter.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nDuring terrain mapping, SCAN means there are no working links or previous terrain results yet. CHECK means mapping is pending while working links or previous results remain available. Existing paths keep their last verified penalty; a new path still waits for its first measurement, even if the Relay says CHECK. Breaking a wire or removing a tower still disconnects it immediately.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
++  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nExtra distance rises as the signal approaches the estimated ground: zero at eight blocks above, 1% at two blocks above and 5% at the surface. Below ground, it rises to 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at forty-eight, 200% at sixty-four and 300% at one hundred twenty-eight. Values fade smoothly between these points and cap at 300%. Penalties are averaged along the path, not multiplied for every sample. A path entirely forty-eight blocks below ground has about half its normal range; one at sixty-four has about one-third, and one at one hundred twenty-eight or deeper has about one-quarter.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nDuring terrain mapping, SCAN means there are no working links or previous terrain results yet. CHECK means mapping is pending while working links or previous results remain available. Existing paths keep their last verified penalty; a new path still waits for its first measurement, even if the Relay says CHECK. Breaking an antenna, its core, or a wire, or removing a tower still disconnects it immediately. Confirmed edits to loaded antennas update promptly; chunk restoration keeps its verification grace.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
+   "block.simpleradio_repeaters.relay_monitor": "Relay Monitor",
+   "tooltip.simpleradio_repeaters.monitor": "Plug into the top of a Relay. Insert a tuned card to survey direct links; use a compass on the screen to mark a tower.",
+   "message.simpleradio_repeaters.monitor_bound": "Compass bound to relay in %s.",
+--- 0.7.3/core/src/main/resources/simpleradio_repeaters.mixins.json
++++ 0.7.4/core/src/main/resources/simpleradio_repeaters.mixins.json
+@@ -10,6 +10,7 @@
+     "RadioBlockActivationMixin",
+     "FrequencyChannelLifecycleMixin",
+     "AntennaWireMixin",
++    "AntennaBlockChangeMixin",
+     "TerrainReachMixin",
+     "TerrainTravelMixin"
+   ],
+--- 0.7.3/docs/Development.md
++++ 0.7.4/docs/Development.md
+@@ -59,3 +59,8 @@
+ Passive card attachments override `routingCards()` to return no forwarding cards. Both the loaded Relay refresh and authoritative controller reconciliation use that method, so a monitor cannot become a saved relay node. Hardware readiness is separate from forwarding eligibility.
+ 
+ `RelaySurvey` predicts direct first-departure links through the existing `RadioSpace`, `NativeRadioAdapter` and `TerrainManager` APIs. It does not create native frequencies or emit sources. `TowerManager.revision()` changes only on actual network invalidation; each monitor reuses its survey until the card, attached relay or revision changes. The client receives the current text page and card inventory, with no exact TX-only location. Compass binding resolves the selected node server-side and writes a static vanilla lodestone target with validation disabled.
++
++
++## Confirmed antenna edits (0.7.4)
++
++`AntennaBlockChangeMixin` observes successful block-identity replacements through `LevelChunk.setBlockState`. It does not run for chunk unloading or ordinary property changes such as transmitter activity flags. `TowerManager` narrows those events through a chunk index and the saved footprint. Known structural destruction immediately persists an invalid record; geometry scans are coalesced and wait until the next server tick so zero-delay native antenna ticks can settle. Confirmed complete scans may publish zero immediately. Non-destructive changes still wait when historical dependencies are unavailable. The existing wire lifecycle path and periodic restoration verification keep their original semantics.
+--- 0.7.3/docs/Release-Notes-0.7.4.md
++++ 0.7.4/docs/Release-Notes-0.7.4.md
+@@ -0,0 +1,15 @@
++# Repeaters 0.7.4
++
++Confirmed antenna block edits now update relay hardware separately from chunk-restoration checks. Breaking a mast, its physical core or a known insulator invalidates the verified relay record immediately, including when its relay box is unloaded. The invalidation is saved before deferred scanning, so leaving immediately cannot retain the old active installation.
++
++Geometry rescans are coalesced per affected loaded relay and run after the next native block tick settles. A complete result can publish zero strength without the second ten-second confirmation used for uncertain load scans. Rebuilding or trimming a loaded installation therefore updates within a few ticks. An unloaded relay box retains its invalid state until it can verify the rebuilt hardware. Unrelated same-block state changes, including transmitter activity flags, do not use this path.
++
++The block-change hook observes successful replacements in loaded chunks; ordinary chunk/entity unloading does not invoke it. Missing historical dependencies retain their existing grace for unconfirmed/non-destructive changes, and guarded scans still cannot load remote chunks. A chunk index narrows each mutation to registered antenna footprints. No world scanning was added to audio routing.
++
++Periodic antenna verification remains as a fallback. Mast-tip terrain publication, height sampling, propagation math, and the terrain curve are unchanged.
++
++Use the existing Dimensional Foci 0.7.3 and Directional Antenna 0.2.9 jars. Foci API 1 is unchanged; this core-only update does not require a new Foci release.
++
++## Validation
++
++Passed 101 unit tests, 87 core server GameTests, and 133 combined server GameTests with Foci and Directional installed. Coverage includes immediate persisted invalidation, rebuilding and trimming before the periodic boundary, unloaded relay boxes, ordinary chunk unloading, and unavailable historical dependencies. Production archives contain no test classes; the existing Foci and Directional jars remain byte-identical.
+--- 0.7.3/docs/Terrain-and-Elevation.md
++++ 0.7.4/docs/Terrain-and-Elevation.md
+@@ -1,4 +1,4 @@
+-# Terrain and elevation — Repeaters 0.7.3
++# Terrain and elevation — Repeaters 0.7.4
+ 
+ Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
+ 
+@@ -48,7 +48,7 @@
+ - Removing a tower needs no new height queries.
+ - `/reload` preserves measured terrain profiles and still refreshes radio resources and the catalyst catalog.
+ 
+-Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
++Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. During terrain mapping, **SCAN** means the relay has neither working links nor a previous terrain result to reuse. **CHECK** means mapping is pending while working links or previous results remain available. Existing paths retain their last environmental penalty; a new path still waits for its first measured result, even when another working path makes the display say CHECK. These display states do not disable the relay. Real wire cuts, confirmed antenna/core breaks, tower removal and channel changes still affect eligibility immediately. Confirmed block edits get a coalesced geometry rescan after native block ticks settle; the 200-tick boundary still controls mast-tip terrain publication.
+ 
+ Explicit `terrain clear` keeps the last in-memory penalties while measuring replacements. Changing sample resolution can also use the saved previous resolution until its replacement completes. A normal restart already has the saved profiles; if a restart interrupts a remap and no usable profile exists, the first check must finish again. Old records without a verified mast tip retain ordinary propagation until visited and scanned.
+ 
+--- 0.7.3/gradle.properties
++++ 0.7.4/gradle.properties
+@@ -1,7 +1,7 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.3
++mod_version=0.7.4
+ foci_version=0.7.3
+ foci_api_version=1
+ foci_required_api_version=1
+--- 0.7.3/tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java
++++ 0.7.4/tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java
+@@ -11,7 +11,7 @@
+ public abstract class ParityTestFilter {
+     private static final Set<String> CLASSES = Set.of("repeatergametests", "relaydiagnosticsgametests", "catalystgametests",
+         "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests",
+-        "antennaorigingametests", "performancegametests", "terraingametests", "monitorgametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
++        "antennaorigingametests", "antennamutationgametests", "performancegametests", "terraingametests", "monitorgametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
+     @Inject(method="getAllTestFunctions",at=@At("RETURN"),cancellable=true,remap=false)
+     private static void parityChecks(CallbackInfoReturnable<Collection<TestFunction>> result) {
+         result.setReturnValue(result.getReturnValue().stream().filter(test -> {

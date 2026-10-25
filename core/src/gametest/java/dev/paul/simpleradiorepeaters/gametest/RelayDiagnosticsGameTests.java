@@ -259,7 +259,8 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
             }
             level.setBlock(core, Blocks.AIR.defaultBlockState(), 3);
             RelayBlockEntity.tick(level, relay.getBlockPos(), relay.getBlockState(), relay);
-            check(relay.displayStatus() == 6, "Removing the actual core must still schedule antenna verification");
+            check(!manager.isEligible(relay.relayId()) && relay.displayStatus() != RelayBlockEntity.READY,
+                    "Confirmed core destruction must stop routing immediately instead of keeping an eligible CHECK state");
             level.setBlock(relay.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
             level.setBlock(microphone, Blocks.AIR.defaultBlockState(), 3);
             helper.succeed();

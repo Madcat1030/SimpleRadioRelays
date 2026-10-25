@@ -10,6 +10,7 @@
     "RadioBlockActivationMixin",
     "FrequencyChannelLifecycleMixin",
     "AntennaWireMixin",
+    "AntennaBlockChangeMixin",
     "TerrainReachMixin",
     "TerrainTravelMixin"
   ],
