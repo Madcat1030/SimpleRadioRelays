@@ -1,0 +1,32 @@
+[
+  {
+    "case": "same_api",
+    "passed": true,
+    "core_version": "0.99.0",
+    "foci_version": "0.7.3",
+    "decision": "accepted",
+    "world_started": false,
+    "intentional_qa_abort": true,
+    "metadata_restored": true
+  },
+  {
+    "case": "different_api",
+    "passed": true,
+    "core_version": "0.99.0",
+    "foci_version": "0.7.3",
+    "decision": "rejected",
+    "world_started": false,
+    "intentional_qa_abort": true,
+    "metadata_restored": true
+  },
+  {
+    "case": "missing_api",
+    "passed": true,
+    "core_version": "0.99.0",
+    "foci_version": "0.7.3",
+    "decision": "rejected",
+    "world_started": false,
+    "intentional_qa_abort": true,
+    "metadata_restored": true
+  }
+]

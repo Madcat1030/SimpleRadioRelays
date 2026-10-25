@@ -1,0 +1,9 @@
+{
+  "added": [
+    "dev/paul/simpleradiofoci/FociCompatibility.class"
+  ],
+  "removed": [],
+  "changed": [
+    "fabric.mod.json"
+  ]
+}

@@ -6,8 +6,10 @@ import json
 import struct
 
 root = Path(__file__).resolve().parents[1]
-version = next(line.split('=', 1)[1].strip() for line in
-               (root / 'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
+properties = dict(line.split('=', 1) for line in (root / 'gradle.properties').read_text().splitlines()
+                  if '=' in line and not line.startswith('#'))
+version = properties['mod_version'].strip()
+api_key = 'simpleradio_repeaters:foci_api'
 reports = []
 for module in ('core', 'foci', 'directional'):
     folder = root / module / 'build/libs'
@@ -32,10 +34,16 @@ for module in ('core', 'foci', 'directional'):
             assert b'org/junit/' not in data and b'net/minecraft/gametest/' not in data, name
             classes += 1
         if module == 'core':
+            assert metadata['version'] == version
+            assert metadata['custom'][api_key] == int(properties['foci_api_version'])
             assert not any('simpleradiofoci' in name or 'simpleradiodirectional' in name for name in names)
             assert not any('nether_focus' in name or 'end_focus' in name for name in names)
         elif module == 'foci':
-            assert metadata['depends']['simpleradio_repeaters'] == version
+            assert metadata['version'] == properties['foci_version'].strip()
+            assert metadata['depends']['simpleradio_repeaters'] == '>=0.7.3'
+            assert metadata['custom'][api_key] == int(properties['foci_required_api_version'])
+            assert properties['foci_required_api_version'] == properties['foci_api_version']
+            assert metadata['entrypoints']['preLaunch'] == ['dev.paul.simpleradiofoci.FociCompatibility']
             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)
         else:
             assert 'simpleradio_repeaters' not in metadata['depends']

@@ -1,0 +1,176 @@
+--- 0.7.2/README.md
++++ 0.7.3/README.md
+@@ -4,15 +4,15 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.2 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+-| Dimensional Foci 0.7.2 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
++| Repeaters 0.7.3 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+ ## Install
+ 
+ Use Fabric Minecraft **1.20.1**, Java **17+**, Fabric Loader **0.19.0+**, Fabric API, Simple Radio **1.20.1-4.5.7.9** and its dependencies (Lexiconfig and Simple Voice Chat). Install the same chosen addons on server and clients. Replace older copies of those JARs.
+ 
+-Directional works without either other addon. When combined, use Repeaters 0.5.7 or newer. Foci replaces Simple Radio's dimensional behavior, so only install it if you want focus-controlled crossings.
++Directional works without either other addon. When combined, use Repeaters 0.5.7 or newer. Foci replaces Simple Radio's dimensional behavior, so only install it if you want focus-controlled crossings. Foci 0.7.3+ can stay installed across routine core updates that retain its Foci API number.
+ 
+ ## Your first relay
+ 
+--- 0.7.2/core/build.gradle
++++ 0.7.3/core/build.gradle
+@@ -49,7 +49,14 @@
+ 
+ processResources {
+     inputs.property 'version', project.version
+-    filesMatching('fabric.mod.json') { expand 'version': project.version }
++    inputs.property 'foci_api_version', rootProject.foci_api_version
++    filesMatching('fabric.mod.json') { expand version: project.version }
++    doLast {
++        def metadataFile = new File(destinationDir, 'fabric.mod.json')
++        def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
++        metadata.custom['simpleradio_repeaters:foci_api'] = Integer.parseInt(rootProject.foci_api_version)
++        metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)) + '\n'
++    }
+ }
+ 
+ tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+--- 0.7.2/core/src/main/resources/fabric.mod.json
++++ 0.7.3/core/src/main/resources/fabric.mod.json
+@@ -10,6 +10,9 @@
+   ],
+   "license": "GPL-3.0-only",
+   "environment": "*",
++  "custom": {
++    "simpleradio_repeaters:foci_api": 1
++  },
+   "entrypoints": {
+     "main": [
+       "dev.paul.simpleradiorepeaters.SimpleRadioRepeaters"
+--- 0.7.2/docs/Development.md
++++ 0.7.3/docs/Development.md
+@@ -22,7 +22,7 @@
+ 
+ All integration calls run on the server thread. Reception methods read cached state and must not scan the world. A connected dish change publishes a new immutable reception view and invalidates the graph immediately. Native receiver membership changes publish their own bindings without invalidating relay links. No-op scans preserve the relay revision. Standalone and combined GameTests cover these boundaries.
+ 
+-Directional 0.2.9 can run without Repeaters, or alongside Repeaters 0.5.7+. It rejects older installed cores because they do not expose this API. Foci uses its matching core version.
++Directional 0.2.9 can run without Repeaters, or alongside Repeaters 0.5.7+. It rejects older installed cores because they do not expose this API. Foci 0.7.3+ requires core 0.7.3+ with the same Foci API number, independently of either release number. See [Foci compatibility](Foci-Compatibility.md).
+ 
+ Native wire entities use Fabric's server entity lifecycle events. Destruction immediately rescans affected loaded antennas or invalidates their saved records; normal tracking/chunk unloading preserves them. New wires are inspected at the end of the tick, after native socket attachment. Directional retains verified mast membership during incomplete or temporarily smaller restoration scans, with a bounded retry once all prior mast chunks are available. Confirmed wire cuts bypass that grace. These notifications do not force-load chunks or add per-packet world scans.
+ 
+--- 0.7.2/docs/Terrain-and-Elevation.md
++++ 0.7.3/docs/Terrain-and-Elevation.md
+@@ -1,4 +1,4 @@
+-# Terrain and elevation — Repeaters 0.7.2
++# Terrain and elevation — Repeaters 0.7.3
+ 
+ Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
+ 
+@@ -12,7 +12,7 @@
+ | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
+ | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
+ 
+-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.2 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
++The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.3 uses an independent compatibility API; Directional 0.2.9 is unchanged.
+ 
+ ## Attenuation
+ 
+--- 0.7.2/foci/build.gradle
++++ 0.7.3/foci/build.gradle
+@@ -3,7 +3,7 @@
+     id 'maven-publish'
+ }
+ 
+-version = project.mod_version
++version = rootProject.foci_version
+ group = project.maven_group
+ base { archivesName = 'simple-radio-repeaters-dimensional-foci-fabric-1.20.1' }
+ 
+@@ -54,7 +54,14 @@
+ 
+ processResources {
+     inputs.property 'version', project.version
+-    filesMatching('fabric.mod.json') { expand 'version': project.version }
++    inputs.property 'foci_api_version', rootProject.foci_required_api_version
++    filesMatching('fabric.mod.json') { expand version: project.version }
++    doLast {
++        def metadataFile = new File(destinationDir, 'fabric.mod.json')
++        def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
++        metadata.custom['simpleradio_repeaters:foci_api'] = Integer.parseInt(rootProject.foci_required_api_version)
++        metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)) + '\n'
++    }
+ }
+ 
+ tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+--- 0.7.2/foci/src/main/resources/fabric.mod.json
++++ 0.7.3/foci/src/main/resources/fabric.mod.json
+@@ -10,7 +10,13 @@
+   ],
+   "license": "GPL-3.0-only",
+   "environment": "*",
++  "custom": {
++    "simpleradio_repeaters:foci_api": 1
++  },
+   "entrypoints": {
++    "preLaunch": [
++      "dev.paul.simpleradiofoci.FociCompatibility"
++    ],
+     "main": [
+       "dev.paul.simpleradiofoci.DimensionalFoci"
+     ]
+@@ -25,6 +31,6 @@
+     "java": ">=17",
+     "simpleradio": "1.20.1-4.5.7.9",
+     "voicechat": ">=1.20.1-2.6.0",
+-    "simpleradio_repeaters": "${version}"
++    "simpleradio_repeaters": ">=0.7.3"
+   }
+ }
+--- 0.7.2/gradle.properties
++++ 0.7.3/gradle.properties
+@@ -1,6 +1,9 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.2
++mod_version=0.7.3
++foci_version=0.7.3
++foci_api_version=1
++foci_required_api_version=1
+ maven_group=dev.paul.simpleradiorepeaters
+ archives_base_name=simple-radio-repeaters-fabric-1.20.1
+--- 0.7.2/tools/verify_prototypes.py
++++ 0.7.3/tools/verify_prototypes.py
+@@ -6,8 +6,10 @@
+ import struct
+ 
+ root = Path(__file__).resolve().parents[1]
+-version = next(line.split('=', 1)[1].strip() for line in
+-               (root / 'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
++properties = dict(line.split('=', 1) for line in (root / 'gradle.properties').read_text().splitlines()
++                  if '=' in line and not line.startswith('#'))
++version = properties['mod_version'].strip()
++api_key = 'simpleradio_repeaters:foci_api'
+ reports = []
+ for module in ('core', 'foci', 'directional'):
+     folder = root / module / 'build/libs'
+@@ -32,10 +34,16 @@
+             assert b'org/junit/' not in data and b'net/minecraft/gametest/' not in data, name
+             classes += 1
+         if module == 'core':
++            assert metadata['version'] == version
++            assert metadata['custom'][api_key] == int(properties['foci_api_version'])
+             assert not any('simpleradiofoci' in name or 'simpleradiodirectional' in name for name in names)
+             assert not any('nether_focus' in name or 'end_focus' in name for name in names)
+         elif module == 'foci':
+-            assert metadata['depends']['simpleradio_repeaters'] == version
++            assert metadata['version'] == properties['foci_version'].strip()
++            assert metadata['depends']['simpleradio_repeaters'] == '>=0.7.3'
++            assert metadata['custom'][api_key] == int(properties['foci_required_api_version'])
++            assert properties['foci_required_api_version'] == properties['foci_api_version']
++            assert metadata['entrypoints']['preLaunch'] == ['dev.paul.simpleradiofoci.FociCompatibility']
+             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)
+         else:
+             assert 'simpleradio_repeaters' not in metadata['depends']

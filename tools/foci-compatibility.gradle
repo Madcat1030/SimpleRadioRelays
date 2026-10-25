@@ -1,0 +1,49 @@
+// QA only: change development-jar metadata, then always restore the complete original jars.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def project = root.project(':directional')
+    def originals = [:]
+    def restore = project.tasks.register('restoreFociCompatibilityMetadata') {
+        doLast { originals.each { file, bytes -> file.bytes = bytes } }
+    }
+    project.tasks.named('runGameTest') {
+        doFirst {
+            def mode = root.findProperty('compatibilityCase')
+            if (!(mode in ['same_api', 'different_api', 'missing_api']))
+                throw new GradleException('Select a compatibilityCase')
+            def core = root.project(':core').tasks.named('jar').get().archiveFile.get().asFile
+            def foci = root.project(':foci').tasks.named('jar').get().archiveFile.get().asFile
+            [core, foci].each { originals[it] = it.bytes }
+            def readMetadata = { file ->
+                new java.util.zip.ZipFile(file).withCloseable { zip ->
+                    new groovy.json.JsonSlurper().parseText(zip.getInputStream(zip.getEntry('fabric.mod.json')).getText('UTF-8'))
+                }
+            }
+            def writeMetadata = { file, metadata ->
+                def temporary = java.nio.file.Files.createTempFile(file.parentFile.toPath(), 'compatibility-', '.jar')
+                try {
+                    new java.util.zip.ZipFile(file).withCloseable { source ->
+                        new java.util.zip.ZipOutputStream(java.nio.file.Files.newOutputStream(temporary)).withCloseable { output ->
+                            source.entries().each { entry ->
+                                output.putNextEntry(new java.util.zip.ZipEntry(entry.name))
+                                if (entry.name == 'fabric.mod.json') output.write(groovy.json.JsonOutput.toJson(metadata).getBytes('UTF-8'))
+                                else if (!entry.directory) source.getInputStream(entry).withCloseable { input -> input.transferTo(output) }
+                                output.closeEntry()
+                            }
+                        }
+                    }
+                    java.nio.file.Files.move(temporary, file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                } finally { java.nio.file.Files.deleteIfExists(temporary) }
+            }
+            def coreMetadata = readMetadata(core)
+            coreMetadata.version = '0.99.0'
+            if (mode == 'different_api') coreMetadata.custom['simpleradio_repeaters:foci_api'] += 1
+            if (mode == 'missing_api') coreMetadata.custom.remove('simpleradio_repeaters:foci_api')
+            def fociMetadata = readMetadata(foci)
+            fociMetadata.entrypoints.preLaunch += 'dev.paul.simpleradiorepeaters.gametest.FociCompatibilityProbe'
+            writeMetadata(core, coreMetadata)
+            writeMetadata(foci, fociMetadata)
+        }
+        finalizedBy restore
+    }
+}

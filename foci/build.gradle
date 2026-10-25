@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+version = rootProject.foci_version
 group = project.maven_group
 base { archivesName = 'simple-radio-repeaters-dimensional-foci-fabric-1.20.1' }
 
@@ -54,7 +54,14 @@ loom {
 
 processResources {
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    inputs.property 'foci_api_version', rootProject.foci_required_api_version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+    doLast {
+        def metadataFile = new File(destinationDir, 'fabric.mod.json')
+        def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
+        metadata.custom['simpleradio_repeaters:foci_api'] = Integer.parseInt(rootProject.foci_required_api_version)
+        metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)) + '\n'
+    }
 }
 
 tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }

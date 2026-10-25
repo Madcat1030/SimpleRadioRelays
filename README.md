@@ -4,15 +4,15 @@ Build radio infrastructure that carries conversations between distant settlement
 
 | Mod | Adds | Requires |
 | --- | --- | --- |
-| Repeaters 0.7.2 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
-| Dimensional Foci 0.7.2 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
+| Repeaters 0.7.3 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+| Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
 | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
 
 ## Install
 
 Use Fabric Minecraft **1.20.1**, Java **17+**, Fabric Loader **0.19.0+**, Fabric API, Simple Radio **1.20.1-4.5.7.9** and its dependencies (Lexiconfig and Simple Voice Chat). Install the same chosen addons on server and clients. Replace older copies of those JARs.
 
-Directional works without either other addon. When combined, use Repeaters 0.5.7 or newer. Foci replaces Simple Radio's dimensional behavior, so only install it if you want focus-controlled crossings.
+Directional works without either other addon. When combined, use Repeaters 0.5.7 or newer. Foci replaces Simple Radio's dimensional behavior, so only install it if you want focus-controlled crossings. Foci 0.7.3+ can stay installed across routine core updates that retain its Foci API number.
 
 ## Your first relay
 

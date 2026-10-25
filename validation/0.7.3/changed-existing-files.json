@@ -1,0 +1,11 @@
+[
+  "README.md",
+  "core/build.gradle",
+  "core/src/main/resources/fabric.mod.json",
+  "docs/Development.md",
+  "docs/Terrain-and-Elevation.md",
+  "foci/build.gradle",
+  "foci/src/main/resources/fabric.mod.json",
+  "gradle.properties",
+  "tools/verify_prototypes.py"
+]

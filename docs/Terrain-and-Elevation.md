@@ -1,4 +1,4 @@
-# Terrain and elevation — Repeaters 0.7.2
+# Terrain and elevation — Repeaters 0.7.3
 
 Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
 
@@ -12,7 +12,7 @@ Set `terrain.mode` in `config/simpleradio-repeaters.json`:
 | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
 | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
 
-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.2 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.3 uses an independent compatibility API; Directional 0.2.9 is unchanged.
 
 ## Attenuation
 
