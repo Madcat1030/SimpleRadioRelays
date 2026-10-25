@@ -84,7 +84,7 @@ public final class TerrainManager {
     }
     private static double fraction(int[] heights, double ay, double by) {
         var cfg = RepeatersConfig.INSTANCE.terrain;
-        return TerrainMath.profileLoss(heights, ay, by, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
+        return TerrainMath.profileLoss(heights, ay, by, cfg.clearanceCurve);
     }
 
     /** Existing links keep their committed penalty during remapping; new links await their first profile. */
@@ -314,7 +314,7 @@ public final class TerrainManager {
                 else {
                     var cfg = RepeatersConfig.INSTANCE.terrain;
                     sum += (index == 0 || index == count - 1 ? .5 : 1)
-                            * TerrainMath.loss(TerrainMath.height(a.y, b.y, t) - h, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
+                            * TerrainMath.loss(TerrainMath.height(a.y, b.y, t) - h, cfg.clearanceCurve);
                 }
                 if (++index == count) { finish(); return true; }
             } catch (RuntimeException problem) {
@@ -335,7 +335,7 @@ public final class TerrainManager {
     private static int settingsHash() {
         var c = RepeatersConfig.INSTANCE.terrain;
         return Objects.hash(c.mode, c.sampleSpacing, c.maxSamplesPerPath,
-                c.nearGroundHeight, c.nearGroundLoss, Arrays.hashCode(c.undergroundLosses),
+                Arrays.deepHashCode(c.clearanceCurve),
                 c.maxElevationAntennaBonus, c.elevationReferenceY, c.elevationFullBonusY);
     }
     public static int configurationStamp() { return current == null ? 0 : 31 * current.revision + current.settingsHash; }

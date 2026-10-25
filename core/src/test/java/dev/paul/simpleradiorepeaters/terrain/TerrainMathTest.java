@@ -5,40 +5,40 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TerrainMathTest {
-    private static final double[] UNDERGROUND = {.10, .25, .50, 1, 1.5, 2};
+    private static final double[][] CURVE = new dev.paul.simpleradiorepeaters.RepeatersConfig.Terrain().clearanceCurve;
     @Test void clearTouchingAndBuriedPathsHaveBoundedSmoothLoss() {
-        assertEquals(0, TerrainMath.loss(8, 8, .01, UNDERGROUND));
-        assertEquals(.01, TerrainMath.loss(0, 8, .01, UNDERGROUND));
-        assertEquals(.50, TerrainMath.loss(-32, 8, .01, UNDERGROUND));
+        assertEquals(0, TerrainMath.loss(8, CURVE));
+        assertEquals(.05, TerrainMath.loss(0, CURVE));
+        assertEquals(.50, TerrainMath.loss(-32, CURVE));
         double last = 0;
         for (double clearance = 64; clearance >= -160; clearance -= .25) {
-            double loss = TerrainMath.loss(clearance, 8, .01, UNDERGROUND);
-            assertTrue(loss >= last && loss <= 2); last = loss;
+            double loss = TerrainMath.loss(clearance, CURVE);
+            assertTrue(loss >= last && loss <= 3); last = loss;
         }
     }
     @Test void samplingDensityDoesNotMultiplyThePenalty() {
         for (int size : new int[]{2, 17, 126, 1024}) {
             int[] ground = new int[size]; Arrays.fill(ground, 80);
-            assertEquals(.01, TerrainMath.profileLoss(ground, 80, 80, 8, .01, UNDERGROUND), 1e-12);
+            assertEquals(.05, TerrainMath.profileLoss(ground, 80, 80, CURVE), 1e-12);
         }
     }
     @Test void aMountainAcrossTheLinkCanBeClearedByHigherMasts() {
         int[] ground = {64, 64, 150, 64, 64};
-        assertTrue(TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND) > 0);
-        assertEquals(0, TerrainMath.profileLoss(ground, 200, 200, 8, .01, UNDERGROUND));
+        assertTrue(TerrainMath.profileLoss(ground, 100, 100, CURVE) > 0);
+        assertEquals(0, TerrainMath.profileLoss(ground, 200, 200, CURVE));
     }
     @Test void aSlopingRayUsesEachSamplesPosition() {
         int[] ground = {64, 110, 150, 180};
-        double rising = TerrainMath.profileLoss(ground, 102, 226, 8, .01, UNDERGROUND);
-        double flat = TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND);
+        double rising = TerrainMath.profileLoss(ground, 102, 226, CURVE);
+        double flat = TerrainMath.profileLoss(ground, 100, 100, CURVE);
         assertEquals(0, rising); assertTrue(flat > 0);
         assertEquals(130, TerrainMath.height(100, 220, .25));
     }
     @Test void swappingEndpointsPreservesTheTerrainResult() {
         int[] ground = {63, 80, 160, 90, 110};
         int[] reverse = {110, 90, 160, 80, 63};
-        assertEquals(TerrainMath.profileLoss(ground, 90, 160, 8, .01, UNDERGROUND),
-                TerrainMath.profileLoss(reverse, 160, 90, 8, .01, UNDERGROUND), 1e-12);
+        assertEquals(TerrainMath.profileLoss(ground, 90, 160, CURVE),
+                TerrainMath.profileLoss(reverse, 160, 90, CURVE), 1e-12);
     }
     @Test void sparseSamplesHaveAHardWorkBound() {
         assertEquals(126, TerrainMath.sampleCount(8000, 64, 1024));
@@ -73,10 +73,10 @@ class TerrainMathTest {
     }
 
     @Test void aboveGroundAndUndergroundHaveTheRequestedSeparateAnchors() {
-        double[] clearances = {10, 8, 4, 0, -4, -8, -12, -16, -20, -30, -32, -48, -64, -80, -96, -112, -128, -160};
-        double[] expected = {0, 0, .005, .01, .055, .10, .175, .25, .3125, .46875, .50, .75, 1, 1.25, 1.5, 1.75, 2, 2};
+        double[] clearances = {10, 8, 5, 2, 1, 0, -4, -8, -12, -16, -20, -30, -32, -40, -48, -56, -64, -96, -128, -160};
+        double[] expected = {0, 0, .005, .01, .03, .05, .075, .10, .175, .25, .3125, .46875, .50, .75, 1, 1.5, 2, 2.5, 3, 3};
         for (int i = 0; i < clearances.length; i++)
-            assertEquals(expected[i], TerrainMath.loss(clearances[i], 8, .01, UNDERGROUND), 1e-12);
+            assertEquals(expected[i], TerrainMath.loss(clearances[i], CURVE), 1e-12);
     }
     @Test void undergroundPenaltiesAddDistanceAndCannotBecomeNonFinite() {
         assertEquals(1000, TerrainMath.extraDistance(1000, 1), 1e-12);
@@ -84,10 +84,19 @@ class TerrainMathTest {
         assertEquals(Double.POSITIVE_INFINITY, TerrainMath.extraDistance(1000, Double.POSITIVE_INFINITY));
         assertEquals(0, TerrainMath.extraDistance(1000, 0));
     }
+    @Test void deepestUniformPathsHaveOneQuarterRangeAndPartialObstructionsAreAveraged() {
+        int[] deep = {-1, -1};
+        double penalty = TerrainMath.profileLoss(deep, -129, -129, CURVE);
+        assertEquals(3, penalty);
+        assertEquals(2000, 500 + TerrainMath.extraDistance(500, penalty));
+        int[] mixed = {-10, 127, -10};
+        assertEquals(1.5, TerrainMath.profileLoss(mixed, -1, -1, CURVE));
+        assertEquals(3, TerrainMath.loss(-1024, CURVE));
+    }
     @Test void aFiveHundredBlockMountainIsWeightedAcrossTheWholeTwoThousandBlockPath() {
         int[] ground = new int[2001]; Arrays.fill(ground, 90);
         Arrays.fill(ground, 750, 1250, 130);
-        double loss = TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND);
+        double loss = TerrainMath.profileLoss(ground, 100, 100, CURVE);
         assertEquals(.25 * .46875, loss, 1e-12);
         assertEquals(2234.375, 2000 + TerrainMath.extraDistance(2000, loss), 1e-9);
     }

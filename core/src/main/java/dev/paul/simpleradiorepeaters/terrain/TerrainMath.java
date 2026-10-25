@@ -12,25 +12,23 @@ public final class TerrainMath {
     public static double height(double from, double to, double fraction) {
         return from + (to - from) * fraction;
     }
-    public static double loss(double clearance, double nearHeight, double near, double[] underground) {
-        if (clearance >= nearHeight) return 0;
-        if (clearance >= 0) return near * (nearHeight - clearance) / nearHeight;
-        double depth = -clearance, start = 0, previous = near;
-        for (int i = 0; i < underground.length; i++) {
-            double end = i < 4 ? 8 * (1 << i) : 64 + 32 * (i - 3);
-            if (depth <= end) return height(previous, underground[i], (depth - start) / (end - start));
-            start = end; previous = underground[i];
+    public static double loss(double clearance, double[][] curve) {
+        if (clearance >= curve[0][0]) return curve[0][1];
+        for (int i = 1; i < curve.length; i++) {
+            double[] upper = curve[i - 1], lower = curve[i];
+            if (clearance >= lower[0])
+                return height(upper[1], lower[1], (upper[0] - clearance) / (upper[0] - lower[0]));
         }
-        return previous;
+        return curve[curve.length - 1][1];
     }
 
-    public static double profileLoss(int[] ground, double fromY, double toY, double nearHeight, double near, double[] underground) {
+    public static double profileLoss(int[] ground, double fromY, double toY, double[][] curve) {
         if (ground.length < 2) return 0;
         double sum = 0;
         for (int i = 0; i < ground.length; i++) {
             double t = (double) i / (ground.length - 1);
             sum += (i == 0 || i == ground.length - 1 ? .5 : 1)
-                    * loss(height(fromY, toY, t) - ground[i], nearHeight, near, underground);
+                    * loss(height(fromY, toY, t) - ground[i], curve);
         }
         return sum / (ground.length - 1);
     }

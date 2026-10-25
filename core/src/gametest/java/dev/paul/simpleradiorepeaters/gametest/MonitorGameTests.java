@@ -205,6 +205,14 @@ public class MonitorGameTests implements FabricGameTest {
                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
                         "Sixteen blocks below the sampled ground must display +25%, using the shared saved profile");
+                long sampled = ((Number) TerrainManager.statistics().get("sampled_columns")).longValue();
+                replacement.clearanceCurve[4][1] = .4;
+                TerrainManager.reconfigure(world.getServer());
+                var updated = RelaySurvey.scan(world.getServer(), manager, home, channel);
+                check(updated.entries().size() == 1 && Math.abs(updated.entries().get(0).terrainPercent() - 40) < .001,
+                        "Changing a curve point must invalidate derived penalties and update the monitor's real survey");
+                check(((Number) TerrainManager.statistics().get("sampled_columns")).longValue() == sampled,
+                        "A changed attenuation curve must reuse saved ground heights without generator queries");
                 check(!world.hasChunkAt(base) && !world.hasChunkAt(other.antennaBase()), "Diagnostic terrain inspection must not load endpoints");
                 helper.succeed();
             } finally {

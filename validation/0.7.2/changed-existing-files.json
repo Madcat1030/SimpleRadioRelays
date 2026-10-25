@@ -1,0 +1,13 @@
+[
+  "README.md",
+  "core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java",
+  "core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/PerformanceGameTests.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainMath.java",
+  "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+  "core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java",
+  "core/src/test/java/dev/paul/simpleradiorepeaters/terrain/TerrainMathTest.java",
+  "docs/Terrain-and-Elevation.md",
+  "gradle.properties"
+]

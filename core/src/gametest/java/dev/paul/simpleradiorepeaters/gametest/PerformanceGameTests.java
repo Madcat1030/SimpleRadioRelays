@@ -124,7 +124,8 @@ public class PerformanceGameTests implements FabricGameTest {
         }
         helper.succeed();
     }
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "performance_timer", timeoutTicks = 3000)
+    // GameTest ticks are accelerated; allow a real second even on a fast host.
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "performance_timer", timeoutTicks = 30_000)
     public void timed_capture_stops_on_elapsed_seconds_and_writes_an_idle_report(GameTestHelper helper) {
         var server = helper.getLevel().getServer(); Set<Path> before = reports();
         check(server.getCommands().getDispatcher().getRoot().getChild("radiorepeater") == null,

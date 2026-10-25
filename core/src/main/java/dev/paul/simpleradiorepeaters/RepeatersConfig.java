@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,16 +17,16 @@ public final class RepeatersConfig {
     public Terrain terrain = new Terrain();
 
     public static final class Terrain {
-        public int formatVersion = 2;
+        public int formatVersion = 3;
         public dev.paul.simpleradiorepeaters.terrain.TerrainMode mode = dev.paul.simpleradiorepeaters.terrain.TerrainMode.RELAY_MAPPING;
         public int sampleSpacing = 64;
         public int maxSamplesPerPath = 1024;
         public int samplesPerTick = 64;
         public double sampleBudgetMs = 1;
-        public double nearGroundHeight = 8;
-        public double nearGroundLoss = 0.01;
-        /** Extra-distance fractions at depths 8, 16, 32, 64, 96 and 128. */
-        public double[] undergroundLosses = {.10, .25, .50, 1, 1.5, 2};
+        /** Rows are {clearance in blocks, extra-distance fraction}, highest clearance first. */
+        public double[][] clearanceCurve = {
+                {8, 0}, {2, .01}, {0, .05}, {-8, .10}, {-16, .25},
+                {-32, .50}, {-48, 1}, {-64, 2}, {-128, 3}};
         public double maxElevationAntennaBonus = 0.10;
         public int elevationReferenceY = 64;
         public int elevationFullBonusY = 192;
@@ -36,13 +37,17 @@ public final class RepeatersConfig {
             maxSamplesPerPath = Math.max(2, Math.min(4096, maxSamplesPerPath));
             samplesPerTick = Math.max(1, Math.min(64, samplesPerTick));
             sampleBudgetMs = finite(sampleBudgetMs, 1, .1, 5);
-            nearGroundHeight = finite(nearGroundHeight, 8, 1.01, 64);
-            nearGroundLoss = finite(nearGroundLoss, .01, 0, .25);
-            double[] defaults = {.10, .25, .50, 1, 1.5, 2};
-            if (undergroundLosses == null || undergroundLosses.length != defaults.length) undergroundLosses = defaults.clone();
-            double previous = nearGroundLoss;
-            for (int i = 0; i < undergroundLosses.length; i++)
-                previous = undergroundLosses[i] = finite(undergroundLosses[i], Math.max(previous, defaults[i]), previous, 4);
+            if (clearanceCurve == null || clearanceCurve.length < 2 || clearanceCurve.length > 64)
+                throw new IllegalArgumentException("terrain.clearanceCurve needs 2 to 64 [clearance, extra-distance] points");
+            double previousHeight = Double.POSITIVE_INFINITY, previousLoss = 0;
+            for (double[] point : clearanceCurve) {
+                if (point == null || point.length != 2 || !Double.isFinite(point[0]) || Math.abs(point[0]) > 4096
+                        || !Double.isFinite(point[1]) || point[0] >= previousHeight || point[1] < previousLoss || point[1] > 4)
+                    throw new IllegalArgumentException("terrain.clearanceCurve requires descending clearances within +/-4096 and nondecreasing extra-distance fractions from 0 to 4");
+                previousHeight = point[0]; previousLoss = point[1];
+            }
+            if (clearanceCurve[0][1] != 0)
+                throw new IllegalArgumentException("terrain.clearanceCurve must start with zero extra distance");
             maxElevationAntennaBonus = finite(maxElevationAntennaBonus, .10, 0, .50);
             elevationReferenceY = Math.max(-64, Math.min(319, elevationReferenceY));
             elevationFullBonusY = Math.max(elevationReferenceY + 1, Math.min(320, elevationFullBonusY));
@@ -64,15 +69,32 @@ public final class RepeatersConfig {
         JsonObject terrain = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
         if (terrain != null && !terrain.has("formatVersion")) {
             // Migrate only the old defaults; preserve deliberately different server settings.
-            if (terrain.has("nearGroundLoss") && loaded.terrain.nearGroundLoss == .10) loaded.terrain.nearGroundLoss = .01;
             if (terrain.has("samplesPerTick") && loaded.terrain.samplesPerTick == 4) loaded.terrain.samplesPerTick = 64;
         }
-        loaded.terrain.formatVersion = 2;
+        if (terrain != null) migrateCurve(terrain, loaded.terrain);
+        loaded.terrain.formatVersion = 3;
         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
         loaded.terrain.validate();
-        if (terrain != null && (terrain.has("clearance") || terrain.has("buriedLoss")))
-            LOGGER.warn("Terrain settings 'clearance' and 'buriedLoss' are no longer used; review 'nearGroundHeight', 'nearGroundLoss' and 'undergroundLosses'.");
         return loaded;
+    }
+    private static void migrateCurve(JsonObject terrain, Terrain loaded) {
+        boolean legacy = terrain.has("nearGroundHeight") || terrain.has("nearGroundLoss") || terrain.has("undergroundLosses")
+                || terrain.has("clearance") || terrain.has("buriedLoss");
+        if (!legacy) return;
+        if (!terrain.has("clearanceCurve")) {
+            double top = terrain.has("nearGroundHeight") ? terrain.get("nearGroundHeight").getAsDouble() : 8;
+            double surface = terrain.has("nearGroundLoss") ? terrain.get("nearGroundLoss").getAsDouble() : .01;
+            if (!terrain.has("formatVersion") && surface == .10) surface = .01;
+            double[] defaults = {.10, .25, .50, 1, 1.5, 2};
+            double[] losses = terrain.has("undergroundLosses") ? new Gson().fromJson(terrain.get("undergroundLosses"), double[].class) : defaults;
+            if (losses == null || losses.length != 6)
+                throw new JsonParseException("Legacy undergroundLosses needs six values; use terrain.clearanceCurve for a new curve");
+            if (top != 8 || surface != .01 || !Arrays.equals(losses, defaults)) {
+                loaded.clearanceCurve = new double[][]{{top, 0}, {0, surface}, {-8, losses[0]}, {-16, losses[1]},
+                        {-32, losses[2]}, {-64, losses[3]}, {-96, losses[4]}, {-128, losses[5]}};
+            }
+        }
+        LOGGER.warn("Retired terrain curve settings were replaced by terrain.clearanceCurve; old defaults use the new balance curve, customized curves are converted. Review the saved points.");
     }
     public static boolean load() {
         return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));

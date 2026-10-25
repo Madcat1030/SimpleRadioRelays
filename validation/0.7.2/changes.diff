@@ -1,0 +1,478 @@
+--- 0.7.1/README.md
++++ 0.7.2/README.md
+@@ -4,8 +4,8 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.1 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+-| Dimensional Foci 0.7.1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
++| Repeaters 0.7.2 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Dimensional Foci 0.7.2 | Focus-controlled links between dimensions and optional Nether reception tweaks | Matching Repeaters core |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+ ## Install
+--- 0.7.1/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
++++ 0.7.2/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
+@@ -205,6 +205,14 @@
+                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
+                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
+                         "Sixteen blocks below the sampled ground must display +25%, using the shared saved profile");
++                long sampled = ((Number) TerrainManager.statistics().get("sampled_columns")).longValue();
++                replacement.clearanceCurve[4][1] = .4;
++                TerrainManager.reconfigure(world.getServer());
++                var updated = RelaySurvey.scan(world.getServer(), manager, home, channel);
++                check(updated.entries().size() == 1 && Math.abs(updated.entries().get(0).terrainPercent() - 40) < .001,
++                        "Changing a curve point must invalidate derived penalties and update the monitor's real survey");
++                check(((Number) TerrainManager.statistics().get("sampled_columns")).longValue() == sampled,
++                        "A changed attenuation curve must reuse saved ground heights without generator queries");
+                 check(!world.hasChunkAt(base) && !world.hasChunkAt(other.antennaBase()), "Diagnostic terrain inspection must not load endpoints");
+                 helper.succeed();
+             } finally {
+--- 0.7.1/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/PerformanceGameTests.java
++++ 0.7.2/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/PerformanceGameTests.java
+@@ -124,7 +124,8 @@
+         }
+         helper.succeed();
+     }
+-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "performance_timer", timeoutTicks = 3000)
++    // GameTest ticks are accelerated; allow a real second even on a fast host.
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "performance_timer", timeoutTicks = 30_000)
+     public void timed_capture_stops_on_elapsed_seconds_and_writes_an_idle_report(GameTestHelper helper) {
+         var server = helper.getLevel().getServer(); Set<Path> before = reports();
+         check(server.getCommands().getDispatcher().getRoot().getChild("radiorepeater") == null,
+--- 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
++++ 0.7.2/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
+@@ -5,6 +5,7 @@
+ import java.io.IOException;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.util.Arrays;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -16,16 +17,16 @@
+     public Terrain terrain = new Terrain();
+ 
+     public static final class Terrain {
+-        public int formatVersion = 2;
++        public int formatVersion = 3;
+         public dev.paul.simpleradiorepeaters.terrain.TerrainMode mode = dev.paul.simpleradiorepeaters.terrain.TerrainMode.RELAY_MAPPING;
+         public int sampleSpacing = 64;
+         public int maxSamplesPerPath = 1024;
+         public int samplesPerTick = 64;
+         public double sampleBudgetMs = 1;
+-        public double nearGroundHeight = 8;
+-        public double nearGroundLoss = 0.01;
+-        /** Extra-distance fractions at depths 8, 16, 32, 64, 96 and 128. */
+-        public double[] undergroundLosses = {.10, .25, .50, 1, 1.5, 2};
++        /** Rows are {clearance in blocks, extra-distance fraction}, highest clearance first. */
++        public double[][] clearanceCurve = {
++                {8, 0}, {2, .01}, {0, .05}, {-8, .10}, {-16, .25},
++                {-32, .50}, {-48, 1}, {-64, 2}, {-128, 3}};
+         public double maxElevationAntennaBonus = 0.10;
+         public int elevationReferenceY = 64;
+         public int elevationFullBonusY = 192;
+@@ -36,13 +37,17 @@
+             maxSamplesPerPath = Math.max(2, Math.min(4096, maxSamplesPerPath));
+             samplesPerTick = Math.max(1, Math.min(64, samplesPerTick));
+             sampleBudgetMs = finite(sampleBudgetMs, 1, .1, 5);
+-            nearGroundHeight = finite(nearGroundHeight, 8, 1.01, 64);
+-            nearGroundLoss = finite(nearGroundLoss, .01, 0, .25);
+-            double[] defaults = {.10, .25, .50, 1, 1.5, 2};
+-            if (undergroundLosses == null || undergroundLosses.length != defaults.length) undergroundLosses = defaults.clone();
+-            double previous = nearGroundLoss;
+-            for (int i = 0; i < undergroundLosses.length; i++)
+-                previous = undergroundLosses[i] = finite(undergroundLosses[i], Math.max(previous, defaults[i]), previous, 4);
++            if (clearanceCurve == null || clearanceCurve.length < 2 || clearanceCurve.length > 64)
++                throw new IllegalArgumentException("terrain.clearanceCurve needs 2 to 64 [clearance, extra-distance] points");
++            double previousHeight = Double.POSITIVE_INFINITY, previousLoss = 0;
++            for (double[] point : clearanceCurve) {
++                if (point == null || point.length != 2 || !Double.isFinite(point[0]) || Math.abs(point[0]) > 4096
++                        || !Double.isFinite(point[1]) || point[0] >= previousHeight || point[1] < previousLoss || point[1] > 4)
++                    throw new IllegalArgumentException("terrain.clearanceCurve requires descending clearances within +/-4096 and nondecreasing extra-distance fractions from 0 to 4");
++                previousHeight = point[0]; previousLoss = point[1];
++            }
++            if (clearanceCurve[0][1] != 0)
++                throw new IllegalArgumentException("terrain.clearanceCurve must start with zero extra distance");
+             maxElevationAntennaBonus = finite(maxElevationAntennaBonus, .10, 0, .50);
+             elevationReferenceY = Math.max(-64, Math.min(319, elevationReferenceY));
+             elevationFullBonusY = Math.max(elevationReferenceY + 1, Math.min(320, elevationFullBonusY));
+@@ -64,15 +69,32 @@
+         JsonObject terrain = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
+         if (terrain != null && !terrain.has("formatVersion")) {
+             // Migrate only the old defaults; preserve deliberately different server settings.
+-            if (terrain.has("nearGroundLoss") && loaded.terrain.nearGroundLoss == .10) loaded.terrain.nearGroundLoss = .01;
+             if (terrain.has("samplesPerTick") && loaded.terrain.samplesPerTick == 4) loaded.terrain.samplesPerTick = 64;
+         }
+-        loaded.terrain.formatVersion = 2;
++        if (terrain != null) migrateCurve(terrain, loaded.terrain);
++        loaded.terrain.formatVersion = 3;
+         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
+         loaded.terrain.validate();
+-        if (terrain != null && (terrain.has("clearance") || terrain.has("buriedLoss")))
+-            LOGGER.warn("Terrain settings 'clearance' and 'buriedLoss' are no longer used; review 'nearGroundHeight', 'nearGroundLoss' and 'undergroundLosses'.");
+         return loaded;
++    }
++    private static void migrateCurve(JsonObject terrain, Terrain loaded) {
++        boolean legacy = terrain.has("nearGroundHeight") || terrain.has("nearGroundLoss") || terrain.has("undergroundLosses")
++                || terrain.has("clearance") || terrain.has("buriedLoss");
++        if (!legacy) return;
++        if (!terrain.has("clearanceCurve")) {
++            double top = terrain.has("nearGroundHeight") ? terrain.get("nearGroundHeight").getAsDouble() : 8;
++            double surface = terrain.has("nearGroundLoss") ? terrain.get("nearGroundLoss").getAsDouble() : .01;
++            if (!terrain.has("formatVersion") && surface == .10) surface = .01;
++            double[] defaults = {.10, .25, .50, 1, 1.5, 2};
++            double[] losses = terrain.has("undergroundLosses") ? new Gson().fromJson(terrain.get("undergroundLosses"), double[].class) : defaults;
++            if (losses == null || losses.length != 6)
++                throw new JsonParseException("Legacy undergroundLosses needs six values; use terrain.clearanceCurve for a new curve");
++            if (top != 8 || surface != .01 || !Arrays.equals(losses, defaults)) {
++                loaded.clearanceCurve = new double[][]{{top, 0}, {0, surface}, {-8, losses[0]}, {-16, losses[1]},
++                        {-32, losses[2]}, {-64, losses[3]}, {-96, losses[4]}, {-128, losses[5]}};
++            }
++        }
++        LOGGER.warn("Retired terrain curve settings were replaced by terrain.clearanceCurve; old defaults use the new balance curve, customized curves are converted. Review the saved points.");
+     }
+     public static boolean load() {
+         return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));
+--- 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
++++ 0.7.2/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
+@@ -84,7 +84,7 @@
+     }
+     private static double fraction(int[] heights, double ay, double by) {
+         var cfg = RepeatersConfig.INSTANCE.terrain;
+-        return TerrainMath.profileLoss(heights, ay, by, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
++        return TerrainMath.profileLoss(heights, ay, by, cfg.clearanceCurve);
+     }
+ 
+     /** Existing links keep their committed penalty during remapping; new links await their first profile. */
+@@ -314,7 +314,7 @@
+                 else {
+                     var cfg = RepeatersConfig.INSTANCE.terrain;
+                     sum += (index == 0 || index == count - 1 ? .5 : 1)
+-                            * TerrainMath.loss(TerrainMath.height(a.y, b.y, t) - h, cfg.nearGroundHeight, cfg.nearGroundLoss, cfg.undergroundLosses);
++                            * TerrainMath.loss(TerrainMath.height(a.y, b.y, t) - h, cfg.clearanceCurve);
+                 }
+                 if (++index == count) { finish(); return true; }
+             } catch (RuntimeException problem) {
+@@ -335,7 +335,7 @@
+     private static int settingsHash() {
+         var c = RepeatersConfig.INSTANCE.terrain;
+         return Objects.hash(c.mode, c.sampleSpacing, c.maxSamplesPerPath,
+-                c.nearGroundHeight, c.nearGroundLoss, Arrays.hashCode(c.undergroundLosses),
++                Arrays.deepHashCode(c.clearanceCurve),
+                 c.maxElevationAntennaBonus, c.elevationReferenceY, c.elevationFullBonusY);
+     }
+     public static int configurationStamp() { return current == null ? 0 : 31 * current.revision + current.settingsHash; }
+--- 0.7.1/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainMath.java
++++ 0.7.2/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainMath.java
+@@ -12,25 +12,23 @@
+     public static double height(double from, double to, double fraction) {
+         return from + (to - from) * fraction;
+     }
+-    public static double loss(double clearance, double nearHeight, double near, double[] underground) {
+-        if (clearance >= nearHeight) return 0;
+-        if (clearance >= 0) return near * (nearHeight - clearance) / nearHeight;
+-        double depth = -clearance, start = 0, previous = near;
+-        for (int i = 0; i < underground.length; i++) {
+-            double end = i < 4 ? 8 * (1 << i) : 64 + 32 * (i - 3);
+-            if (depth <= end) return height(previous, underground[i], (depth - start) / (end - start));
+-            start = end; previous = underground[i];
++    public static double loss(double clearance, double[][] curve) {
++        if (clearance >= curve[0][0]) return curve[0][1];
++        for (int i = 1; i < curve.length; i++) {
++            double[] upper = curve[i - 1], lower = curve[i];
++            if (clearance >= lower[0])
++                return height(upper[1], lower[1], (upper[0] - clearance) / (upper[0] - lower[0]));
+         }
+-        return previous;
++        return curve[curve.length - 1][1];
+     }
+ 
+-    public static double profileLoss(int[] ground, double fromY, double toY, double nearHeight, double near, double[] underground) {
++    public static double profileLoss(int[] ground, double fromY, double toY, double[][] curve) {
+         if (ground.length < 2) return 0;
+         double sum = 0;
+         for (int i = 0; i < ground.length; i++) {
+             double t = (double) i / (ground.length - 1);
+             sum += (i == 0 || i == ground.length - 1 ? .5 : 1)
+-                    * loss(height(fromY, toY, t) - ground[i], nearHeight, near, underground);
++                    * loss(height(fromY, toY, t) - ground[i], curve);
+         }
+         return sum / (ground.length - 1);
+     }
+--- 0.7.1/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.7.2/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -36,7 +36,7 @@
+   "handbook.simpleradio_repeaters.troubleshooting.title": "Troubleshooting & Tips",
+   "handbook.simpleradio_repeaters.troubleshooting.text_0": "Make sure your Relay shows READY and a positive ANT value, and that a Catalyst is installed.\n\nYou need at least one tuned Frequency Card in a Repeater Bank, or at least one RX card and one TX card in a Transponder.\n\nBeing able to talk from near Relay Tower 1 to a receiver near Relay Tower 2 does not guarantee that a signal from further away, such as Tower 5 or 6, can make the same jump.\n\nImprove the antenna, install an amplifier, or build more intermediary Relays to help weaker signals travel further.",
+   "handbook.simpleradio_repeaters.terrain.title": "Terrain & Elevation",
+-  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nNear-ground signals receive at most a one-percent distance penalty above the surface. Below ground, the extra distance rises: 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at sixty-four, 150% at ninety-six and 200% at one hundred twenty-eight. Penalties are averaged along the path, not multiplied for every sample. A path entirely sixty-four blocks below ground has about half its normal range; one at one hundred twenty-eight has about one-third.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nDuring terrain mapping, SCAN means there are no working links or previous terrain results yet. CHECK means mapping is pending while working links or previous results remain available. Existing paths keep their last verified penalty; a new path still waits for its first measurement, even if the Relay says CHECK. Breaking a wire or removing a tower still disconnects it immediately.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
++  "handbook.simpleradio_repeaters.terrain.text": "Overworld relay towers account for the landscape between them. A mountain across the path makes a signal travel farther, effectively. Masts at least eight blocks above the estimated ground avoid this extra loss. Higher antennas also receive a small, capped bonus to their antenna contribution.\n\nExtra distance rises as the signal approaches the estimated ground: zero at eight blocks above, 1% at two blocks above and 5% at the surface. Below ground, it rises to 10% at eight blocks deep, 25% at sixteen, 50% at thirty-two, 100% at forty-eight, 200% at sixty-four and 300% at one hundred twenty-eight. Values fade smoothly between these points and cap at 300%. Penalties are averaged along the path, not multiplied for every sample. A path entirely forty-eight blocks below ground has about half its normal range; one at sixty-four has about one-third, and one at one hundred twenty-eight or deeper has about one-quarter.\n\nClearance is measured between the tips of the two masts. Growing or trimming a mast updates its clearance during the normal ten-second antenna cycle. Adding spokes, changing cards, or aiming a receiver array reuses the terrain already measured. Saved towers retain their last verified mast height while unloaded.\n\nDuring terrain mapping, SCAN means there are no working links or previous terrain results yet. CHECK means mapping is pending while working links or previous results remain available. Existing paths keep their last verified penalty; a new path still waits for its first measurement, even if the Relay says CHECK. Breaking a wire or removing a tower still disconnects it immediately.\n\nTerrain is estimated from the world generator. Player buildings, tunnels and later excavation are not part of this approximation. The Nether, the End and dimensional focus projections keep their existing propagation rules.\n\nServer modes are Off, Relay Mapping (the default), and Full. Off restores original propagation and disables the elevation bonus. Full also checks ordinary radio and handheld connections; device links within 256 blocks remain unaffected.",
+   "block.simpleradio_repeaters.relay_monitor": "Relay Monitor",
+   "tooltip.simpleradio_repeaters.monitor": "Plug into the top of a Relay. Insert a tuned card to survey direct links; use a compass on the screen to mark a tower.",
+   "message.simpleradio_repeaters.monitor_bound": "Compass bound to relay in %s.",
+--- 0.7.1/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
++++ 0.7.2/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
+@@ -43,40 +43,68 @@
+             Files.writeString(config, "{\"maxRelayHops\":999,\"terrain\":{\"mode\":\"off\"}}");
+             assertTrue(RepeatersConfig.load(config));
+             assertEquals(128, RepeatersConfig.INSTANCE.maxRelayHops);
+-            assertTrue(Files.readString(config).contains("\"formatVersion\": 2"));
++            assertTrue(Files.readString(config).contains("\"formatVersion\": 3"));
+             var live = RepeatersConfig.INSTANCE;
+             Files.writeString(config, "{invalid");
+             assertFalse(RepeatersConfig.load(config));
+             assertSame(live, RepeatersConfig.INSTANCE);
+             assertEquals("{invalid", Files.readString(config));
++            String badCurve = "{\"terrain\":{\"clearanceCurve\":[[8,0],[8,1]]}}";
++            Files.writeString(config, badCurve);
++            assertFalse(RepeatersConfig.load(config));
++            assertSame(live, RepeatersConfig.INSTANCE);
++            assertEquals(badCurve, Files.readString(config));
+         } finally { RepeatersConfig.INSTANCE = previous; }
+     }
+ 
+     @Test void oldDefaultsMigrateButCustomSettingsSurvive() {
+         var migrated = RepeatersConfig.parse("{\"terrain\":{\"nearGroundLoss\":0.1,\"samplesPerTick\":4,\"clearance\":32,\"buriedLoss\":0.35}}");
+-        assertEquals(.01, migrated.terrain.nearGroundLoss);
+         assertEquals(64, migrated.terrain.samplesPerTick);
+-        assertEquals(8, migrated.terrain.nearGroundHeight);
+-        assertArrayEquals(new double[]{.10, .25, .50, 1, 1.5, 2}, migrated.terrain.undergroundLosses);
++        assertEquals(.05, loss(migrated, 0));
++        assertEquals(3, loss(migrated, -128));
++        var previous = RepeatersConfig.parse("{\"terrain\":{\"formatVersion\":2,\"mode\":\"off\",\"nearGroundHeight\":8,\"nearGroundLoss\":0.01,\"undergroundLosses\":[0.1,0.25,0.5,1,1.5,2]}}");
++        assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.OFF, previous.terrain.mode);
++        assertEquals(.01, loss(previous, 2));
++        assertEquals(1, loss(previous, -48));
++        assertEquals(3, loss(previous, -128));
+         var custom = RepeatersConfig.parse("{\"terrain\":{\"nearGroundLoss\":0.015,\"samplesPerTick\":12}}");
+-        assertEquals(.015, custom.terrain.nearGroundLoss);
++        assertEquals(.015, loss(custom, 0));
++        assertEquals(.0075, loss(custom, 4));
++        assertEquals(1, loss(custom, -64));
++        assertEquals(2, loss(custom, -128));
+         assertEquals(12, custom.terrain.samplesPerTick);
+         var modern = RepeatersConfig.parse("{\"terrain\":{\"formatVersion\":2,\"nearGroundLoss\":0.1,\"samplesPerTick\":4}}");
+-        assertEquals(.1, modern.terrain.nearGroundLoss);
++        assertEquals(.1, loss(modern, 0));
+         assertEquals(4, modern.terrain.samplesPerTick);
++    }
++    private static double loss(RepeatersConfig cfg, double clearance) {
++        return dev.paul.simpleradiorepeaters.terrain.TerrainMath.loss(clearance, cfg.terrain.clearanceCurve);
+     }
+     @Test void malformedConfigurationIsRejectedRatherThanReplacedWithDefaults() {
+         assertThrows(RuntimeException.class, () -> RepeatersConfig.parse("{\"terrain\":"));
+         assertThrows(RuntimeException.class, () -> RepeatersConfig.parse("[]"));
+         assertThrows(RuntimeException.class, () -> RepeatersConfig.parse("null"));
+     }
+-    @Test void undergroundCurveAndSamplingBudgetsAreValidated() {
++    @Test void malformedCurvesAreRejectedAndSamplingBudgetsAreValidated() {
+         var cfg = new RepeatersConfig.Terrain();
+-        cfg.undergroundLosses = new double[]{.5, .2, Double.NaN, 1, 1.5, 8};
+         cfg.sampleBudgetMs = Double.NaN; cfg.validate();
+-        assertArrayEquals(new double[]{.5, .5, .5, 1, 1.5, 4}, cfg.undergroundLosses);
+         assertEquals(1, cfg.sampleBudgetMs);
+-        cfg.undergroundLosses = null; cfg.validate();
+-        assertArrayEquals(new double[]{.10, .25, .50, 1, 1.5, 2}, cfg.undergroundLosses);
++        for (double[][] invalid : new double[][][]{null, {}, {{8, 0}}, {{8, 0}, {8, 1}}, {{8, .01}, {0, .1}},
++                {{8, 0}, {0, -1}}, {{8, 0}, {0, Double.NaN}}, {{8, 0}, {0, 5}}, {{8, 0}, {0}},
++                {{8, 0}, {0, 1}, {-8, .5}}}) {
++            cfg.clearanceCurve = invalid;
++            assertThrows(IllegalArgumentException.class, cfg::validate);
++        }
++    }
++    @Test void explicitCurvesRoundTripAndTakePrecedenceOverRetiredFields() {
++        var cfg = RepeatersConfig.parse("{\"terrain\":{\"nearGroundLoss\":0.1,\"clearanceCurve\":[[10,0],[0,0.02],[-64,1.5]]}}");
++        assertEquals(.02, loss(cfg, 0));
++        assertEquals(1.5, loss(cfg, -64));
++        String normalized = new com.google.gson.Gson().toJson(cfg);
++        assertFalse(normalized.contains("nearGroundLoss"));
++        assertFalse(normalized.contains("undergroundLosses"));
++        var restored = RepeatersConfig.parse(normalized);
++        assertEquals(loss(cfg, -32), loss(restored, -32));
++        assertEquals(3, restored.terrain.formatVersion);
+     }
+ }
+--- 0.7.1/core/src/test/java/dev/paul/simpleradiorepeaters/terrain/TerrainMathTest.java
++++ 0.7.2/core/src/test/java/dev/paul/simpleradiorepeaters/terrain/TerrainMathTest.java
+@@ -5,40 +5,40 @@
+ import static org.junit.jupiter.api.Assertions.*;
+ 
+ class TerrainMathTest {
+-    private static final double[] UNDERGROUND = {.10, .25, .50, 1, 1.5, 2};
++    private static final double[][] CURVE = new dev.paul.simpleradiorepeaters.RepeatersConfig.Terrain().clearanceCurve;
+     @Test void clearTouchingAndBuriedPathsHaveBoundedSmoothLoss() {
+-        assertEquals(0, TerrainMath.loss(8, 8, .01, UNDERGROUND));
+-        assertEquals(.01, TerrainMath.loss(0, 8, .01, UNDERGROUND));
+-        assertEquals(.50, TerrainMath.loss(-32, 8, .01, UNDERGROUND));
++        assertEquals(0, TerrainMath.loss(8, CURVE));
++        assertEquals(.05, TerrainMath.loss(0, CURVE));
++        assertEquals(.50, TerrainMath.loss(-32, CURVE));
+         double last = 0;
+         for (double clearance = 64; clearance >= -160; clearance -= .25) {
+-            double loss = TerrainMath.loss(clearance, 8, .01, UNDERGROUND);
+-            assertTrue(loss >= last && loss <= 2); last = loss;
++            double loss = TerrainMath.loss(clearance, CURVE);
++            assertTrue(loss >= last && loss <= 3); last = loss;
+         }
+     }
+     @Test void samplingDensityDoesNotMultiplyThePenalty() {
+         for (int size : new int[]{2, 17, 126, 1024}) {
+             int[] ground = new int[size]; Arrays.fill(ground, 80);
+-            assertEquals(.01, TerrainMath.profileLoss(ground, 80, 80, 8, .01, UNDERGROUND), 1e-12);
++            assertEquals(.05, TerrainMath.profileLoss(ground, 80, 80, CURVE), 1e-12);
+         }
+     }
+     @Test void aMountainAcrossTheLinkCanBeClearedByHigherMasts() {
+         int[] ground = {64, 64, 150, 64, 64};
+-        assertTrue(TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND) > 0);
+-        assertEquals(0, TerrainMath.profileLoss(ground, 200, 200, 8, .01, UNDERGROUND));
++        assertTrue(TerrainMath.profileLoss(ground, 100, 100, CURVE) > 0);
++        assertEquals(0, TerrainMath.profileLoss(ground, 200, 200, CURVE));
+     }
+     @Test void aSlopingRayUsesEachSamplesPosition() {
+         int[] ground = {64, 110, 150, 180};
+-        double rising = TerrainMath.profileLoss(ground, 102, 226, 8, .01, UNDERGROUND);
+-        double flat = TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND);
++        double rising = TerrainMath.profileLoss(ground, 102, 226, CURVE);
++        double flat = TerrainMath.profileLoss(ground, 100, 100, CURVE);
+         assertEquals(0, rising); assertTrue(flat > 0);
+         assertEquals(130, TerrainMath.height(100, 220, .25));
+     }
+     @Test void swappingEndpointsPreservesTheTerrainResult() {
+         int[] ground = {63, 80, 160, 90, 110};
+         int[] reverse = {110, 90, 160, 80, 63};
+-        assertEquals(TerrainMath.profileLoss(ground, 90, 160, 8, .01, UNDERGROUND),
+-                TerrainMath.profileLoss(reverse, 160, 90, 8, .01, UNDERGROUND), 1e-12);
++        assertEquals(TerrainMath.profileLoss(ground, 90, 160, CURVE),
++                TerrainMath.profileLoss(reverse, 160, 90, CURVE), 1e-12);
+     }
+     @Test void sparseSamplesHaveAHardWorkBound() {
+         assertEquals(126, TerrainMath.sampleCount(8000, 64, 1024));
+@@ -73,10 +73,10 @@
+     }
+ 
+     @Test void aboveGroundAndUndergroundHaveTheRequestedSeparateAnchors() {
+-        double[] clearances = {10, 8, 4, 0, -4, -8, -12, -16, -20, -30, -32, -48, -64, -80, -96, -112, -128, -160};
+-        double[] expected = {0, 0, .005, .01, .055, .10, .175, .25, .3125, .46875, .50, .75, 1, 1.25, 1.5, 1.75, 2, 2};
++        double[] clearances = {10, 8, 5, 2, 1, 0, -4, -8, -12, -16, -20, -30, -32, -40, -48, -56, -64, -96, -128, -160};
++        double[] expected = {0, 0, .005, .01, .03, .05, .075, .10, .175, .25, .3125, .46875, .50, .75, 1, 1.5, 2, 2.5, 3, 3};
+         for (int i = 0; i < clearances.length; i++)
+-            assertEquals(expected[i], TerrainMath.loss(clearances[i], 8, .01, UNDERGROUND), 1e-12);
++            assertEquals(expected[i], TerrainMath.loss(clearances[i], CURVE), 1e-12);
+     }
+     @Test void undergroundPenaltiesAddDistanceAndCannotBecomeNonFinite() {
+         assertEquals(1000, TerrainMath.extraDistance(1000, 1), 1e-12);
+@@ -84,10 +84,19 @@
+         assertEquals(Double.POSITIVE_INFINITY, TerrainMath.extraDistance(1000, Double.POSITIVE_INFINITY));
+         assertEquals(0, TerrainMath.extraDistance(1000, 0));
+     }
++    @Test void deepestUniformPathsHaveOneQuarterRangeAndPartialObstructionsAreAveraged() {
++        int[] deep = {-1, -1};
++        double penalty = TerrainMath.profileLoss(deep, -129, -129, CURVE);
++        assertEquals(3, penalty);
++        assertEquals(2000, 500 + TerrainMath.extraDistance(500, penalty));
++        int[] mixed = {-10, 127, -10};
++        assertEquals(1.5, TerrainMath.profileLoss(mixed, -1, -1, CURVE));
++        assertEquals(3, TerrainMath.loss(-1024, CURVE));
++    }
+     @Test void aFiveHundredBlockMountainIsWeightedAcrossTheWholeTwoThousandBlockPath() {
+         int[] ground = new int[2001]; Arrays.fill(ground, 90);
+         Arrays.fill(ground, 750, 1250, 130);
+-        double loss = TerrainMath.profileLoss(ground, 100, 100, 8, .01, UNDERGROUND);
++        double loss = TerrainMath.profileLoss(ground, 100, 100, CURVE);
+         assertEquals(.25 * .46875, loss, 1e-12);
+         assertEquals(2234.375, 2000 + TerrainMath.extraDistance(2000, loss), 1e-9);
+     }
+--- 0.7.1/docs/Terrain-and-Elevation.md
++++ 0.7.2/docs/Terrain-and-Elevation.md
+@@ -1,4 +1,4 @@
+-# Terrain and elevation — Repeaters 0.7.1
++# Terrain and elevation — Repeaters 0.7.2
+ 
+ Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
+ 
+@@ -12,7 +12,7 @@
+ | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
+ | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
+ 
+-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.1 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
++The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.2 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+ 
+ ## Attenuation
+ 
+@@ -21,17 +21,18 @@
+ | Clearance | Extra distance at that sample |
+ | --- | ---: |
+ | 8 blocks or more above ground | 0% |
+-| Ground level | 1% |
++| 2 blocks above ground | 1% |
++| Ground level | 5% |
+ | 8 blocks below ground | 10% |
+ | 16 below | 25% |
+ | 32 below | 50% |
+-| 64 below | 100% |
+-| 96 below | 150% |
+-| 128 below or deeper | 200% |
++| 48 below | 100% |
++| 64 below | 200% |
++| 128 below or deeper | 300% |
+ 
+ Values interpolate linearly between anchors. Sample penalties are averaged over the path using trapezoidal distance weighting; they are not multiplied or added once per sample. The RF calculation uses `distance × (1 + average penalty)` before the native reception-floor deduction, in both reach and travel calculations.
+ 
+-A completely clear path between ten-block-high masts pays no terrain penalty. A path entirely 64 blocks below the estimated surface behaves as twice its actual distance, giving about half its otherwise available range; at 128 blocks below, it behaves as three times its distance, giving about one-third. Antenna reception, signal power and audio-quality thresholds still apply normally.
++A completely clear path between ten-block-high masts pays no terrain penalty. A path entirely 48 blocks below the estimated surface behaves as twice its actual distance, giving about half its otherwise available range. At 64 blocks below it behaves as three times its distance, giving about one-third; at 128 blocks below or deeper it behaves as four times its distance, giving about one-quarter. Antenna reception, signal power and audio-quality thresholds still apply normally.
+ 
+ For a 2,000-block path with a 500-block mountain section 30 blocks above the signal line, that section has a 46.875% penalty. If the rest clears the terrain by at least eight blocks, the average is approximately 11.72%, making the link behave like 2,234 blocks. Sparse sample placement makes this an estimate rather than an exact cliff-edge calculation.
+ 
+@@ -71,26 +72,34 @@
+ 
+ ```json
+ "terrain": {
+-  "formatVersion": 2,
++  "formatVersion": 3,
+   "mode": "relay_mapping",
+   "sampleSpacing": 64,
+   "maxSamplesPerPath": 1024,
+   "samplesPerTick": 64,
+   "sampleBudgetMs": 1.0,
+-  "nearGroundHeight": 8.0,
+-  "nearGroundLoss": 0.01,
+-  "undergroundLosses": [0.10, 0.25, 0.50, 1.0, 1.5, 2.0],
++  "clearanceCurve": [
++    [8.0, 0.0],
++    [2.0, 0.01],
++    [0.0, 0.05],
++    [-8.0, 0.10],
++    [-16.0, 0.25],
++    [-32.0, 0.50],
++    [-48.0, 1.0],
++    [-64.0, 2.0],
++    [-128.0, 3.0]
++  ],
+   "maxElevationAntennaBonus": 0.10,
+   "elevationReferenceY": 64,
+   "elevationFullBonusY": 192
+ }
+ ```
+ 
+-`undergroundLosses` sets extra-distance fractions at depths 8, 16, 32, 64, 96 and 128. Its values must be finite, nondecreasing, and no greater than 4. The above-ground fade reaches `nearGroundLoss` at ground level and zero at `nearGroundHeight`.
++Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. Invalid curves reject the reload and keep the live configuration. Editing the curve recalculates penalties from the saved ground samples; it does not remap the terrain.
+ 
+ The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
+ 
+-On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above; loading a config that still contains either key logs a warning.
++On upgrade, the unchanged 0.6.x/0.7.1 default curve adopts the new defaults above. Customized `nearGroundHeight`, `nearGroundLoss` or `undergroundLosses` values are converted into equivalent explicit points at their original clearances, preserving that custom balance. An explicit `clearanceCurve` takes precedence over retired fields. Conversion logs one warning, and normalization removes the retired curve fields, including `clearance` and `buriedLoss`. Other settings, including Off mode, are retained. The old unversioned `samplesPerTick: 4` default still migrates to 64.
+ 
+ A valid configuration takes effect even when its file cannot be rewritten, including read-only mounts. A failed normalization save logs a warning. An unreadable or malformed configuration still fails to load and leaves the current settings unchanged.
+ 
+--- 0.7.1/gradle.properties
++++ 0.7.2/gradle.properties
+@@ -1,6 +1,6 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.1
++mod_version=0.7.2
+ maven_group=dev.paul.simpleradiorepeaters
+ archives_base_name=simple-radio-repeaters-fabric-1.20.1

@@ -1,4 +1,4 @@
-# Terrain and elevation — Repeaters 0.7.1
+# Terrain and elevation — Repeaters 0.7.2
 
 Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
 
@@ -12,7 +12,7 @@ Set `terrain.mode` in `config/simpleradio-repeaters.json`:
 | `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
 | `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
 
-The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.1 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+The Nether, the End and focus projections retain their existing propagation rules. Foci 0.7.2 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
 
 ## Attenuation
 
@@ -21,17 +21,18 @@ Each sample compares estimated ground height with the straight line between the 
 | Clearance | Extra distance at that sample |
 | --- | ---: |
 | 8 blocks or more above ground | 0% |
-| Ground level | 1% |
+| 2 blocks above ground | 1% |
+| Ground level | 5% |
 | 8 blocks below ground | 10% |
 | 16 below | 25% |
 | 32 below | 50% |
-| 64 below | 100% |
-| 96 below | 150% |
-| 128 below or deeper | 200% |
+| 48 below | 100% |
+| 64 below | 200% |
+| 128 below or deeper | 300% |
 
 Values interpolate linearly between anchors. Sample penalties are averaged over the path using trapezoidal distance weighting; they are not multiplied or added once per sample. The RF calculation uses `distance × (1 + average penalty)` before the native reception-floor deduction, in both reach and travel calculations.
 
-A completely clear path between ten-block-high masts pays no terrain penalty. A path entirely 64 blocks below the estimated surface behaves as twice its actual distance, giving about half its otherwise available range; at 128 blocks below, it behaves as three times its distance, giving about one-third. Antenna reception, signal power and audio-quality thresholds still apply normally.
+A completely clear path between ten-block-high masts pays no terrain penalty. A path entirely 48 blocks below the estimated surface behaves as twice its actual distance, giving about half its otherwise available range. At 64 blocks below it behaves as three times its distance, giving about one-third; at 128 blocks below or deeper it behaves as four times its distance, giving about one-quarter. Antenna reception, signal power and audio-quality thresholds still apply normally.
 
 For a 2,000-block path with a 500-block mountain section 30 blocks above the signal line, that section has a 46.875% penalty. If the rest clears the terrain by at least eight blocks, the average is approximately 11.72%, making the link behave like 2,234 blocks. Sparse sample placement makes this an estimate rather than an exact cliff-edge calculation.
 
@@ -71,26 +72,34 @@ Active and pending results are not evicted by packet traversal order. Idle entri
 
 ```json
 "terrain": {
-  "formatVersion": 2,
+  "formatVersion": 3,
   "mode": "relay_mapping",
   "sampleSpacing": 64,
   "maxSamplesPerPath": 1024,
   "samplesPerTick": 64,
   "sampleBudgetMs": 1.0,
-  "nearGroundHeight": 8.0,
-  "nearGroundLoss": 0.01,
-  "undergroundLosses": [0.10, 0.25, 0.50, 1.0, 1.5, 2.0],
+  "clearanceCurve": [
+    [8.0, 0.0],
+    [2.0, 0.01],
+    [0.0, 0.05],
+    [-8.0, 0.10],
+    [-16.0, 0.25],
+    [-32.0, 0.50],
+    [-48.0, 1.0],
+    [-64.0, 2.0],
+    [-128.0, 3.0]
+  ],
   "maxElevationAntennaBonus": 0.10,
   "elevationReferenceY": 64,
   "elevationFullBonusY": 192
 }
 ```
 
-`undergroundLosses` sets extra-distance fractions at depths 8, 16, 32, 64, 96 and 128. Its values must be finite, nondecreasing, and no greater than 4. The above-ground fade reaches `nearGroundLoss` at ground level and zero at `nearGroundHeight`.
+Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. Invalid curves reject the reload and keep the live configuration. Editing the curve recalculates penalties from the saved ground samples; it does not remap the terrain.
 
 The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
 
-On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above; loading a config that still contains either key logs a warning.
+On upgrade, the unchanged 0.6.x/0.7.1 default curve adopts the new defaults above. Customized `nearGroundHeight`, `nearGroundLoss` or `undergroundLosses` values are converted into equivalent explicit points at their original clearances, preserving that custom balance. An explicit `clearanceCurve` takes precedence over retired fields. Conversion logs one warning, and normalization removes the retired curve fields, including `clearance` and `buriedLoss`. Other settings, including Off mode, are retained. The old unversioned `samplesPerTick: 4` default still migrates to 64.
 
 A valid configuration takes effect even when its file cannot be rewritten, including read-only mounts. A failed normalization save logs a warning. An unreadable or malformed configuration still fails to load and leaves the current settings unchanged.
 

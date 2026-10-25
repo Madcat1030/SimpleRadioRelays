@@ -1,0 +1,13 @@
+{
+  "added": [],
+  "removed": [],
+  "changed": [
+    "assets/simpleradio_repeaters/lang/en_us.json",
+    "dev/paul/simpleradiorepeaters/RepeatersConfig$Terrain.class",
+    "dev/paul/simpleradiorepeaters/RepeatersConfig.class",
+    "dev/paul/simpleradiorepeaters/terrain/TerrainManager$Job.class",
+    "dev/paul/simpleradiorepeaters/terrain/TerrainManager.class",
+    "dev/paul/simpleradiorepeaters/terrain/TerrainMath.class",
+    "fabric.mod.json"
+  ]
+}
