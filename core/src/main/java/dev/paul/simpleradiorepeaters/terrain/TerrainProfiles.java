@@ -4,18 +4,24 @@ import net.minecraft.nbt.*;
 import net.minecraft.world.level.saveddata.SavedData;
 import java.util.*;
 
-/** World-local, bounded relay terrain samples. Device paths never enter this SavedData. */
+/** World-local terrain samples, retained while their mast columns are registered. */
 public final class TerrainProfiles extends SavedData {
     public static final String NAME = "simpleradio_repeater_terrain";
-    private static final int MAX_PROFILES = 1024;
+    private record Path(long a, long b) {}
     public record Key(int ax, int az, int bx, int bz, int spacing, int limit) {
         public static Key between(int ax, int az, int bx, int bz, int spacing, int limit) {
             return ax < bx || ax == bx && az <= bz ? new Key(ax, az, bx, bz, spacing, limit)
                     : new Key(bx, bz, ax, az, spacing, limit);
         }
         public boolean startsAt(int x, int z) { return ax == x && az == z; }
+        public boolean usesOnly(Set<Long> columns) {
+            return columns.contains(column(ax, az)) && columns.contains(column(bx, bz));
+        }
+        private Path path() { return new Path(column(ax, az), column(bx, bz)); }
     }
-    private final Map<Key, int[]> profiles = new LinkedHashMap<>(16, .75f, true);
+    public static long column(int x, int z) { return (long) x << 32 ^ (z & 0xffffffffL); }
+    private final Map<Key, int[]> profiles = new LinkedHashMap<>();
+    private final Map<Path, Key> paths = new HashMap<>();
     private long seed;
     private boolean initialized;
     public void initialize(long worldSeed) {
@@ -24,22 +30,35 @@ public final class TerrainProfiles extends SavedData {
     public int size() { return profiles.size(); }
     public int[] get(Key key) { return profiles.get(key); }
     public void put(Key key, int[] heights) {
+        // A completed replacement supersedes only the old resolution for this same path.
+        Key old = paths.put(key.path(), key);
+        if (old != null && !old.equals(key)) profiles.remove(old);
         profiles.put(key, heights.clone());
-        while (profiles.size() > MAX_PROFILES) profiles.remove(profiles.keySet().iterator().next());
         setDirty();
     }
-    public void clear() { profiles.clear(); setDirty(); }
+    public void retainColumns(Set<Long> columns) {
+        if (profiles.keySet().removeIf(key -> {
+            if (key.usesOnly(columns)) return false;
+            paths.remove(key.path()); return true;
+        })) setDirty();
+    }
+    /** A previous resolution remains usable while its replacement is being measured. */
+    public int[] previous(Key key) {
+        Key previous = paths.get(key.path());
+        return previous == null ? null : profiles.get(previous);
+    }
+    public void clear() { profiles.clear(); paths.clear(); setDirty(); }
     public static TerrainProfiles load(CompoundTag tag) {
         var data = new TerrainProfiles();
         if (tag.getInt("Format") != 1) return data;
         data.seed = tag.getLong("Seed"); data.initialized = true;
         var entries = tag.getList("Profiles", Tag.TAG_COMPOUND);
-        for (int i = Math.max(0, entries.size() - MAX_PROFILES); i < entries.size(); i++) {
+        for (int i = 0; i < entries.size(); i++) {
             var entry = entries.getCompound(i); var coords = entry.getIntArray("Path");
             var heights = entry.getIntArray("Heights");
             if (coords.length != 6 || coords[4] < 16 || coords[5] < 2 || coords[5] > 4096
                     || heights.length < 2 || heights.length > coords[5]) continue;
-            data.profiles.put(new Key(coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]), heights);
+            data.put(new Key(coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]), heights);
         }
         return data;
     }

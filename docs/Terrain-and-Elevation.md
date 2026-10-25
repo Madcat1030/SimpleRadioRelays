@@ -1,61 +1,106 @@
-# Terrain and elevation
+# Terrain and elevation — Repeaters 0.6.1
 
-Repeaters 0.6.0 adds a coarse Overworld terrain model with three modes. **Off** restores pre-terrain propagation, including removal of the elevation bonus and all height-query work. **Relay Mapping** is the default on a fresh install and enables cached inter-relay terrain attenuation plus the capped elevation bonus. **Full** additionally checks ordinary radio/device links. Terrain loss excludes the Nether, End, cross-dimensional links and projected focus sites. An Overworld relay's elevation bonus remains part of its antenna power when a focus projects it elsewhere.
+Repeaters estimates the Overworld landscape between antenna tips without loading or generating world chunks. Physical terrain profiles are independent of frequency, power and the radio graph, so ordinary tower edits reuse the expensive work.
 
-## Server settings
+## Modes
 
-Settings live under `terrain` in `config/simpleradio-repeaters.json`:
+Set `terrain.mode` in `config/simpleradio-repeaters.json`:
+
+| Mode | Behavior |
+| --- | --- |
+| `off` | Original pre-terrain propagation; no terrain sampling or elevation bonus |
+| `relay_mapping` | Default: cached terrain attenuation between Overworld relays, plus the capped elevation bonus |
+| `full` | Relay Mapping plus ordinary transmitter/receiver, handheld and relay/device links in the Overworld |
+
+The Nether, the End and focus projections retain their existing propagation rules. Foci 0.6.1 is a metadata-only compatibility build; Directional 0.2.9 is unchanged.
+
+## Attenuation
+
+Each sample compares estimated ground height with the straight line between the endpoints. Relay endpoints use the top face of the verified mast tip. Positive clearance is above ground; negative clearance is below ground.
+
+| Clearance | Extra distance at that sample |
+| --- | ---: |
+| 8 blocks or more above ground | 0% |
+| Ground level | 1% |
+| 8 blocks below ground | 10% |
+| 16 below | 25% |
+| 32 below | 50% |
+| 64 below | 100% |
+| 96 below | 150% |
+| 128 below or deeper | 200% |
+
+Values interpolate linearly between anchors. Sample penalties are averaged over the path using trapezoidal distance weighting; they are not multiplied or added once per sample. The RF calculation uses `distance × (1 + average penalty)` before the native reception-floor deduction, in both reach and travel calculations.
+
+A completely clear path between ten-block-high masts pays no terrain penalty. A path entirely 64 blocks below the estimated surface behaves as twice its actual distance, giving about half its otherwise available range; at 128 blocks below, it behaves as three times its distance, giving about one-third. Antenna reception, signal power and audio-quality thresholds still apply normally.
+
+For a 2,000-block path with a 500-block mountain section 30 blocks above the signal line, that section has a 46.875% penalty. If the rest clears the terrain by at least eight blocks, the average is approximately 11.72%, making the link behave like 2,234 blocks. Sparse sample placement makes this an estimate rather than an exact cliff-edge calculation.
+
+## Mapping and persistence
+
+`ChunkGenerator.getBaseHeight` is queried with `OCEAN_FLOOR_WG` and the world's `RandomState`. This estimates solid base terrain, excluding the water surface. It does not request a world chunk, perform decoration or carving, tick blocks, or write chunk terrain. Buildings, trees, excavation and exact cave geometry are outside this approximation. Unsupported generators fall back to ordinary propagation and log the failure once.
+
+Samples normally lie 64 blocks apart, including both endpoints. Very long paths widen their spacing to stay within `maxSamplesPerPath`. Ground samples are saved in `data/simpleradio_repeater_terrain.dat` and shared across directions and channels. Active paths have no LRU eviction limit. Paths are pruned when an endpoint mast column is no longer registered; another tower sharing that mast keeps its profiles alive. A completed replacement resolution retires only the old resolution of the same physical path.
+
+- Adding or moving a tower horizontally requests only new paths that can pass the ordinary radio calculation.
+- Growing or trimming a mast recalculates clearance using the existing ground samples.
+- Changing cards, catalysts, amplifiers, antenna strength or receiver direction reuses the terrain samples.
+- Removing a tower needs no new height queries.
+- `/reload` preserves measured terrain profiles and still refreshes radio resources and the catalyst catalog.
+
+Geometry and completed relay profiles publish on the Overworld's `gameTime % 200 == 0` boundary. Sampling runs between these boundaries. New paths show **SCAN** while waiting for their first verified terrain result. Existing paths retain their previous environmental penalty during remapping and show **CHECK**. This display does not disable the relay. Real wire cuts, tower removal and channel changes still affect eligibility immediately.
+
+Explicit `terrain clear` keeps the last in-memory penalties while measuring replacements. Changing sample resolution can also use the saved previous resolution until its replacement completes. A normal restart already has the saved profiles; if a restart interrupts a remap and no usable profile exists, the first check must finish again. Old records without a verified mast tip retain ordinary propagation until visited and scanned.
+
+## Work budget
+
+The default is a **one-millisecond soft budget per server tick**, with a safety ceiling of 64 columns. The allowance decreases as recent average tick time rises from 40 to 50 milliseconds, reaching 10% of the configured budget on an overloaded server. Relay mapping receives three out of four sampling opportunities when both queues have work; optional endpoint checks receive the remaining opportunity. Either queue can use the whole allowance when the other is empty.
+
+A single generator call cannot be interrupted and may exceed the budget. Diagnostics report total sampling time, the largest sampling tick, budget overruns, remaining queued columns and oldest relay-job age. There is no terrain generation on an audio-routing call.
+
+A 4,000-block path needs 64 columns. Actual completion time depends on generator cost and other queued work; the ten-second publication boundary is separate from sampling throughput. Unchanged established links do not run recurring generator scans.
+
+## Full-mode device links
+
+Links at or below **256 blocks** of environmental endpoint separation bypass terrain checks entirely. Outside that radius, ordinary reach/travel is checked before terrain work is requested, using the actual packet power and applicable directional reception.
+
+Each recently active ordered endpoint pair retains only its latest scalar penalty, sampled endpoint positions and a pending flag. No device height array or path profile is retained or saved. A new pair waits for its first result; an existing pair keeps its last result until a replacement is ready. Resampling occurs only after either end moves **more than 16 blocks** from its completed sample positions. Stationary active pairs have no resample timer.
+
+Active and pending results are not evicted by packet traversal order. Idle entries expire after 30 seconds. At the protective ceiling of 16,384 retained pairs, additional pairs use ordinary propagation rather than evict live jobs or become permanently silent; `device_capacity_fallbacks` reports this condition. The sampling queue is separately bounded and drains as jobs finish, allowing waiting pairs to be admitted without losing their state.
+
+## Configuration and commands
 
 ```json
-{
+"terrain": {
+  "formatVersion": 2,
   "mode": "relay_mapping",
   "sampleSpacing": 64,
   "maxSamplesPerPath": 1024,
-  "samplesPerTick": 4,
-  "clearance": 32.0,
-  "nearGroundLoss": 0.10,
-  "buriedLoss": 0.35,
+  "samplesPerTick": 64,
+  "sampleBudgetMs": 1.0,
+  "nearGroundHeight": 8.0,
+  "nearGroundLoss": 0.01,
+  "undergroundLosses": [0.10, 0.25, 0.50, 1.0, 1.5, 2.0],
   "maxElevationAntennaBonus": 0.10,
   "elevationReferenceY": 64,
   "elevationFullBonusY": 192
 }
 ```
 
-Commands require operator permission:
+`undergroundLosses` sets extra-distance fractions at depths 8, 16, 32, 64, 96 and 128. Its values must be finite, nondecreasing, and no greater than 4. The above-ground fade reaches `nearGroundLoss` at ground level and zero at `nearGroundHeight`.
+
+The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
+
+On upgrade from 0.6.0, unchanged old defaults migrate from `nearGroundLoss: 0.10` to `0.01` and from `samplesPerTick: 4` to `64`. Other custom values are retained. The previous `clearance` and `buriedLoss` settings are replaced by the explicit curve above.
+
+Operator commands:
 
 | Command | Effect |
 | --- | --- |
-| `/radiorepeaters terrain` | Show mode, saved profile count, pending work and sampling time |
-| `/radiorepeaters terrain off` | Restore 0.5.8 propagation and stop height-query work |
-| `/radiorepeaters terrain relay_mapping` | Use cached inter-relay terrain attenuation and the elevation bonus |
-| `/radiorepeaters terrain full` | Also enable ordinary device-link checks |
-| `/radiorepeaters terrain reload` | Reload the JSON settings |
-| `/radiorepeaters terrain clear` | Discard saved profiles and resample active relay paths |
+| `/radiorepeaters terrain` | Show mode and work statistics |
+| `/radiorepeaters terrain off` | Restore original propagation and stop sampling |
+| `/radiorepeaters terrain relay_mapping` | Enable cached relay terrain and elevation |
+| `/radiorepeaters terrain full` | Also enable endpoint checks |
+| `/radiorepeaters terrain reload` | Reload JSON; report failure and keep current settings if invalid |
+| `/radiorepeaters terrain clear` | Remap profiles while existing links retain their previous penalty |
 
-The three mode commands save their changes. The JSON values are `off`, `relay_mapping` and `full`. Clear profiles after intentionally replacing the world's terrain generator or seed.
-
-## Relay links
-
-The existing guarded antenna scan also records the highest antenna block in the main vertical mast, including a wired extension's remote mast. Incomplete scans retain the last verified tip. Existing 0.5.8 records acquire a tip when visited and scanned; records without a verified tip retain ordinary propagation until then.
-
-The engine's `ChunkGenerator.getBaseHeight` is queried with `OCEAN_FLOOR_WG` and the world's `RandomState`. This estimates solid base terrain, excluding the water surface. It does not request a world chunk, run decoration or carving, tick blocks, or write chunk terrain. Buildings, trees, tunnels, excavation, and exact cave geometry are outside this approximation. Unusual generators that cannot answer the height query fall back to ordinary propagation and log the failure once.
-
-Horizontal samples are normally 64 blocks apart, including both endpoints. Very long paths use a wider spacing to stay within `maxSamplesPerPath`. The terrain line is compared with a ray between the top faces of the two verified mast tips. Full clearance of 32 blocks has no extra loss; touching the estimated ground has a 10% distance penalty; being 32 or more blocks below it has a 35% penalty. Smooth transitions connect these anchors. The final fraction is the distance-weighted average along the path, so sampling density does not multiply attenuation. Extra distance participates in both RF reach and travel loss; inherited audio degradation is still preserved.
-
-Only relay pairs that can pass the ordinary RF check are scheduled. Work runs on the server thread with a column-count budget and a two-millisecond soft time budget per tick. A single engine query cannot be interrupted, so this is not a hard upper bound on an unusual generator's query time. Audio routing only requests work and reads results.
-
-Terrain samples are saved separately in `data/simpleradio_repeater_terrain.dat`, bounded to 1,024 physical paths. Opposite directions and different frequency graphs share samples. Cards, catalysts, power, amplifier and dish changes reuse this data. A mast-height change reuses the ground samples and recalculates clearance; moving its horizontal position requires a new profile. New profiles and changed mast heights become visible on the Overworld's `gameTime % 200 == 0` boundary. Sample jobs are spread across intervening ticks. An unmeasured new relay link waits for its first profile instead of temporarily bypassing terrain loss.
-
-The elevation bonus increases the relay's antenna contribution by up to 10%, ramping from zero at tip Y=64 to the cap at Y=192. It does not multiply the radio's entire base power. It uses the same committed tip heights and is disabled in `off` mode. The existing antenna base remains the RF coordinate origin for distance, wires and dimensional policies; the tip is used for environmental clearance and elevation only.
-
-Ordinary unchanged antenna scans and chunk unloading do not discard profiles. Broken wires, removed relays and other hardware invalidations retain their immediate behavior. Server datapack reloads clear terrain profiles so generator-related changes can be picked up.
-
-## Optional device links
-
-`full` mode covers native transmitter/receiver links, handheld links, relay ingress and relay egress in the Overworld. Links at or below **256 blocks** of endpoint separation bypass the terrain system entirely. For relay ingress and egress, the committed mast tip is the environmental endpoint. Ordinary native device links use their native endpoint locations.
-
-Outside that radius, the first check is queued. Each active ordered endpoint pair retains only its latest loss fraction, the positions sampled, and a pending-work flag. No device sample array or path profile is retained or saved. The scalar result is reused until either end moves **more than 16 blocks** from the positions of the completed check. The previous result remains in use while a replacement is computed; a brand-new remote pair waits for its first result. There is no recurring resample timer for a stationary active pair.
-
-Idle scalar results expire after 30 seconds, and the active-state map is capped at 512 pairs. A later connection then starts with a fresh check. Entering the free radius immediately removes the pair's scalar state and cancels its pending work. Both the native reach and travel hooks apply the same result through composable MixinExtras expression modifications. Wired transfers are excluded.
-
-`/radiorepeaters test` captures terrain settings and cumulative work counters at the start and end. Compare those counters to measure generator work separately from per-packet routing. `/radiorepeaters diagnose` includes verified tips, elevation multipliers and existing device results without starting new terrain jobs.
+The three mode commands save their changes. `/radiorepeaters test` captures terrain settings and cumulative work statistics. `/radiorepeaters diagnose` inspects existing results without starting height sampling.

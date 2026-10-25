@@ -12,6 +12,6 @@ public abstract class TerrainReachMixin {
             "Lcom/codinglitch/simpleradio/central/WorldlyPosition;distance(Lcom/codinglitch/simpleradio/central/WorldlyPosition;)F"))
     private float repeaters$terrainReach(float distance, RadioSource source, RadioRouter destination) {
         return destination instanceof RadioReceiver receiver
-                ? (float) (distance + TerrainManager.nativeLoss((RadioTransmitter) (Object) this, receiver)) : distance;
+                ? (float) (distance + TerrainManager.nativeLoss((RadioTransmitter) (Object) this, receiver, source, distance)) : distance;
     }
 }

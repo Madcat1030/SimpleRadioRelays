@@ -390,6 +390,9 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
     }
 
     private void updateDisplayedState(TowerManager manager) {
+        // Looking up peers requests any missing terrain work before its display state is read.
+        displayPeers = manager.peers(relayId);
+        int mapping = dev.paul.simpleradiorepeaters.terrain.TerrainManager.mappingState(relayId);
         if (!enabled) status = OFF;
         else if (!hasCatalyst()) status = NO_CATALYST;
         else if (cardBank == null) status = NO_BANK;
@@ -397,13 +400,13 @@ public final class RelayBlockEntity extends BlockEntity implements Frequencing {
             status = NO_CARD;
         else if (bankPending) status = WAITING_FOR_BANK;
         else if (dirty) status = manager.isEligible(relayId) ? CHECKING : SCANNING;
+        else if (mapping != 0 && manager.isEligible(relayId)) status = mapping == 2 || displayPeers > 0 ? CHECKING : SCANNING;
         else status = antennaPower <= 0 ? NO_ANTENNA : READY;
         boolean ready = manager.isEligible(relayId);
         BlockState state = getBlockState();
         if (state.getValue(RelayBlock.ACTIVE) != ready)
             level.setBlock(
                     worldPosition, state.setValue(RelayBlock.ACTIVE, ready), Block.UPDATE_CLIENTS);
-        displayPeers = manager.peers(relayId);
         Display current =
                 new Display(antennaPower, status, displayPeers, channels().size(), enabled);
         if (!current.equals(lastDisplay)) {

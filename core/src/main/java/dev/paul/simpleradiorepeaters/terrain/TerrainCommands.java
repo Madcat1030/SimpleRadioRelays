@@ -14,11 +14,15 @@ public final class TerrainCommands {
         var root = literal("terrain").requires(s -> s.hasPermission(2)).executes(c -> status(c.getSource()));
         for (TerrainMode mode : TerrainMode.values()) root.then(literal(mode.id()).executes(c -> select(c, mode)));
         return root.then(literal("reload").executes(c -> {
-                    RepeatersConfig.load(); TerrainManager.reconfigure(c.getSource().getServer()); return status(c.getSource());
+                    if (!RepeatersConfig.load()) {
+                        c.getSource().sendFailure(Component.literal("Could not reload simpleradio-repeaters.json. Current settings were kept; see latest.log for details."));
+                        return 0;
+                    }
+                    TerrainManager.reconfigure(c.getSource().getServer()); return status(c.getSource());
                 }))
                 .then(literal("clear").executes(c -> {
                     TerrainManager.clear(c.getSource().getServer());
-                    c.getSource().sendSuccess(() -> Component.literal("Cleared saved relay terrain profiles. Active links will be sampled again."), false);
+                    c.getSource().sendSuccess(() -> Component.literal("Remapping relay terrain. Existing links keep their previous result until replacement samples are ready."), false);
                     return 1;
                 }));
     }

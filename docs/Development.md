@@ -43,3 +43,12 @@ Use `/radiorepeaters test start 60`, or `test start` followed by `test stop`. JS
 ## Models and handbook
 
 See [the model kit](../directional/art/model-kit/README.md) for editable Blockbench projects and [handbook extensions](Handbook-Extensions.md) for addon-owned chapters. Receiver asset generation must not overwrite translated tooltips or handbook text. Historical native captures and test evidence remain under the versioned `validation/` directories.
+
+
+## Terrain follow-up (0.6.1)
+
+Relay ground profiles are referenced by registered physical mast columns; they are no longer an LRU cache. Clearance memoization is still bounded because a missed clearance calculation is cheap and never requests generator work by itself. A per-relay-pair last result preserves established environmental penalties during remapping. Pending mapping is a display state, not an eligibility flag.
+
+Full-mode preflight uses the actual native source type/power or the relay departure power and the existing reception integrations before admitting terrain work. Device scalar entries expire by inactivity instead of packet traversal order; the protective capacity fallback uses ordinary propagation and is counted explicitly. Sampling has separate relay/device queues, a time budget with a count ceiling, and 3:1 relay priority. Native hooks remain MixinExtras expression modifications.
+
+The attenuation curve averages extra-distance fractions. Keep this distinction explicit: a 100% extra-distance penalty gives approximately half range; it is not a 100% loss of power or range. Profile persistence, native/relay RF parity and capacity tests must exercise both clear and buried paths.

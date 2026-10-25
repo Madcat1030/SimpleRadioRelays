@@ -14,6 +14,6 @@ public abstract class TerrainTravelMixin {
             "Lcom/codinglitch/simpleradio/central/WorldlyPosition;distance(Lcom/codinglitch/simpleradio/central/WorldlyPosition;)F"))
     private float repeaters$terrainTravel(float distance, Router from, Router to, Medium medium) {
         return medium instanceof Frequency && from instanceof RadioTransmitter transmitter && to instanceof RadioReceiver receiver
-                ? (float) (distance + TerrainManager.nativeLoss(transmitter, receiver)) : distance;
+                ? (float) (distance + TerrainManager.nativeLoss(transmitter, receiver, (RadioSource) (Object) this, distance)) : distance;
     }
 }

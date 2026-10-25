@@ -90,7 +90,6 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
             if (success) {
-                dev.paul.simpleradiorepeaters.terrain.TerrainManager.clear(server);
                 TowerManager.resourcesReloaded(server, "server_datapack_reload");
                 server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts);
             }

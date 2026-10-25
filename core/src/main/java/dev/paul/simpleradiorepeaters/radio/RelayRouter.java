@@ -273,8 +273,12 @@ public final class RelayRouter {
                                                 power,
                                                 SimpleRadioFrequencing.TRANSMITTER,
                                                 receiver,
-                                                output,
-                                                dev.paul.simpleradiorepeaters.terrain.TerrainManager.egressLoss(leg, port.tower(), receiver));
+                                                output);
+                                if (received != null && dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.terrain.mode.pointToPoint()) {
+                                    double extra = dev.paul.simpleradiorepeaters.terrain.TerrainManager.egressLoss(leg, port.tower(), receiver);
+                                    if (extra > 0) received = NativeRadioAdapter.receiveAtReceiver(leg, power, power,
+                                            SimpleRadioFrequencing.TRANSMITTER, receiver, output, extra);
+                                }
                                 if (received == null) continue;
                                 double noise = Math.max(path.severity(), received.severity());
                                 float remaining = (float) received.power();
@@ -381,8 +385,12 @@ public final class RelayRouter {
                                 source.transmissionCap,
                                 type,
                                 port.tower(),
-                                channel,
-                                dev.paul.simpleradiorepeaters.terrain.TerrainManager.ingressLoss(leg, emitter, port.tower()));
+                                channel);
+                if (received != null && dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.terrain.mode.pointToPoint()) {
+                    double extra = dev.paul.simpleradiorepeaters.terrain.TerrainManager.ingressLoss(leg, emitter, port.tower());
+                    if (extra > 0) received = NativeRadioAdapter.receiveAtTower(leg, source.transmissionPower,
+                            source.transmissionCap, type, port.tower(), channel, extra);
+                }
                 if (received != null) {
                     if (sample != null) sample.add(INGRESS_RF_SUCCESSES);
                     best = Math.min(best, received.severity());

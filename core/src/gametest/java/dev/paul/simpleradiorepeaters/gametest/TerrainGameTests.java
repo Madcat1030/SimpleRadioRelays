@@ -5,6 +5,8 @@ import com.codinglitch.simpleradio.central.*;
 import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
 import com.codinglitch.simpleradio.radio.*;
 import dev.paul.simpleradiorepeaters.RepeatersConfig;
+import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
+import dev.paul.simpleradiorepeaters.block.*;
 import dev.paul.simpleradiorepeaters.network.*;
 import dev.paul.simpleradiorepeaters.radio.*;
 import dev.paul.simpleradiorepeaters.terrain.*;
@@ -210,6 +212,11 @@ public class TerrainGameTests implements FabricGameTest {
                             check(TerrainManager.relayLoss(leg, lowA, lowB) > 0 && counter("sampled_columns") == columns,
                                     "Shortening the masts must update clearance without resampling the ground");
                             check(!world.hasChunkAt(a.antennaBase()) && !world.hasChunkAt(b.antennaBase()), "Saved relay terrain checks must not activate endpoint or intervening chunks");
+                            double committed = TerrainManager.relayLoss(leg, lowA, lowB);
+                            TerrainManager.clear(world.getServer());
+                            check(TerrainManager.relayLoss(leg, lowA, lowB) == committed
+                                            && TerrainManager.mappingState(a.id()) == 2,
+                                    "Remapping must report CHECK and retain the last penalty instead of silencing an existing link");
                             helper.succeed();
                         } finally { manager.removeAt(a.dimension(), a.position()); manager.removeAt(b.dimension(), b.position()); restore(world, old); }
                     });
@@ -218,5 +225,178 @@ public class TerrainGameTests implements FabricGameTest {
                 }
             });
         });
+    }
+
+    private static RelayBlockEntity physicalRelay(ServerLevel world, BlockPos core, Frequency frequency) {
+        world.setBlock(core, net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        for (int i = 1; i <= 2; i++) world.setBlock(core.above(i), com.codinglitch.simpleradio.core.registry.SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        BlockPos box = core.east();
+        world.setBlock(box, SimpleRadioRepeaters.RELAY.defaultBlockState().setValue(RelayBlock.FACING, net.minecraft.core.Direction.EAST), 3);
+        world.setBlock(box.above(), SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState(), 3);
+        var relay = (RelayBlockEntity) world.getBlockEntity(box);
+        relay.installCatalyst(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GILDED_BLACKSTONE), true);
+        var card = new net.minecraft.world.item.ItemStack(SimpleRadioRepeaters.CARD);
+        SimpleRadioRepeaters.CARD.setFrequency(card, frequency.getFrequency(), frequency.getModulation());
+        ((ChannelBankBlockEntity) world.getBlockEntity(box.above())).insert(0, card, true);
+        return relay;
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 720, batch = "terrain_mapping_display")
+    public void physicalRelaysShowScanThenReadyAndKeepTheirLinksDuringCheck(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, true, false); var manager = TowerManager.get(world.getServer());
+        var frequency = frequency("097.97"); var channel = ChannelKey.from(frequency);
+        var a = physicalRelay(world, helper.absolutePos(new BlockPos(2, 2, 2)), frequency);
+        var b = physicalRelay(world, helper.absolutePos(new BlockPos(2, 2, 12)), frequency);
+        helper.startSequence().thenWaitUntil(() -> check(manager.isEligible(a.relayId()) && manager.isEligible(b.relayId()), "Physical masts must finish their guarded antenna scan"))
+                .thenWaitUntil(() -> check(a.displayStatus() == 5 && TerrainManager.mappingState(a.relayId()) == 1,
+                        "A new path waiting for its first profile must be visible as SCAN"))
+                .thenWaitUntil(() -> check(a.displayStatus() == RelayBlockEntity.READY && a.displayPeers() == 1,
+                        "Completing terrain mapping must restore READY and publish the real connection"))
+                .thenExecute(() -> { TerrainManager.clear(world.getServer()); manager.network(world, channel); })
+                .thenWaitUntil(() -> check(a.displayStatus() == 6 && TerrainManager.mappingState(a.relayId()) == 2,
+                        "An existing path must show CHECK while replacement terrain is measured"))
+                .thenExecute(() -> {
+                    check(a.displayPeers() == 1 && manager.isEligible(a.relayId()), "CHECK must retain the cached connection and eligibility");
+                    for (var relay : List.of(a, b)) {
+                        world.removeBlock(relay.getBlockPos().above(), false); world.removeBlock(relay.getBlockPos(), false);
+                    }
+                    restore(world, old);
+                }).thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_device_preflight")
+    public void unreachableNativeReceiversCreateNoTerrainStateOrHeightJobs(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, false, true);
+        var frequency = frequency("097.94");
+        var sender = new RadioTransmitter(frequency, position(world, 2_000_000, 1000, -2_000_000)).frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+        try {
+            long columns = counter("sampled_columns"), filtered = counter("filtered_device_checks");
+            for (int i = 0; i < 625; i++) {
+                var receiver = new RadioReceiver(frequency, position(world, 2_050_000 + i, 1000, -2_000_000)).frequencingType(SimpleRadioFrequencing.RECEIVER);
+                check(!sender.shouldRouteTo(packet(sender), receiver), "An unreachable native receiver must still fail ordinary reach");
+            }
+            check(counter("device_results") == 0 && counter("pending_device_checks") == 0
+                            && counter("sampled_columns") == columns && counter("filtered_device_checks") >= filtered + 625,
+                    "Impossible native links must be rejected before creating any terrain state or generator work");
+            helper.succeed();
+        } finally { restore(world, old); }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 800, batch = "terrain_device_capacity")
+    public void sixHundredTwentyFiveActiveNativePairsAllFinishWithoutEvictingPendingJobs(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, false, true);
+        var frequency = frequency("097.95");
+        var senders = new ArrayList<RadioTransmitter>(); var receivers = new ArrayList<RadioReceiver>();
+        var packets = new ArrayList<RadioSource>();
+        for (int i = 0; i < 25; i++) {
+            var sender = new RadioTransmitter(frequency, position(world, 2_100_000 + 2 * i, 1000, -2_100_000)).frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+            senders.add(sender); packets.add(packet(sender));
+            receivers.add(new RadioReceiver(frequency, position(world, 2_100_700 + 2 * i, 1000, -2_100_000)).frequencingType(SimpleRadioFrequencing.RECEIVER));
+        }
+        boolean[] finished = {false};
+        helper.onEachTick(() -> {
+            if (!finished[0])
+                for (int i = 0; i < senders.size(); i++) for (var receiver : receivers) senders.get(i).shouldRouteTo(packets.get(i), receiver);
+        });
+        helper.startSequence().thenWaitUntil(() -> {
+            int audible = 0;
+            for (int i = 0; i < senders.size(); i++) for (var receiver : receivers)
+                if (senders.get(i).shouldRouteTo(packets.get(i), receiver)) audible++;
+            check(audible == 625 && counter("device_measured_results") == 625, "Every active pair, including those beyond 512, must complete its first terrain check");
+        }).thenExecute(() -> {
+            check(counter("device_results") == 625 && counter("pending_device_checks") == 0,
+                    "A repeated packet traversal must retain all live scalar results and eventually drain the queue");
+            SimpleRadioRepeaters.LOGGER.info("[terrain-regression] All 625 active device pairs completed: {}", TerrainManager.statistics());
+            finished[0] = true; restore(world, old);
+        }).thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_relay_device_preflight")
+    public void unreachableRelayIngressAndEgressSkipDeviceTerrainWork(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, false, true); var manager = TowerManager.get(world.getServer());
+        var frequency = frequency("097.96"); var channel = ChannelKey.from(frequency);
+        var records = new ArrayList<TowerRecord>(); var receivers = new ArrayList<RadioReceiver>();
+        BlockPos base = new BlockPos(2_200_000, 1000, -2_200_000);
+        try {
+            for (int i = 0; i < 25; i++) {
+                var record = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), base.east(i),
+                        Set.of(channel), true, RelayCatalysts.GILDED, true, 32, Set.of());
+                records.add(record); manager.updateSnapshot(record);
+                var receiver = new RadioReceiver(frequency, position(world, base.getX() + 50_000 + i, 1000, base.getZ())).frequencingType(SimpleRadioFrequencing.RECEIVER);
+                receiver.identifier = (short) (31000 + i);
+                receiver.owner = new net.minecraft.world.entity.decoration.ArmorStand(world, base.getX() + 50_000 + i, 1000, base.getZ());
+                receivers.add(receiver); frequency.getReceivers().add(receiver);
+            }
+            var sender = new RadioTransmitter(frequency, position(world, base.getX(), 1000, base.getZ())).frequencingType(SimpleRadioFrequencing.TRANSMITTER);
+            sender.identifier = 30990;
+            check(RelayRouter.tryRoute(sender, packet(sender), null), "The nearby relay network must take over the packet so egress is exercised");
+            check(counter("device_results") == 0 && counter("pending_device_checks") == 0,
+                    "The 625 out-of-range relay-to-receiver combinations must not enqueue terrain work");
+            sender.position = position(world, base.getX() - 50_000, 1000, base.getZ());
+            check(!RelayRouter.tryRoute(sender, packet(sender), null), "A far transmitter must fail all relay entrances");
+            check(counter("device_results") == 0 && counter("pending_device_checks") == 0,
+                    "Unreachable relay entrances must not create device state either");
+            helper.succeed();
+        } finally {
+            receivers.forEach(receiver -> frequency.getReceivers().remove(receiver));
+            records.forEach(record -> manager.removeAt(record.dimension(), record.position()));
+            restore(world, old);
+        }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_profile_capacity")
+    public void activeProfilesBeyondTheOldLimitPersistAndOnlyOrphanedMastPathsArePruned(GameTestHelper helper) {
+        var data = new TerrainProfiles(); data.initialize(helper.getLevel().getSeed());
+        Set<Long> columns = new HashSet<>(); List<TerrainProfiles.Key> paths = new ArrayList<>();
+        for (int i = 0; i < 46; i++) columns.add(TerrainProfiles.column(i * 64, -1000));
+        for (int a = 0; a < 46; a++) for (int b = a + 1; b < 46; b++) {
+            var key = TerrainProfiles.Key.between(a * 64, -1000, b * 64, -1000, 64, 1024);
+            paths.add(key); data.put(key, new int[]{64, 64});
+        }
+        check(data.size() == 1035, "Every registered path in a 46-tower mesh must survive the old 1024-entry limit");
+        for (int pass = 0; pass < 3; pass++) for (var key : paths) check(data.get(key) != null, "Graph traversal must not evict another active path");
+        var restored = TerrainProfiles.load(data.save(new CompoundTag())); restored.initialize(helper.getLevel().getSeed());
+        check(restored.size() == 1035, "Saving and loading must preserve the complete active mesh");
+        columns.remove(TerrainProfiles.column(0, -1000)); restored.retainColumns(columns);
+        check(restored.size() == 990, "Removing one mast must prune exactly its 45 paths and retain the others");
+        var old = paths.get(paths.size() - 1);
+        var replacement = TerrainProfiles.Key.between(old.ax(), old.az(), old.bx(), old.bz(), 128, 1024);
+        check(data.previous(replacement) != null, "Changing resolution must leave a usable previous profile");
+        data.put(replacement, new int[]{65, 65});
+        check(data.size() == 1035 && data.get(old) == null && data.get(replacement)[0] == 65,
+                "A replacement must retire only the previous resolution of its own physical path");
+        helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 400, batch = "terrain_datapack_reload")
+    public void realDatapackReloadPreservesMeasuredTerrainProfiles(GameTestHelper helper) {
+        var world = helper.getLevel(); var old = configure(world, true, false); var manager = TowerManager.get(world.getServer());
+        var a = tower(world, new BlockPos(2_300_000, 64, -2_300_000), new BlockPos(2_300_000, 100, -2_300_000), UUID.randomUUID(), 32);
+        var b = tower(world, a.antennaBase().east(800), a.antennaTip().east(800), UUID.randomUUID(), 32);
+        manager.updateSnapshot(a); manager.updateSnapshot(b);
+        var data = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
+        var key = TerrainProfiles.Key.between(a.antennaTip().getX(), a.antennaTip().getZ(), b.antennaTip().getX(), b.antennaTip().getZ(), 64, 1024);
+        int[] heights = {64, 64}; data.put(key, heights);
+        var reload = world.getServer().reloadResources(world.getServer().getPackRepository().getSelectedIds());
+        helper.startSequence().thenWaitUntil(() -> check(reload.isDone(), "Datapack reload must finish")).thenExecute(() -> {
+            try {
+                reload.join();
+                check(Arrays.equals(heights, data.get(key)), "A successful real datapack reload must not discard generator-height profiles");
+            } finally { manager.removeAt(a.dimension(), a.position()); manager.removeAt(b.dimension(), b.position()); restore(world, old); }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "terrain_config_error")
+    public void malformedConfigReloadReturnsFailureAndKeepsTheLiveSettings(GameTestHelper helper) throws Exception {
+        var path = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json");
+        String previous = java.nio.file.Files.readString(path); var live = RepeatersConfig.INSTANCE;
+        try {
+            java.nio.file.Files.writeString(path, "{invalid");
+            int result = helper.getLevel().getServer().getCommands().performPrefixedCommand(
+                    helper.getLevel().getServer().createCommandSourceStack(), "radiorepeaters terrain reload");
+            check(result == 0 && RepeatersConfig.INSTANCE == live && java.nio.file.Files.readString(path).equals("{invalid"),
+                    "A broken config must return command failure, retain live settings and leave the invalid file available for correction");
+        } finally { java.nio.file.Files.writeString(path, previous); }
+        helper.succeed();
     }
 }
