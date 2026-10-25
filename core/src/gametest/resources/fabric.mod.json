@@ -14,7 +14,8 @@
       "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
       "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
       "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests",
-      "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests"
+      "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.TerrainGameTests"
     ]
   },
   "depends": {

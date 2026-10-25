@@ -89,7 +89,11 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(RelayPerformance::stopping);
         ServerLifecycleEvents.SERVER_STOPPED.register(TowerManager::stop);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
-            if (success) { TowerManager.resourcesReloaded(server, "server_datapack_reload"); server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts); }
+            if (success) {
+                dev.paul.simpleradiorepeaters.terrain.TerrainManager.clear(server);
+                TowerManager.resourcesReloaded(server, "server_datapack_reload");
+                server.getPlayerList().getPlayers().forEach(SimpleRadioRepeaters::syncCatalysts);
+            }
         });
         ServerPlayNetworking.registerGlobalReceiver(CATALYST_REQUEST, (server, player, handler, packet, sender) ->
                 server.execute(() -> {
@@ -105,6 +109,7 @@ public final class SimpleRadioRepeaters implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
             dispatcher.register(literal("radiorepeaters")
                 .then(RelayPerformance.commands())
+                .then(dev.paul.simpleradiorepeaters.terrain.TerrainCommands.commands())
                 .then(literal("status").executes(context -> {
                     TowerManager manager = TowerManager.get(context.getSource().getServer());
                     context.getSource().sendSuccess(() -> Component.literal(manager == null

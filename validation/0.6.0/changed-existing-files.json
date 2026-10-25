@@ -1,0 +1,19 @@
+[
+  "README.md",
+  "core/src/gametest/resources/fabric.mod.json",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/SimpleRadioRepeaters.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/AntennaScanner.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerRecord.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayPerformance.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayRouter.java",
+  "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+  "core/src/main/resources/simpleradio_repeaters.mixins.json",
+  "core/src/test/java/dev/paul/simpleradiorepeaters/handbook/HandbookContentsTest.java",
+  "docs/Development.md",
+  "gradle.properties",
+  "tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java"
+]

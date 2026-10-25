@@ -1,0 +1,20 @@
+{
+  "core": {
+    "attributes": {},
+    "tests": 69,
+    "failures": 0,
+    "errors": 0
+  },
+  "standalone-directional": {
+    "attributes": {},
+    "tests": 21,
+    "failures": 0,
+    "errors": 0
+  },
+  "combined": {
+    "attributes": {},
+    "tests": 115,
+    "failures": 0,
+    "errors": 0
+  }
+}

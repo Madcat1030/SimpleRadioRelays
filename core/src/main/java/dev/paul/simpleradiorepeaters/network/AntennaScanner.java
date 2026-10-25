@@ -18,7 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /** Runs native antenna geometry against a guarded accessor that cannot request absent chunks. */
 public final class AntennaScanner {
-    public record Result(boolean complete, int score, Set<Long> footprint, BlockPos antennaBase) {}
+    public record Result(boolean complete, int score, Set<Long> footprint, BlockPos antennaBase, BlockPos antennaTip) {
+        public Result(boolean complete, int score, Set<Long> footprint, BlockPos antennaBase) {
+            this(complete, score, footprint, antennaBase, null);
+        }
+    }
     private static final class MissingChunk extends RuntimeException {
         @Override public synchronized Throwable fillInStackTrace() { return this; }
     }
@@ -74,15 +78,21 @@ public final class AntennaScanner {
             BlockPos antennaCore = base.below();
             if (!guarded.getBlockState(antennaCore).isFaceSturdy(guarded, antennaCore, Direction.UP))
                 return new Result(true, 0, Set.copyOf(observed), antennaCore.immutable());
-            BlockState state = guarded.getBlockState(base); int score = 0;
+            BlockState state = guarded.getBlockState(base); int score = 0; BlockPos tip = null;
             if (state.getBlock() instanceof Antennal antennal) {
                 AtomicInteger total = new AtomicInteger(); List<BlockPos> visited = new ArrayList<>();
                 antennal.climbColumn(base.mutable(), guarded, total, 0, visited); score = total.get();
                 visited.forEach(p -> observed.add(p.asLong()));
+                if (score > 0) {
+                    tip = base.immutable();
+                    for (BlockPos p : visited)
+                        if (p.getX() == base.getX() && p.getZ() == base.getZ() && p.getY() > tip.getY()
+                                && guarded.getBlockState(p).getBlock() instanceof Antennal) tip = p.immutable();
+                }
             }
             Set<Long> footprint = new HashSet<>(observed);
             for (long packed : observed) for (Direction direction : Direction.values()) footprint.add(BlockPos.of(packed).relative(direction).asLong());
-            return new Result(true, score, Set.copyOf(footprint), antennaCore.immutable());
+            return new Result(true, score, Set.copyOf(footprint), antennaCore.immutable(), tip);
         } catch (MissingChunk e) { return new Result(false, 0, Set.copyOf(observed), core.immutable()); }
     }
 }

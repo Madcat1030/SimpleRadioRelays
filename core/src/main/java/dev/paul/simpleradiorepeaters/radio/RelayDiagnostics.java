@@ -39,6 +39,7 @@ public final class RelayDiagnostics {
         lines.add("RF txAM=" + tx.transmissionPowerAM + " txFM=" + tx.transmissionPowerFM + " txAptitude=" + tx.antennaAptitude
                 + " loss=" + tx.transmissionDiminishment + " method=" + tx.diminishmentMethod
                 + " rxBase=" + rx.receptionPower + " rxAptitude=" + rx.antennaAptitude);
+        lines.add("TERRAIN mode=" + RepeatersConfig.INSTANCE.terrain.mode.id() + " " + dev.paul.simpleradiorepeaters.terrain.TerrainManager.statistics());
         if (manager == null) { lines.add("Manager unavailable"); return List.copyOf(lines); }
         lines.add(manager.summary());
         Set<ChannelKey> channels = new TreeSet<>();
@@ -47,6 +48,8 @@ public final class RelayDiagnostics {
             lines.add("SAVED " + tower.id() + " " + tower.dimension() + " " + tower.position().toShortString()
                     + " eligible=" + tower.eligible() + " enabled=" + tower.enabled() + " verified=" + tower.verified()
                     + " antennaBase=" + tower.antennaBase().toShortString()
+                    + " antennaTip=" + tower.antennaTip()
+                    + " elevationMultiplier=" + dev.paul.simpleradiorepeaters.terrain.TerrainManager.elevationMultiplier(tower)
                     + " antennaRaw=" + tower.antennaScore() + " antennaEffective="
                     + RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
                     + " catalyst=" + tower.catalystItem() + " efficiency=" + tower.efficiency()
@@ -104,13 +107,19 @@ public final class RelayDiagnostics {
                               ChannelKey channel, FrequencingType type, List<RadioRouter> endpoints) {
         double power = type.getTransmissionPower(channel.mode()); Map<Integer, Double> entrances = new LinkedHashMap<>();
         var emission = RadioSpace.physical(level, position);
+        UUID emitter = endpoints.stream().filter(r -> r instanceof RadioTransmitter t && t.frequency != null
+                && ChannelKey.from(t.frequency).equals(channel) && t.frequencingType == type && t.getLocation() != null
+                && t.getLocation().level == level && new Vec3(t.getLocation()).distanceToSqr(position) <= 256)
+                .sorted(Comparator.comparingDouble(r -> new Vec3(r.getLocation()).distanceToSqr(position)))
+                .map(r -> r.reference).findFirst().orElse(new UUID(0, 0));
         for (int i = 0; i < network.ports().size(); i++) {
             RelayPort port = network.ports().get(i); if (!port.input().equals(channel)) continue;
             double severity = Double.POSITIVE_INFINITY;
             for (var site : port.sites()) {
                 var leg = RadioSpace.between(emission, site, network.nativeCrossDimensional());
                 if (leg == null) continue;
-                var arrival = NativeRadioAdapter.receiveAtTower(leg, power, power, type, port.tower(), channel);
+                var arrival = NativeRadioAdapter.receiveAtTower(leg, power, power, type, port.tower(), channel,
+                        dev.paul.simpleradiorepeaters.terrain.TerrainManager.observedIngressLoss(leg, emitter, port.tower()));
                 if (arrival != null) severity = Math.min(severity, arrival.severity());
             }
             if (Double.isFinite(severity)) entrances.put(i, severity);
@@ -132,7 +141,8 @@ public final class RelayDiagnostics {
                     var leg = RadioSpace.between(site, RadioSpace.physical(destinationLevel, new Vec3(receiver.getLocation())), network.nativeCrossDimensional());
                     if (leg == null) continue;
                     double departure = NativeRadioAdapter.departurePower(port.tower(), output, path.decay());
-                    var arrival = NativeRadioAdapter.receiveAtReceiver(leg, departure, departure, SimpleRadioFrequencing.TRANSMITTER, receiver, output);
+                    var arrival = NativeRadioAdapter.receiveAtReceiver(leg, departure, departure, SimpleRadioFrequencing.TRANSMITTER, receiver, output,
+                            dev.paul.simpleradiorepeaters.terrain.TerrainManager.observedEgressLoss(leg, port.tower(), receiver));
                     if (arrival == null) continue;
                     strongest = Math.max(strongest, arrival.power()); cleanest = Math.min(cleanest, Math.max(path.severity(), arrival.severity()));
                 }

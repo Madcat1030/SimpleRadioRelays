@@ -9,7 +9,9 @@
     "RadioReceiverMixin",
     "RadioBlockActivationMixin",
     "FrequencyChannelLifecycleMixin",
-    "AntennaWireMixin"
+    "AntennaWireMixin",
+    "TerrainReachMixin",
+    "TerrainTravelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

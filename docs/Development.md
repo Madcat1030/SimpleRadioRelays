@@ -34,6 +34,12 @@ Use `/radiorepeaters test start 60`, or `test start` followed by `test stop`. JS
 
 `/radiorepeaters` is the only command root; the former singular alias was removed in 0.5.8.
 
+## Terrain propagation
+
+`terrain/TerrainManager` owns the bounded server-thread height-query queue. `TerrainProfiles` stores only physical relay terrain samples in world SavedData. RF graphs and channel ports share those samples; mast-height commits and completed profiles publish on the Overworld's 200-tick boundary. The native antenna base remains the RF origin, while the independently saved mast tip determines environmental clearance. Device checks retain only an expiring scalar result and sampled endpoint coordinates, with no device profile arrays or disk writes. Their reach/travel expression hooks compose with the Foci and Directional hooks.
+
+`TerrainMathTest` covers clearance, density-independent weighting, sloping rays, elevation bounds, movement and free-radius boundaries. `TerrainGameTests` exercises the real noise generator without loading chunks, actual mast-tip scans, native travel parity, device resampling and persisted relay-profile reuse. The profile report snapshots include `terrain_settings` and cumulative `terrain_work`, so generator work can be measured independently of routing time. See [terrain settings](Terrain-and-Elevation.md) for the defaults and operator commands.
+
 ## Models and handbook
 
 See [the model kit](../directional/art/model-kit/README.md) for editable Blockbench projects and [handbook extensions](Handbook-Extensions.md) for addon-owned chapters. Receiver asset generation must not overwrite translated tooltips or handbook text. Historical native captures and test evidence remain under the versioned `validation/` directories.

@@ -66,12 +66,14 @@ public final class TowerManager {
                                 TowerSavedData::load, TowerSavedData::new, TowerSavedData.NAME);
         TowerManager manager = new TowerManager(server, data);
         MANAGERS.put(server, manager);
+        dev.paul.simpleradiorepeaters.terrain.TerrainManager.start(server, data.towers.values());
         manager.reconcileLoadedChunks(); // Spawn chunks may have loaded before SERVER_STARTED.
         SimpleRadioRepeaters.LOGGER.info(
                 "Restored {} repeater records without loading tower chunks", data.towers.size());
     }
 
     public static void stop(MinecraftServer server) {
+        dev.paul.simpleradiorepeaters.terrain.TerrainManager.stop(server);
         MANAGERS.remove(server);
     }
 
@@ -85,6 +87,7 @@ public final class TowerManager {
                 manager.wireChanged(level, wire, false);
         }
         manager.reconcilePendingChunks();
+        dev.paul.simpleradiorepeaters.terrain.TerrainManager.tick(server, manager.data.towers.values());
         if (server.getTickCount() % 100 == 0) {
             manager.checkConfiguration();
         }
@@ -443,7 +446,7 @@ public final class TowerManager {
                         relay.cardBank(),
                         relay.attachmentType(),
                         relay.transponderChannels(),
-                        antenna.antennaBase()));
+                        antenna.antennaBase(), antenna.antennaTip()));
     }
 
     /** Accept a verified snapshot from a stationary tower adapter, on the server thread. */
@@ -500,20 +503,23 @@ public final class TowerManager {
                         channel,
                         RadioSpace.nativeCrossDimensional(),
                         RadioSpace.policyFingerprint());
-        return new Inspection(networks.get(scope), buildNetwork(level, scope));
+        return new Inspection(networks.get(scope), buildNetwork(level, scope, false));
     }
 
     private Network buildNetwork(ServerLevel sourceLevel, Scope scope) {
+        return buildNetwork(sourceLevel, scope, true);
+    }
+    private Network buildNetwork(ServerLevel sourceLevel, Scope scope, boolean terrainRequests) {
         long started = RelayPerformance.clock(server);
         Network result = null;
         try {
-            return result = buildNetworkObserved(sourceLevel, scope);
+            return result = buildNetworkObserved(sourceLevel, scope, terrainRequests);
         } finally {
             RelayPerformance.graphBuilt(server, started, result, scope);
         }
     }
 
-    private Network buildNetworkObserved(ServerLevel sourceLevel, Scope scope) {
+    private Network buildNetworkObserved(ServerLevel sourceLevel, Scope scope, boolean terrainRequests) {
         List<RelayPort> all = new ArrayList<>();
         Map<ChannelKey, List<RelayPort>> listeners = new HashMap<>();
         for (TowerRecord tower :
@@ -602,6 +608,13 @@ public final class TowerManager {
                                                 SimpleRadioFrequencing.TRANSMITTER,
                                                 nodes.get(target.getKey()),
                                                 sender.output());
+                                // Terrain can only weaken a link: don't sample pairs already beyond ordinary reach.
+                                if (link != null) {
+                                    double extra = dev.paul.simpleradiorepeaters.terrain.TerrainManager.relayLoss(
+                                            leg, sender.tower(), nodes.get(target.getKey()), terrainRequests);
+                                    if (extra > 0) link = NativeRadioAdapter.receiveAtTower(leg, power, power,
+                                            SimpleRadioFrequencing.TRANSMITTER, nodes.get(target.getKey()), sender.output(), extra);
+                                }
                                 if (link != null) best = Math.min(best, link.severity());
                             }
                             if (Double.isFinite(best))
@@ -689,6 +702,8 @@ public final class TowerManager {
                                                         n.attachment().antennaMultiplier())
                                                 + " at "
                                                 + n.antennaBase().toShortString()
+                                                + " | tip "
+                                                + (n.antennaTip() == null ? "unverified" : n.antennaTip().toShortString())
                                                 + " | catalyst "
                                                 + n.catalystItem()
                                                 + " ("

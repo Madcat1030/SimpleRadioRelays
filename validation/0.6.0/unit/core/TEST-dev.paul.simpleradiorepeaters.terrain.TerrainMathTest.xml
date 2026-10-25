@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-25T03:31:25.040Z" hostname="aede03f7eaac" time="0.022">
+  <properties/>
+  <testcase name="aSlopingRayUsesEachSamplesPosition()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="deviceMovementMustExceedSixteenBlocks()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="clearTouchingAndBuriedPathsHaveBoundedSmoothLoss()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="theDeviceFreeRadiusIncludesItsBoundary()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="samplingDensityDoesNotMultiplyThePenalty()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="sparseSamplesHaveAHardWorkBound()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="swappingEndpointsPreservesTheTerrainResult()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.001"/>
+  <testcase name="aMountainAcrossTheLinkCanBeClearedByHigherMasts()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="elevationBonusHasNoBelowSeaPenaltyAndCannotGrowBeyondTheCap()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.0"/>
+  <testcase name="threeModesHaveOneDefaultAndStableConfigurationValues()" classname="dev.paul.simpleradiorepeaters.terrain.TerrainMathTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

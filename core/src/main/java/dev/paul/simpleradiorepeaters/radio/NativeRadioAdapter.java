@@ -18,7 +18,8 @@ public final class NativeRadioAdapter {
         return (float) (type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude);
     }
     private static double antennaScore(TowerRecord tower) {
-        return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier());
+        return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
+                * dev.paul.simpleradiorepeaters.terrain.TerrainManager.elevationMultiplier(tower);
     }
     public static float departurePower(TowerRecord tower, ChannelKey channel, int relayCount) {
         return RelayPower.departure(towerPower(tower, channel), tower.efficiency(),
@@ -32,10 +33,14 @@ public final class NativeRadioAdapter {
     }
     public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
+        return receiveAtTower(leg, power, cap, sender, receiver, channel, 0);
+    }
+    public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
+                                                      FrequencingType sender, TowerRecord receiver, ChannelKey channel, double terrainLoss) {
         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
         double reception = RelayIntegrations.receptionAtTower(
                 type.receptionPower + antennaScore(receiver) * type.antennaAptitude, leg, receiver, channel);
-        return receive(leg.distance(), power, cap, sender, reception,
+        return receive(leg.distance() + terrainLoss, power, cap, sender, reception,
                 type.receptionFloor, channel, leg.dimensional(), leg.propagation());
     }
     public static RadioLinkMath.Result receiveAtReceiver(double distance, double power, double cap,
@@ -45,8 +50,12 @@ public final class NativeRadioAdapter {
     }
     public static RadioLinkMath.Result receiveAtReceiver(RadioSpace.Leg leg, double power, double cap,
                                                          FrequencingType sender, RadioReceiver receiver, ChannelKey channel) {
+        return receiveAtReceiver(leg, power, cap, sender, receiver, channel, 0);
+    }
+    public static RadioLinkMath.Result receiveAtReceiver(RadioSpace.Leg leg, double power, double cap,
+                                                         FrequencingType sender, RadioReceiver receiver, ChannelKey channel, double terrainLoss) {
         float reception = RelayIntegrations.receptionAtReceiver(receiver.getPower(), leg, receiver, channel);
-        return receive(leg.distance(), power, cap, sender, reception, receiver.frequencingType.receptionFloor,
+        return receive(leg.distance() + terrainLoss, power, cap, sender, reception, receiver.frequencingType.receptionFloor,
                 channel, leg.dimensional(), leg.propagation());
     }
     private static RadioLinkMath.Result receive(double distance, double power, double cap, FrequencingType type,
@@ -70,6 +79,7 @@ public final class NativeRadioAdapter {
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
                 RadioSpace.policyFingerprint(), RelayIntegrations.configurationStamp(),
-                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers);
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers,
+                dev.paul.simpleradiorepeaters.terrain.TerrainManager.configurationStamp());
     }
 }

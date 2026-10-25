@@ -82,6 +82,7 @@ public final class RelayPerformance {
             if (before.verified() != after.verified()) changed.add("verified");
             if (before.antennaScore() != after.antennaScore()) changed.add("antenna_score");
             if (!before.antennaBase().equals(after.antennaBase())) changed.add("antenna_base");
+            if (!Objects.equals(before.antennaTip(), after.antennaTip())) changed.add("antenna_tip");
             if (!before.footprint().equals(after.footprint())) changed.add("footprint");
             if (!Objects.equals(before.cardBank(), after.cardBank())) changed.add("controller");
             if (!before.attachment().equals(after.attachment())) changed.add("attachment");
@@ -229,6 +230,8 @@ public final class RelayPerformance {
                 .filter(mod -> mod.getMetadata().getId().startsWith("simpleradio") || Set.of("minecraft", "fabricloader", "voicechat").contains(mod.getMetadata().getId()))
                 .forEach(mod -> mods.put(mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString())); out.put("mods", mods);
         out.put("rf_configuration_stamp", NativeRadioAdapter.configurationStamp());
+        out.put("terrain_settings", new com.google.gson.Gson().toJsonTree(dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.terrain));
+        out.put("terrain_work", dev.paul.simpleradiorepeaters.terrain.TerrainManager.statistics());
         var tx = com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing.TRANSMITTER;
         var rx = com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing.RECEIVER;
         var frequency = com.codinglitch.simpleradio.SimpleRadioLibrary.SERVER_CONFIG.frequency;

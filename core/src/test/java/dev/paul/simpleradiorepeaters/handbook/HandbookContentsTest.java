@@ -30,7 +30,7 @@ class HandbookContentsTest {
         try (var reader = new InputStreamReader(getClass().getResourceAsStream(
                 "/assets/simpleradio_repeaters/lang/en_us.json"), StandardCharsets.UTF_8)) {
             var language = JsonParser.parseReader(reader).getAsJsonObject();
-            for (String id : List.of("start", "relay", "bank", "transponder", "card", "amplifiers", "troubleshooting")) {
+            for (String id : List.of("start", "relay", "bank", "transponder", "card", "amplifiers", "terrain", "troubleshooting")) {
                 var resource = "/assets/simpleradio_repeaters/radio_handbook/chapters/" + id + ".json";
                 try (var chapterReader = new InputStreamReader(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8)) {
                     var chapter = HandbookContents.read("simpleradio_repeaters:" + id, chapterReader);

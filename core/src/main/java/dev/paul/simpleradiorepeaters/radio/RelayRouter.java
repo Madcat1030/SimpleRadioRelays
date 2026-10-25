@@ -114,7 +114,7 @@ public final class RelayRouter {
         RadioSource prepared = prepare(original, transmitter, input);
         if (sample != null) sample.emission(emission.position());
         Map<Integer, Double> entrances =
-                entrances(prepared, emission, input, network, sample, true);
+                entrances(prepared, emission, input, network, sample, true, transmitter.reference);
         if (entrances.isEmpty()) {
             if (sample != null) sample.add(NO_ENTRANCE);
             return false;
@@ -149,7 +149,7 @@ public final class RelayRouter {
         }
         prepared = prepare(working, transmitter, input);
         if (sample != null) sample.phase(RelayPerformance.Phase.FINAL_ENTRANCES);
-        entrances = entrances(prepared, emission, input, network, sample, false);
+        entrances = entrances(prepared, emission, input, network, sample, false, transmitter.reference);
         if (sample != null) sample.phase(RelayPerformance.Phase.PATHS);
         List<List<RelayGraph.Reach>> reachable =
                 network.graph()
@@ -273,7 +273,8 @@ public final class RelayRouter {
                                                 power,
                                                 SimpleRadioFrequencing.TRANSMITTER,
                                                 receiver,
-                                                output);
+                                                output,
+                                                dev.paul.simpleradiorepeaters.terrain.TerrainManager.egressLoss(leg, port.tower(), receiver));
                                 if (received == null) continue;
                                 double noise = Math.max(path.severity(), received.severity());
                                 float remaining = (float) received.power();
@@ -350,7 +351,7 @@ public final class RelayRouter {
             ChannelKey channel,
             TowerManager.Network network,
             RelayPerformance.Sample sample,
-            boolean initial) {
+            boolean initial, UUID emitter) {
         Map<Integer, Double> result = new LinkedHashMap<>();
         if (sample != null) sample.add(INGRESS_PASSES);
         FrequencingType type = source.getFrequencingType();
@@ -380,7 +381,8 @@ public final class RelayRouter {
                                 source.transmissionCap,
                                 type,
                                 port.tower(),
-                                channel);
+                                channel,
+                                dev.paul.simpleradiorepeaters.terrain.TerrainManager.ingressLoss(leg, emitter, port.tower()));
                 if (received != null) {
                     if (sample != null) sample.add(INGRESS_RF_SUCCESSES);
                     best = Math.min(best, received.severity());
