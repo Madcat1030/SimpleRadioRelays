@@ -17,7 +17,7 @@ The transmitter uses its configured AM/FM base. The receiver uses its configured
 
 For example, with AM base power 4,400 and antenna aptitude 10, transmitter powers are 2,200 at ANT 0; 3,380 at ANT 8; and 4,560 at ANT 16. A receiver with base allowance 300 and aptitude 10 has 150, 305 and 460 respectively. Two matching bare stations therefore have about half their previous combined reach before other losses. The receiver still has an allowance that handhelds lack.
 
-Recovery uses physical antenna strength. Relay amplifiers and elevation retain their full existing antenna bonuses; they do not turn a small physical mast into ANT 16 for base recovery. Catalyst efficiency and relay-count decay apply afterward, including the Ender Amplifier's existing decay reset. Directional reception and dimensional propagation compose with the resulting powers as before.
+The Relay screen shows raw physical ANT; the monitor adds a separate effective-strength line for amplifier/elevation bonuses. Recovery uses physical antenna strength. Relay amplifiers and elevation retain their full existing antenna bonuses; they do not turn a small physical mast into ANT 16 for base recovery. Catalyst efficiency and relay-count decay apply afterward, including the Ender Amplifier's existing decay reset. Directional reception and dimensional propagation compose with the resulting powers as before.
 
 ## Configuration
 

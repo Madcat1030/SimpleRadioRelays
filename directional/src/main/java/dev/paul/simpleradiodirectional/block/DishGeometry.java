@@ -7,7 +7,6 @@ import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import java.util.*;
 
 /** One center and eight reservation/selection parts in a 3x3 vertical plane. */

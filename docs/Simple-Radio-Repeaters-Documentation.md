@@ -1,3 +1,5 @@
+> Architecture reference with historical sections. For 0.9r1 changes and current validation, see [release notes](Release-Notes-0.9r1.md) and [development](Development.md).
+
 # Simple Radio Repeaters 0.5.2
 
 Historical implementation notes for 0.5.2. For current setup, use the [README](../README.md); for current build, test and integration details, use [Development](Development.md). Later behavior changes are recorded in the versioned release notes.
@@ -11,7 +13,7 @@ A pair of Fabric Minecraft 1.20.1 addons for **Simple Radio 1.20.1-4.5.7.9**. Th
 | `core` / `simpleradio_repeaters` | Relay, Bank, Transponder, Frequency Cards, three amplifier tiers, antenna scanner, saved tower records, route mapping/updating and delivery hooks |
 | `foci` / `simpleradio_repeaters_foci` | Nether and End focus items/recipes/models, projection policy, optional Nether propagation and native dimensional guards |
 
-Install core on server and clients. Install the matching Foci JAR on both sides to enable its rules. Foci declares a required dependency on the matching core version; Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
+Install core on server and clients. Install Foci on both sides to enable its rules. Foci requires core 0.7.3+ with the same Foci API number; routine release numbers do not need to match. Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
 
 Replace the old 0.4.x addon JAR. Existing Relay/Bank/Transponder/card IDs are unchanged. The two focus IDs also remain `simpleradio_repeaters:nether_focus` and `simpleradio_repeaters:end_focus`, but the expansion now owns their registration and resources. Install both JARs to retain those items. Loading without the expansion follows normal missing-item handling; focus effects and saved projected sites do not remain active.
 
@@ -205,12 +207,12 @@ Use JDK 21 for Gradle/Loom. Release classes target Java 17. `./gradlew build pro
 
 `./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.2/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
 
-`tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
+Production source sets already exclude addon fixtures and test entrypoints. `tools/prototype.gradle` makes a byte-identical copy of each normal release JAR; there is no custom shrinker, class rewriting or obfuscation. `tools/verify_prototypes.py` checks release/copy identity, Java target versions, module boundaries, metadata and absence of test classes. Real microphone playback is outside these automated checks.
 
 0.5.4 adds `NativeMathGameTests`: real native transmitters, receivers and sources provide the reach/travel/severity reference for `NativeRadioAdapter` and `RadioLinkMath`. Coverage includes AM/FM, handheld and tower sender types, native tower power, additive/multiplicative loss, partial incoming power, reception-floor branches, all standard dimensions and coordinates near ±1,000,000. Range-edge probes use an explicit margin outside float rounding uncertainty; power/severity comparisons budget native float ULPs. Cross-world cases separately cover reach passing but travel exhausting the carrier, plus native dimensional OFF. Expansion tests compare the Nether profile with native Foci hooks active and verify antenna-based projections. These fixtures never load the terrain at the radio positions.
 
-Gameplay retains numeric candidate evaluation. Native reference objects exist only in development tests and are stripped from prototype distributions. The exact Simple Radio version constraint cannot identify an upstream binary republished under the same version; validation records the tested dependency hash. A future jar with that version still needs hook compatibility and parity checks.
+Gameplay retains numeric candidate evaluation. Native reference objects exist only in development test source sets and are not packaged in production distributions. The exact Simple Radio version constraint cannot identify an upstream binary republished under the same version; validation records the tested dependency hash. A future jar with that version still needs hook compatibility and parity checks.
 
-## 0.5.0 regression results
+## Historical 0.5.0 regression results
 
 The core-only Minecraft run passes all **41 addon tests**. The combined installation passes all **64 addon tests**, including focus return traffic, native ON/OFF precedence, direct-crossing rejection, the speaker origin gate and live Nether-setting cache changes. All **51 unit tests** pass (49 core, 2 expansion). Both Minecraft runs also execute seven native tests and retain the same four recorded native failures; separated reports are supplied. Test packets use synthetic encoded bytes rather than live microphone audio.

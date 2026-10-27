@@ -3,7 +3,7 @@ plugins { id 'fabric-loom' }
 evaluationDependsOn(':core')
 if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
 
-version = '0.2.9'
+version = rootProject.directional_version
 group = project.maven_group
 base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
 

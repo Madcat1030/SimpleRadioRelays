@@ -199,7 +199,7 @@ public final class TowerManager {
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState previous) {
         var server = level.getServer();
         if (!server.isSameThread()) return;
-        var manager = get(server); if (manager == null) return;
+        var manager = get(server); if (manager == null || manager.antennasByChunk.isEmpty()) return;
         var affected = manager.antennasByChunk.get(new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong()));
         if (affected == null) return;
         for (UUID id : List.copyOf(affected)) {

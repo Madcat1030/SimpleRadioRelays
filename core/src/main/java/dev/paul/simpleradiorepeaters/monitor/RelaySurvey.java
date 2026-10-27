@@ -12,10 +12,10 @@ import java.util.*;
 /** One-hop, first-departure predictions. Never joins the forwarding graph or emits audio. */
 public final class RelaySurvey {
     public record Entry(UUID id, boolean tx, boolean rx, String dimension, @Nullable BlockPos position,
-                        double distance, double terrainPercent, String bearing, boolean mapped, BlockPos compassTarget) {
+                        double distance, double terrainPercent, String bearing, BlockPos compassTarget) {
         public String directionLabel() { return tx && rx ? "TX/RX" : rx ? "RX only" : "TX only"; }
     }
-    public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna,
+    public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna, double effectiveAntenna,
                          int tx, int rx, int other, int pending, List<Entry> entries) {}
     private record Arrival(RadioSpace.Leg leg, double extra, RadioLinkMath.Result signal) {}
     private record Probe(@Nullable Arrival arrival, boolean pending) {}
@@ -57,10 +57,10 @@ public final class RelaySurvey {
             }
             entries.add(new Entry(target.id(), tx, rx, target.dimension(), rx ? target.antennaBase() : null,
                     leg.distance(), leg.distance() == 0 ? 0 : link.extra() / leg.distance() * 100,
-                    bearing, leg.dimensional(), compass));
+                    bearing, compass));
         }
         entries.sort(Comparator.comparing((Entry e) -> !e.rx()).thenComparingDouble(Entry::distance).thenComparing(Entry::id));
-        return new Result(channel, home.antennaBase(), home.dimension(), NativeRadioAdapter.antennaScore(home),
+        return new Result(channel, home.antennaBase(), home.dimension(), home.antennaScore(), NativeRadioAdapter.antennaScore(home),
                 txCount, rxCount, active - rxCount, pending, List.copyOf(entries));
     }
     private static Probe probe(List<RadioSpace.Site> from, List<RadioSpace.Site> to, TowerRecord sender,
@@ -70,7 +70,7 @@ public final class RelaySurvey {
         for (var leg : RadioSpace.between(from, to, dimensional)) {
             var signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel);
             if (signal == null) continue;
-            double extra = TerrainManager.relayLoss(leg, sender, receiver);
+            double extra = TerrainManager.surveyLoss(leg, sender, receiver);
             if (!Double.isFinite(extra)) { pending = true; continue; }
             if (extra > 0) signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel, extra);
             if (signal != null && (best == null || signal.severity() < best.signal().severity()

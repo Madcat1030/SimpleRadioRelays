@@ -457,6 +457,26 @@ public class RepeaterGameTests implements FabricGameTest {
         });
     }
 
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
+    public void quiet_card_removal_notifies_the_relay_without_an_extra_integration_callback(GameTestHelper helper) {
+        var level = helper.getLevel(); var core = helper.absolutePos(new BlockPos(2, 2, 2));
+        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+        var relay = configuredRelay(level, core, 197);
+        helper.runAfterDelay(40, () -> {
+            var manager = TowerManager.get(level.getServer()); var bank = relay.findAssignedBank();
+            check(manager.isEligible(relay.relayId()) && bank != null, "The fixture must have a working bank");
+            var channel = relay.channels().iterator().next(); var before = manager.network(level, channel);
+            var removed = bank.removeItemNoUpdate(0);
+            check(!removed.isEmpty() && relay.channels().isEmpty() && !manager.isEligible(relay.relayId()),
+                    "Direct-container extraction must immediately remove the saved forwarding channel");
+            check(manager.network(level, channel) != before,
+                    "The edit must invalidate cached routes without a separate setChanged call");
+            level.removeBlock(bank.getBlockPos(), false); level.removeBlock(relay.getBlockPos(), false);
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
     public void card_display_cache_tracks_inventory_edits_and_client_update_tags(GameTestHelper helper) {
         var state = SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState();
@@ -470,9 +490,7 @@ public class RepeaterGameTests implements FabricGameTest {
                 "Insertion must replace the display snapshot without mutating the previous one");
         for (int slot = 0; slot < 6; slot++) {
             var card = full.get(slot); var tag = bank.getItem(slot).getTag();
-            check(card.present() && card.frequencyLabel().equals(tag.getString("frequency"))
-                            && card.modulationLabel().equals(tag.getString("modulation"))
-                            && card.label().equals(card.frequencyLabel() + " " + card.modulationLabel()),
+            check(card.present() && card.label().equals(tag.getString("frequency") + " " + tag.getString("modulation")),
                     "Each visible slot must retain its own stored tuning labels");
         }
         for (int frame = 0; frame < 120; frame++) check(bank.displayCards() == full, "Unchanged frames must reuse the same snapshot");
@@ -483,16 +501,15 @@ public class RepeaterGameTests implements FabricGameTest {
         check(!bank.displayCards().get(3).present() && full.get(3).present(), "Removing a card must hide only its current display");
         bank.insert(3, new ItemStack(SimpleRadioRepeaters.CARD), false);
         var blank = bank.displayCards().get(3);
-        check(blank.present() && blank.frequencyLabel().equals("BLANK") && blank.modulationLabel().equals("--") && blank.label().equals("BLANK --"),
+        check(blank.present() && blank.label().equals("BLANK --"),
                 "An inserted untuned card must keep the existing blank labels");
         bank.getItem(0).getOrCreateTag().putString("frequency", "000.77");
         bank.getItem(0).getOrCreateTag().putString("modulation", "FM"); bank.setChanged();
         var retuned = bank.displayCards();
-        check(retuned != full && retuned.get(0).frequencyLabel().equals("000.77") && retuned.get(0).modulationLabel().equals("FM")
-                        && retuned.get(0).label().equals("000.77 FM"),
+        check(retuned != full && retuned.get(0).label().equals("000.77 FM"),
                 "An in-place tuning edit with setChanged must refresh both labels");
         bank.getItem(2).getOrCreateTag().putString("modulation", "invalid"); bank.setChanged();
-        check(bank.displayCards().get(2).frequencyLabel().equals("BLANK"), "Invalid tuning must retain the existing blank-card appearance");
+        check(bank.displayCards().get(2).label().equals("BLANK --"), "Invalid tuning must retain the existing blank-card appearance");
         ChannelBankBlockEntity clientCopy = new ChannelBankBlockEntity(BlockPos.ZERO, state);
         clientCopy.displayCards(); clientCopy.load(bank.getUpdateTag());
         var received = clientCopy.displayCards();

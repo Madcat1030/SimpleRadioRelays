@@ -35,6 +35,7 @@ class FociCompatibilityTest {
                 && d.getModId().equals("simpleradio_repeaters")).findFirst().orElseThrow();
         assertFalse(dependency.matches(Version.parse("0.7.2")));
         assertTrue(dependency.matches(Version.parse("0.7.3")));
+        assertTrue(dependency.matches(Version.parse("0.9.0-rc.1")));
         assertTrue(dependency.matches(Version.parse("0.99.0")));
         assertEquals(FociCompatibility.class.getName(), foci.getAsJsonObject("entrypoints")
                 .getAsJsonArray("preLaunch").get(0).getAsString());

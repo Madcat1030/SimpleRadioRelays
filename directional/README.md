@@ -1,4 +1,4 @@
-# Simple Radio Directional Antenna 0.2.9
+# Simple Radio Directional Antenna 0.9r1
 
 Adds two aimable receiver arrays for Simple Radio towers. **Repeaters and Dimensional Foci are optional.** With Repeaters installed, the same arrays also improve relay reception.
 

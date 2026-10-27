@@ -46,11 +46,11 @@ public class ChannelBankBlockEntity extends BlockEntity implements WorldlyContai
         }
         return displayCards;
     }
-    public record CardDisplay(boolean present, String frequencyLabel, String modulationLabel, String label) {
+    public record CardDisplay(boolean present, String label) {
         private static CardDisplay of(CardState card) {
             boolean tuned = card.channel() != null;
             String frequency = tuned ? card.frequency() : "BLANK", modulation = tuned ? card.modulation() : "--";
-            return new CardDisplay(card.present(), frequency, modulation, frequency + " " + modulation);
+            return new CardDisplay(card.present(), frequency + " " + modulation);
         }
     }
     @Nullable public BlockPos primaryRelayPosition() {
@@ -90,7 +90,7 @@ public class ChannelBankBlockEntity extends BlockEntity implements WorldlyContai
     }
     @Override public ItemStack removeItemNoUpdate(int slot) {
         ItemStack result = ContainerHelper.takeItem(items, slot);
-        if (!result.isEmpty()) displayCards = null;
+        if (!result.isEmpty()) setChanged();
         return result;
     }
     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); stack.setCount(Math.min(1, stack.getCount())); setChanged(); }

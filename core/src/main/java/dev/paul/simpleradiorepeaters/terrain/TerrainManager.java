@@ -92,33 +92,41 @@ public final class TerrainManager {
         return relayLoss(leg, from, to, true);
     }
     public static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to, boolean request) {
+        return relayLoss(leg, from, to, request, request);
+    }
+    /** Surveys share terrain work, but never mark forwarding relays as SCAN/CHECK. */
+    public static double surveyLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to) {
+        return relayLoss(leg, from, to, true, false);
+    }
+    private static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to,
+                                    boolean request, boolean operational) {
         var m = current;
         if (m == null || !RepeatersConfig.INSTANCE.terrain.mode.relayLinks() || !overworld(leg) || leg.distance() == 0) return 0;
         // Legacy records retain ordinary propagation until their first verified mast scan.
         if (from.antennaTip() == null || to.antennaTip() == null) return 0;
         var pair = RelayPair.of(from.id(), to.id());
-        RelayState state = request ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
+        RelayState state = operational ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
         if (!m.tips.containsKey(from.id()) || !m.tips.containsKey(to.id())) {
-            if (request && state != null) state.waitingForTip = true;
+            if (operational && state != null) state.waitingForTip = true;
             return previousLoss(leg.distance(), state);
         }
         var a = tip(from, leg.from()); var b = tip(to, leg.to()); var cfg = RepeatersConfig.INSTANCE.terrain;
         var key = TerrainProfiles.Key.between(Mth.floor(a.x), Mth.floor(a.z), Mth.floor(b.x), Mth.floor(b.z), cfg.sampleSpacing, cfg.maxSamplesPerPath);
-        if (request && state != null) state.waitingForTip = false;
+        if (operational && state != null) state.waitingForTip = false;
         if (m.failed.contains(key)) {
-            if (request && state != null) { state.loss = 0; state.pending = null; }
+            if (operational && state != null) { state.loss = 0; state.pending = null; }
             return 0;
         }
         int[] heights = m.profiles.get(key);
         boolean forward = key.startsAt(Mth.floor(a.x), Mth.floor(a.z));
         double ay = forward ? a.y : b.y, by = forward ? b.y : a.y;
         if (heights == null) {
-            if (request && state != null) state.pending = key;
+            if (operational && state != null) state.pending = key;
             if (request) m.enqueueRelay(key, leg.from().level());
             int[] previous = m.profiles.previous(key);
             if (previous != null) {
                 double loss = fraction(previous, ay, by);
-                if (request && state != null) state.loss = loss;
+                if (operational && state != null) state.loss = loss;
                 return TerrainMath.extraDistance(leg.distance(), loss);
             }
             return previousLoss(leg.distance(), state);
@@ -126,7 +134,7 @@ public final class TerrainManager {
         var ray = new Ray(key, ay, by);
         double loss = m.rays.computeIfAbsent(ray, ignored -> fraction(heights, ay, by));
         trim(m.rays, MAX_RAYS);
-        if (request && state != null) { state.loss = loss; state.pending = null; }
+        if (operational && state != null) { state.loss = loss; state.pending = null; }
         return TerrainMath.extraDistance(leg.distance(), loss);
     }
     private static double previousLoss(double distance, RelayState state) {

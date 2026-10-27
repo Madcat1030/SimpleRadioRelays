@@ -46,6 +46,7 @@ for module in ('core', 'foci', 'directional'):
             assert metadata['entrypoints']['preLaunch'] == ['dev.paul.simpleradiofoci.FociCompatibility']
             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)
         else:
+            assert metadata['version'] == properties['directional_version'].strip()
             assert 'simpleradio_repeaters' not in metadata['depends']
             assert 'simpleradio_repeaters_foci' not in metadata['depends']
             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)

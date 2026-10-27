@@ -4,9 +4,9 @@ Build radio infrastructure that carries conversations between distant settlement
 
 | Mod | Adds | Requires |
 | --- | --- | --- |
-| Repeaters 0.7.6 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
-| Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
-| Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+| Repeaters 0.9r1 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+| Dimensional Foci 0.9r1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+| Directional Antenna 0.9r1 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
 
 ## Install
 
@@ -26,7 +26,7 @@ A bank repeats up to six separate channels. Replace it with a Transponder to tra
 
 Each relay gives the signal fresh transmit power, limited by its catalyst and accumulated relay decay. Amplifiers improve the antenna contribution; the Ender Amplifier also resets power decay. They do not repair audio already damaged along the way. Hearing a tower does not guarantee your handheld can reach it in reply.
 
-By default, block Transmitters, block Receivers and Relays start at 50% of their base power. Physical antenna strength restores it linearly: 75% at ANT 8 and 100% at ANT 16, plus the normal antenna bonuses throughout. Handhelds are unchanged. Set `antennaDependentBasePower` to `false` to disable this [balance rule](docs/Antenna-Power-Balance.md).
+By default, block Transmitters, block Receivers and Relays start at 50% of their base power. Physical antenna strength restores it linearly: 75% at ANT 8 and 100% at ANT 16, plus the normal antenna bonuses throughout. ANT shows the physical mast score; the monitor lists effective strength separately. Handhelds are unchanged. Set `antennaDependentBasePower` to `false` to disable this [balance rule](docs/Antenna-Power-Balance.md).
 
 Overworld relay links use coarse, saved terrain profiles. Taller masts can clear intervening hills. Terrain checks for ordinary device links are off unless the server enables Full mode. See [terrain settings](docs/Terrain-and-Elevation.md).
 
@@ -34,4 +34,4 @@ Plug a [Relay Monitor](docs/Relay-Monitor.md) on top instead to survey one chann
 
 Craft a book with Simple Radio copper wire to get **Simple Radio Relays**, the in-game guide. Installed addons contribute their own chapters. Saved relay towers continue working while unloaded without force-loading chunks.
 
-See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.6.md), or [building and testing](docs/Development.md).
+See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.9r1.md), [text and model review](docs/Text-and-Block-Review.md), or [building and testing](docs/Development.md). Fabric records this release candidate as `0.9.0-rc.1`.

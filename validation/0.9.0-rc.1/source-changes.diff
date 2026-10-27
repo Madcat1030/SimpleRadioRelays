@@ -1,0 +1,671 @@
+--- 0.7.6/README.md
++++ 0.9r1/README.md
+@@ -4,9 +4,9 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.6 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+-| Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+-| Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
++| Repeaters 0.9r1 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Dimensional Foci 0.9r1 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
++| Directional Antenna 0.9r1 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+ ## Install
+ 
+@@ -26,7 +26,7 @@
+ 
+ Each relay gives the signal fresh transmit power, limited by its catalyst and accumulated relay decay. Amplifiers improve the antenna contribution; the Ender Amplifier also resets power decay. They do not repair audio already damaged along the way. Hearing a tower does not guarantee your handheld can reach it in reply.
+ 
+-By default, block Transmitters, block Receivers and Relays start at 50% of their base power. Physical antenna strength restores it linearly: 75% at ANT 8 and 100% at ANT 16, plus the normal antenna bonuses throughout. Handhelds are unchanged. Set `antennaDependentBasePower` to `false` to disable this [balance rule](docs/Antenna-Power-Balance.md).
++By default, block Transmitters, block Receivers and Relays start at 50% of their base power. Physical antenna strength restores it linearly: 75% at ANT 8 and 100% at ANT 16, plus the normal antenna bonuses throughout. ANT shows the physical mast score; the monitor lists effective strength separately. Handhelds are unchanged. Set `antennaDependentBasePower` to `false` to disable this [balance rule](docs/Antenna-Power-Balance.md).
+ 
+ Overworld relay links use coarse, saved terrain profiles. Taller masts can clear intervening hills. Terrain checks for ordinary device links are off unless the server enables Full mode. See [terrain settings](docs/Terrain-and-Elevation.md).
+ 
+@@ -34,4 +34,4 @@
+ 
+ Craft a book with Simple Radio copper wire to get **Simple Radio Relays**, the in-game guide. Installed addons contribute their own chapters. Saved relay towers continue working while unloaded without force-loading chunks.
+ 
+-See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.6.md), or [building and testing](docs/Development.md).
++See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.9r1.md), [text and model review](docs/Text-and-Block-Review.md), or [building and testing](docs/Development.md). Fabric records this release candidate as `0.9.0-rc.1`.
+--- 0.7.6/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
++++ 0.9r1/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
+@@ -264,6 +264,12 @@
+             try {
+                 var profiles = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
+                 var key = TerrainProfiles.Key.between(base.getX(), base.getZ(), base.getX() + 1000, base.getZ(), 64, 1024);
++                check(RelaySurvey.scan(world.getServer(), manager, home, channel).pending() == 1,
++                        "Once tips publish, an unmeasured survey path must queue its own measurement");
++                check(TerrainManager.mappingState(home.id()) == 0 && TerrainManager.mappingState(other.id()) == 0,
++                        "A passive survey must not mark either relay SCAN or CHECK");
++                check(profiles.get(key) != null || ((Number) TerrainManager.statistics().get("pending_relay_profiles")).longValue() > 0,
++                        "A passive survey must still request its own bounded terrain measurement");
+                 profiles.put(key, new int[]{217, 217});
+                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
+                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
+@@ -283,4 +289,19 @@
+             }
+         });
+     }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_raw_antenna")
++    public void surveyDistinguishesRawMastScoreFromAmplifierAndElevationBonuses(GameTestHelper helper) {
++        var world = helper.getLevel(); var manager = TowerManager.get(world.getServer());
++        var base = new BlockPos(2_900_000, 64, -2_900_000);
++        var home = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), base.north(), Set.of(), true,
++                RelayCatalysts.GILDED, true, 10, Set.of(), null, RelayAttachment.AMPLIFIER, null, base);
++        manager.updateSnapshot(home);
++        try {
++            var result = RelaySurvey.scan(world.getServer(), manager, home, CHANNEL);
++            check(result.antenna() == 10 && result.effectiveAntenna() == 17.5,
++                    "ANT must show raw mast progress; the effective value must include the Ender bonus separately");
++            helper.succeed();
++        } finally { remove(manager, List.of(home)); }
++    }
+ }
+--- 0.7.6/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java
++++ 0.9r1/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java
+@@ -457,6 +457,26 @@
+         });
+     }
+ 
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 90)
++    public void quiet_card_removal_notifies_the_relay_without_an_extra_integration_callback(GameTestHelper helper) {
++        var level = helper.getLevel(); var core = helper.absolutePos(new BlockPos(2, 2, 2));
++        level.setBlock(core, Blocks.IRON_BLOCK.defaultBlockState(), 3);
++        level.setBlock(core.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
++        var relay = configuredRelay(level, core, 197);
++        helper.runAfterDelay(40, () -> {
++            var manager = TowerManager.get(level.getServer()); var bank = relay.findAssignedBank();
++            check(manager.isEligible(relay.relayId()) && bank != null, "The fixture must have a working bank");
++            var channel = relay.channels().iterator().next(); var before = manager.network(level, channel);
++            var removed = bank.removeItemNoUpdate(0);
++            check(!removed.isEmpty() && relay.channels().isEmpty() && !manager.isEligible(relay.relayId()),
++                    "Direct-container extraction must immediately remove the saved forwarding channel");
++            check(manager.network(level, channel) != before,
++                    "The edit must invalidate cached routes without a separate setChanged call");
++            level.removeBlock(bank.getBlockPos(), false); level.removeBlock(relay.getBlockPos(), false);
++            helper.succeed();
++        });
++    }
++
+     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+     public void card_display_cache_tracks_inventory_edits_and_client_update_tags(GameTestHelper helper) {
+         var state = SimpleRadioRepeaters.CHANNEL_BANK.defaultBlockState();
+@@ -470,9 +490,7 @@
+                 "Insertion must replace the display snapshot without mutating the previous one");
+         for (int slot = 0; slot < 6; slot++) {
+             var card = full.get(slot); var tag = bank.getItem(slot).getTag();
+-            check(card.present() && card.frequencyLabel().equals(tag.getString("frequency"))
+-                            && card.modulationLabel().equals(tag.getString("modulation"))
+-                            && card.label().equals(card.frequencyLabel() + " " + card.modulationLabel()),
++            check(card.present() && card.label().equals(tag.getString("frequency") + " " + tag.getString("modulation")),
+                     "Each visible slot must retain its own stored tuning labels");
+         }
+         for (int frame = 0; frame < 120; frame++) check(bank.displayCards() == full, "Unchanged frames must reuse the same snapshot");
+@@ -483,16 +501,15 @@
+         check(!bank.displayCards().get(3).present() && full.get(3).present(), "Removing a card must hide only its current display");
+         bank.insert(3, new ItemStack(SimpleRadioRepeaters.CARD), false);
+         var blank = bank.displayCards().get(3);
+-        check(blank.present() && blank.frequencyLabel().equals("BLANK") && blank.modulationLabel().equals("--") && blank.label().equals("BLANK --"),
++        check(blank.present() && blank.label().equals("BLANK --"),
+                 "An inserted untuned card must keep the existing blank labels");
+         bank.getItem(0).getOrCreateTag().putString("frequency", "000.77");
+         bank.getItem(0).getOrCreateTag().putString("modulation", "FM"); bank.setChanged();
+         var retuned = bank.displayCards();
+-        check(retuned != full && retuned.get(0).frequencyLabel().equals("000.77") && retuned.get(0).modulationLabel().equals("FM")
+-                        && retuned.get(0).label().equals("000.77 FM"),
++        check(retuned != full && retuned.get(0).label().equals("000.77 FM"),
+                 "An in-place tuning edit with setChanged must refresh both labels");
+         bank.getItem(2).getOrCreateTag().putString("modulation", "invalid"); bank.setChanged();
+-        check(bank.displayCards().get(2).frequencyLabel().equals("BLANK"), "Invalid tuning must retain the existing blank-card appearance");
++        check(bank.displayCards().get(2).label().equals("BLANK --"), "Invalid tuning must retain the existing blank-card appearance");
+         ChannelBankBlockEntity clientCopy = new ChannelBankBlockEntity(BlockPos.ZERO, state);
+         clientCopy.displayCards(); clientCopy.load(bank.getUpdateTag());
+         var received = clientCopy.displayCards();
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
+@@ -12,6 +12,7 @@
+ public final class RepeatersConfig {
+     private static final Logger LOGGER = LoggerFactory.getLogger("simpleradio_repeaters");
+     public static RepeatersConfig INSTANCE = new RepeatersConfig();
++    private static boolean curveFallback;
+     public int maxRelayHops = 64;
+     public boolean persistentUnloadedTowers = true;
+     public boolean antennaDependentBasePower = true;
+@@ -61,22 +62,39 @@
+         Files.writeString(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"),
+                 new GsonBuilder().setPrettyPrinting().create().toJson(INSTANCE) + "\n");
+     }
+-    /** Parse and validate before replacing the live settings or touching the file. */
++    private record Parsed(RepeatersConfig settings, String curveWarning) {}
++
++    /** Recover only a bad curve; unrelated settings still apply. Malformed JSON is rejected. */
+     static RepeatersConfig parse(String json) {
++        return parse(json, new Terrain().clearanceCurve).settings();
++    }
++    private static Parsed parse(String json, double[][] fallbackCurve) {
+         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+-        RepeatersConfig loaded = new Gson().fromJson(root, RepeatersConfig.class);
++        JsonObject fields = root.deepCopy();
++        JsonObject terrain = fields.has("terrain") && fields.get("terrain").isJsonObject() ? fields.getAsJsonObject("terrain") : null;
++        // Decode the curve separately so a wrong element type cannot reject valid feature switches.
++        JsonElement curve = terrain == null ? null : terrain.remove("clearanceCurve");
++        RepeatersConfig loaded = new Gson().fromJson(fields, RepeatersConfig.class);
+         if (loaded == null) throw new JsonParseException("Expected a configuration object");
+         if (loaded.terrain == null) loaded.terrain = new Terrain();
+-        JsonObject terrain = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
+         if (terrain != null && !terrain.has("formatVersion")) {
+             // Migrate only the old defaults; preserve deliberately different server settings.
+             if (terrain.has("samplesPerTick") && loaded.terrain.samplesPerTick == 4) loaded.terrain.samplesPerTick = 64;
+         }
+-        if (terrain != null) migrateCurve(terrain, loaded.terrain);
++        String warning = null;
++        try {
++            if (curve != null) loaded.terrain.clearanceCurve = new Gson().fromJson(curve, double[][].class);
++            JsonObject source = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
++            if (source != null) migrateCurve(source, loaded.terrain);
++            loaded.terrain.validate();
++        } catch (RuntimeException invalidCurve) {
++            loaded.terrain.clearanceCurve = Arrays.stream(fallbackCurve).map(double[]::clone).toArray(double[][]::new);
++            loaded.terrain.validate();
++            warning = invalidCurve.getMessage() == null ? invalidCurve.getClass().getSimpleName() : invalidCurve.getMessage();
++        }
+         loaded.terrain.formatVersion = 3;
+         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
+-        loaded.terrain.validate();
+-        return loaded;
++        return new Parsed(loaded, warning);
+     }
+     private static void migrateCurve(JsonObject terrain, Terrain loaded) {
+         boolean legacy = terrain.has("nearGroundHeight") || terrain.has("nearGroundLoss") || terrain.has("undergroundLosses")
+@@ -100,18 +118,26 @@
+     public static boolean load() {
+         return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));
+     }
++    public static boolean usedFallbackCurve() { return curveFallback; }
+     static boolean load(Path path) {
+-        RepeatersConfig loaded;
++        Parsed parsed;
+         try {
+-            loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
++            parsed = Files.exists(path) ? parse(Files.readString(path), INSTANCE.terrain.clearanceCurve)
++                    : new Parsed(new RepeatersConfig(), null);
+         } catch (Exception e) {
+             LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
+             return false;
+         }
+-        INSTANCE = loaded;
++        INSTANCE = parsed.settings();
++        curveFallback = parsed.curveWarning() != null;
++        if (curveFallback) {
++            LOGGER.warn("Invalid terrain curve in {}: {}. Other settings are active; keeping the previous curve (defaults at startup). The file was left unchanged for correction.",
++                    path, parsed.curveWarning());
++            return true;
++        }
+         try {
+             Files.createDirectories(path.getParent());
+-            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(loaded) + "\n");
++            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(INSTANCE) + "\n");
+         } catch (Exception e) {
+             LOGGER.warn("Repeater configuration is active, but its normalized file could not be saved to {}", path, e);
+         }
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/block/ChannelBankBlockEntity.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/block/ChannelBankBlockEntity.java
+@@ -46,11 +46,11 @@
+         }
+         return displayCards;
+     }
+-    public record CardDisplay(boolean present, String frequencyLabel, String modulationLabel, String label) {
++    public record CardDisplay(boolean present, String label) {
+         private static CardDisplay of(CardState card) {
+             boolean tuned = card.channel() != null;
+             String frequency = tuned ? card.frequency() : "BLANK", modulation = tuned ? card.modulation() : "--";
+-            return new CardDisplay(card.present(), frequency, modulation, frequency + " " + modulation);
++            return new CardDisplay(card.present(), frequency + " " + modulation);
+         }
+     }
+     @Nullable public BlockPos primaryRelayPosition() {
+@@ -90,7 +90,7 @@
+     }
+     @Override public ItemStack removeItemNoUpdate(int slot) {
+         ItemStack result = ContainerHelper.takeItem(items, slot);
+-        if (!result.isEmpty()) displayCards = null;
++        if (!result.isEmpty()) setChanged();
+         return result;
+     }
+     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); stack.setCount(Math.min(1, stack.getCount())); setChanged(); }
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlock.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayBlock.java
+@@ -17,7 +17,6 @@
+ import net.minecraft.world.level.block.state.*;
+ import net.minecraft.world.level.block.state.properties.*;
+ import net.minecraft.world.phys.BlockHitResult;
+-import org.jetbrains.annotations.Nullable;
+ 
+ public final class RelayBlock extends BaseEntityBlock {
+     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java
+@@ -84,16 +84,17 @@
+         if (index < 0) {
+             text.add("TX OVERVIEW  " + channel);
+             text.add(dimension(reading.dimension())); text.add(coordinates(reading.origin()));
+-            text.add(String.format(Locale.ROOT, "ANT %.1f", reading.antenna()));
++            text.add(String.format(Locale.ROOT, "ANT %.1f (mast)", reading.antenna()));
++            text.add(String.format(Locale.ROOT, "Effective %.1f", reading.effectiveAntenna()));
+             text.add("TX " + reading.tx() + "   RX " + reading.rx());
+             text.add("Other nodes " + reading.other());
+-            text.add(reading.pending() > 0 ? "SCAN " + reading.pending() + " paths" : "Nominal direct links");
++            text.add(reading.pending() > 0 ? "Surveying " + reading.pending() + " paths" : "Nominal direct links");
+         } else {
+             var entry = reading.entries().get(index);
+             text.add(channel + "  " + entry.directionLabel()); text.add(dimension(entry.dimension()));
+             if (entry.rx()) {
+                 text.add(coordinates(Objects.requireNonNull(entry.position())));
+-                text.add(String.format(Locale.ROOT, "%s %.0f blocks", entry.mapped() ? "Mapped" : "Distance", entry.distance()));
++                text.add(String.format(Locale.ROOT, "Radio distance %.0f blocks", entry.distance()));
+                 text.add(String.format(Locale.ROOT, "Terrain +%.1f%%", entry.terrainPercent()));
+             } else {
+                 text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/client/RelayRenderer.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/client/RelayRenderer.java
+@@ -2,8 +2,6 @@
+ 
+ import com.mojang.blaze3d.vertex.PoseStack;
+ import dev.paul.simpleradiorepeaters.block.*;
+-import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
+-import dev.paul.simpleradiorepeaters.radio.RelayPower;
+ import net.minecraft.client.gui.Font;
+ import net.minecraft.client.Minecraft;
+ import net.minecraft.client.renderer.MultiBufferSource;
+@@ -40,7 +38,7 @@
+         }
+         int status = relay.displayStatus();
+         String label = status >= 0 && status < STATUS.length ? STATUS[status] : "WAIT";
+-        long antenna = Math.round(RelayPower.antennaScore(relay.getAntennaPower(), relay.attachmentType().antennaMultiplier()));
++        long antenna = Math.round(relay.getAntennaPower());
+         DeviceRendering.text(font, "ANT " + antenna, 8, 11.8, -1, 8, .008f, 0xffb5d994, pose, buffers);
+         DeviceRendering.text(font, label, 8, 10.6, -1, 8, .008f, status == RelayBlockEntity.READY ? 0xff91d25f : 0xffd7b766, pose, buffers);
+         DeviceRendering.text(font, "LINK " + relay.displayPeers(), 8, 9.4, -1, 8, .008f, 0xffb5d994, pose, buffers);
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java
+@@ -12,10 +12,10 @@
+ /** One-hop, first-departure predictions. Never joins the forwarding graph or emits audio. */
+ public final class RelaySurvey {
+     public record Entry(UUID id, boolean tx, boolean rx, String dimension, @Nullable BlockPos position,
+-                        double distance, double terrainPercent, String bearing, boolean mapped, BlockPos compassTarget) {
++                        double distance, double terrainPercent, String bearing, BlockPos compassTarget) {
+         public String directionLabel() { return tx && rx ? "TX/RX" : rx ? "RX only" : "TX only"; }
+     }
+-    public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna,
++    public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna, double effectiveAntenna,
+                          int tx, int rx, int other, int pending, List<Entry> entries) {}
+     private record Arrival(RadioSpace.Leg leg, double extra, RadioLinkMath.Result signal) {}
+     private record Probe(@Nullable Arrival arrival, boolean pending) {}
+@@ -57,10 +57,10 @@
+             }
+             entries.add(new Entry(target.id(), tx, rx, target.dimension(), rx ? target.antennaBase() : null,
+                     leg.distance(), leg.distance() == 0 ? 0 : link.extra() / leg.distance() * 100,
+-                    bearing, leg.dimensional(), compass));
++                    bearing, compass));
+         }
+         entries.sort(Comparator.comparing((Entry e) -> !e.rx()).thenComparingDouble(Entry::distance).thenComparing(Entry::id));
+-        return new Result(channel, home.antennaBase(), home.dimension(), NativeRadioAdapter.antennaScore(home),
++        return new Result(channel, home.antennaBase(), home.dimension(), home.antennaScore(), NativeRadioAdapter.antennaScore(home),
+                 txCount, rxCount, active - rxCount, pending, List.copyOf(entries));
+     }
+     private static Probe probe(List<RadioSpace.Site> from, List<RadioSpace.Site> to, TowerRecord sender,
+@@ -70,7 +70,7 @@
+         for (var leg : RadioSpace.between(from, to, dimensional)) {
+             var signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel);
+             if (signal == null) continue;
+-            double extra = TerrainManager.relayLoss(leg, sender, receiver);
++            double extra = TerrainManager.surveyLoss(leg, sender, receiver);
+             if (!Double.isFinite(extra)) { pending = true; continue; }
+             if (extra > 0) signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel, extra);
+             if (signal != null && (best == null || signal.severity() < best.signal().severity()
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java
+@@ -199,7 +199,7 @@
+     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState previous) {
+         var server = level.getServer();
+         if (!server.isSameThread()) return;
+-        var manager = get(server); if (manager == null) return;
++        var manager = get(server); if (manager == null || manager.antennasByChunk.isEmpty()) return;
+         var affected = manager.antennasByChunk.get(new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong()));
+         if (affected == null) return;
+         for (UUID id : List.copyOf(affected)) {
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainCommands.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainCommands.java
+@@ -20,6 +20,9 @@
+                         return 0;
+                     }
+                     TerrainManager.reconfigure(c.getSource().getServer());
++                    if (RepeatersConfig.usedFallbackCurve())
++                        c.getSource().sendSuccess(() -> Component.translatable("message.simpleradio_repeaters.terrain_curve_fallback")
++                                .withStyle(net.minecraft.ChatFormatting.YELLOW), false);
+                     if (previousBalance != RepeatersConfig.INSTANCE.antennaDependentBasePower)
+                         dev.paul.simpleradiorepeaters.network.TowerManager.resourcesReloaded(
+                                 c.getSource().getServer(), "antenna_balance_changed");
+--- 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
++++ 0.9r1/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java
+@@ -92,33 +92,41 @@
+         return relayLoss(leg, from, to, true);
+     }
+     public static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to, boolean request) {
++        return relayLoss(leg, from, to, request, request);
++    }
++    /** Surveys share terrain work, but never mark forwarding relays as SCAN/CHECK. */
++    public static double surveyLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to) {
++        return relayLoss(leg, from, to, true, false);
++    }
++    private static double relayLoss(RadioSpace.Leg leg, TowerRecord from, TowerRecord to,
++                                    boolean request, boolean operational) {
+         var m = current;
+         if (m == null || !RepeatersConfig.INSTANCE.terrain.mode.relayLinks() || !overworld(leg) || leg.distance() == 0) return 0;
+         // Legacy records retain ordinary propagation until their first verified mast scan.
+         if (from.antennaTip() == null || to.antennaTip() == null) return 0;
+         var pair = RelayPair.of(from.id(), to.id());
+-        RelayState state = request ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
++        RelayState state = operational ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);
+         if (!m.tips.containsKey(from.id()) || !m.tips.containsKey(to.id())) {
+-            if (request && state != null) state.waitingForTip = true;
++            if (operational && state != null) state.waitingForTip = true;
+             return previousLoss(leg.distance(), state);
+         }
+         var a = tip(from, leg.from()); var b = tip(to, leg.to()); var cfg = RepeatersConfig.INSTANCE.terrain;
+         var key = TerrainProfiles.Key.between(Mth.floor(a.x), Mth.floor(a.z), Mth.floor(b.x), Mth.floor(b.z), cfg.sampleSpacing, cfg.maxSamplesPerPath);
+-        if (request && state != null) state.waitingForTip = false;
++        if (operational && state != null) state.waitingForTip = false;
+         if (m.failed.contains(key)) {
+-            if (request && state != null) { state.loss = 0; state.pending = null; }
++            if (operational && state != null) { state.loss = 0; state.pending = null; }
+             return 0;
+         }
+         int[] heights = m.profiles.get(key);
+         boolean forward = key.startsAt(Mth.floor(a.x), Mth.floor(a.z));
+         double ay = forward ? a.y : b.y, by = forward ? b.y : a.y;
+         if (heights == null) {
+-            if (request && state != null) state.pending = key;
++            if (operational && state != null) state.pending = key;
+             if (request) m.enqueueRelay(key, leg.from().level());
+             int[] previous = m.profiles.previous(key);
+             if (previous != null) {
+                 double loss = fraction(previous, ay, by);
+-                if (request && state != null) state.loss = loss;
++                if (operational && state != null) state.loss = loss;
+                 return TerrainMath.extraDistance(leg.distance(), loss);
+             }
+             return previousLoss(leg.distance(), state);
+@@ -126,7 +134,7 @@
+         var ray = new Ray(key, ay, by);
+         double loss = m.rays.computeIfAbsent(ray, ignored -> fraction(heights, ay, by));
+         trim(m.rays, MAX_RAYS);
+-        if (request && state != null) { state.loss = loss; state.pending = null; }
++        if (operational && state != null) { state.loss = loss; state.pending = null; }
+         return TerrainMath.extraDistance(leg.distance(), loss);
+     }
+     private static double previousLoss(double distance, RelayState state) {
+--- 0.7.6/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.9r1/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -23,7 +23,7 @@
+   "handbook.simpleradio_repeaters.start.title": "Your First Relay",
+   "handbook.simpleradio_repeaters.start.text_0": "You will need five things to start up your new radio network:\n1) An existing tower\n2) A Relay\n3) A Repeater Bank\n4) A Frequency Card\n5) A Catalyst\n\nAttach your new Relay to an existing Simple Radio tower's core. Unlike a Receiver or Transmitter, the Relay does not work on its own. It requires an antenna atop the core, or an antenna connected through wired insulators. Install a Catalyst as well, which sets the maximum strength of relayed transmissions.\n\nConnect a Repeater Bank to the top of your new Relay. While this block does nothing on its own, it is required to process the signals for relaying.\n\nCraft one or more Frequency Cards and tune them at the Radiosmithing Station. Each Repeater Bank allows a Relay to repeat up to six frequencies. Install a tuned Frequency Card into your Repeater Bank, and it's good to go.\n\nCongratulations! You have set up a Simple Radio Relay! Users with transceivers or other Simple Radio devices in receiving range of this tower can now hear signals from users who can transmit to it, even if those users are out of range of each other.\n\nBuild more Simple Radio Relay Towers to extend the network even further! Signals lose power over successive hops. Better Catalysts and upgrades can help on larger networks.",
+   "handbook.simpleradio_repeaters.relay.title": "The Relay",
+-  "handbook.simpleradio_repeaters.relay.text_1": "The Relay block is the core of your new relay network. Place it beside a metal core with an attached antenna to extend your network through the other compatible devices. It has two slots and one connection point.\n\nWith default settings, block Transmitters, block Receivers and Relays use half their base power without an antenna. Each antenna point restores some of it: 75% at ANT 8 and full base power at ANT 16. Normal antenna bonuses are added throughout. Handhelds are unchanged. A Relay still needs a real antenna to work.\n\nThe Relay requires a Catalyst to function. The standard catalysts are an amethyst block and gilded blackstone. Your choice determines how much of the tower's power this Relay can use to boost transmissions.\n\nWith each successive jump across a network, the available boost drops by 10%. A better catalyst means your towers don't need to be as enormous to carry messages across a few extreme-distance jumps.\n\nThe optional upgrade slot can improve the Relay's power, counter relay degradation, or add other abilities. See Amplifiers for more details.",
++  "handbook.simpleradio_repeaters.relay.text_1": "The Relay block is the core of your new relay network. Place it beside a metal core with an attached antenna to extend your network through the other compatible devices. It has two slots and one connection point.\n\nWith default settings, block Transmitters, block Receivers and Relays use half their base power without an antenna. Each antenna point restores some of it: 75% at ANT 8 and full base power at ANT 16. ANT shows the physical mast score; amplifier and elevation bonuses do not count toward ANT 16. The monitor shows effective strength separately. Normal antenna bonuses are added throughout. Handhelds are unchanged. A Relay still needs a real antenna to work.\n\nThe Relay requires a Catalyst to function. The standard catalysts are an amethyst block and gilded blackstone. Your choice determines how much of the tower's power this Relay can use to boost transmissions.\n\nWith each successive jump across a network, the available boost drops by 10%. A better catalyst means your towers don't need to be as enormous to carry messages across a few extreme-distance jumps.\n\nThe optional upgrade slot can improve the Relay's power, counter relay degradation, or add other abilities. See Amplifiers for more details.",
+   "handbook.simpleradio_repeaters.bank.title": "The Repeater Bank",
+   "handbook.simpleradio_repeaters.bank.text_1": "The Repeater Bank lets you select which frequencies your new Relay forwards. Attach it directly to the top of your Relay block to get it working.\n\nInstall tuned cards by right-clicking an available front slot. Right-click an inserted card with an empty hand to remove it.\n\nForwarding multiple signals on a single Relay does not combine those channels; they are all kept separate.",
+   "handbook.simpleradio_repeaters.transponder.title": "The Transponder",
+@@ -42,6 +42,7 @@
+   "message.simpleradio_repeaters.monitor_bound": "Compass bound to relay in %s.",
+   "message.simpleradio_repeaters.monitor_target_gone": "The selected relay is no longer available.",
+   "handbook.simpleradio_repeaters.monitor.title": "The Relay Monitor",
+-  "handbook.simpleradio_repeaters.monitor.text": "Plug a Relay Monitor into the top of a Relay instead of a Repeater Bank or Transponder. It is a passive diagnostic attachment and does not repeat signals. A valid antenna, catalyst and tuned Frequency Card are required to survey links.\n\nThe overview shows this antenna's coordinates, antenna strength, direct TX and RX counts, and other active nodes on the selected frequency and modulation. TX/RX towers count in both totals. Other nodes includes TX-only towers and nodes outside direct hearing range, including saved unloaded towers; this count does not promise a path through the network.\n\nClick the screen with an empty hand to cycle through heard towers, approximate TX-only entries, then back to the overview. Heard towers show coordinates, direct distance and terrain extra distance, with TX/RX or RX only. TX-only pages show a sixteen-point bearing such as SSE or WNW and a rounded distance instead of coordinates.\n\nUse a compass on the screen to bind one compass to the selected tower. The overview binds your own tower. A TX-only page binds to the displayed bearing and rounded distance, giving an approximate location. A heard tower gives an exact target. An existing compass stays unchanged if reception improves; bind it again for the exact position. No lodestone is needed. The compass stores a fixed position and works in the target dimension. Clicking with a compass does not change pages.\n\nPredictions use fresh first-relay power and the normal antenna, amplifier, directional and dimensional calculations. An already-weakened message may fail a nominal link. Initial terrain mapping shows SCAN; established paths keep their last environmental result during remapping.",
+-  "message.simpleradio_repeaters.monitor_bound_estimate": "Compass bound to estimated relay location in %s."
++  "handbook.simpleradio_repeaters.monitor.text": "Plug a Relay Monitor into the top of a Relay instead of a Repeater Bank or Transponder. It is a passive diagnostic attachment and does not repeat signals. A valid antenna, catalyst and tuned Frequency Card are required to survey links.\n\nThe overview shows this antenna's coordinates, raw mast strength (ANT), effective antenna strength including amplifier and elevation bonuses, direct TX and RX counts, and other active nodes on the selected frequency and modulation. TX/RX towers count in both totals. Other nodes includes TX-only towers and nodes outside direct hearing range, including saved unloaded towers; this count does not promise a path through the network.\n\nClick the screen with an empty hand to cycle through heard towers, approximate TX-only entries, then back to the overview. Heard towers show coordinates, radio distance and terrain extra distance, with TX/RX or RX only. TX-only pages show a sixteen-point bearing such as SSE or WNW and a rounded distance instead of coordinates.\n\nUse a compass on the screen to bind one compass to the selected tower. The overview binds your own tower. A TX-only page binds to the displayed bearing and rounded distance, giving an approximate location. A heard tower gives an exact target. An existing compass stays unchanged if reception improves; bind it again for the exact position. No lodestone is needed. The compass stores a fixed position and works in the target dimension. Clicking with a compass does not change pages.\n\nPredictions use fresh first-relay power and the normal antenna, amplifier, directional and dimensional calculations. An already-weakened message may fail a nominal link. Radio distance includes dimension and propagation scaling, before terrain extra distance. The monitor shows its own survey progress; surveying does not change another Relay's SCAN or CHECK status. Established paths keep their last environmental result during remapping.",
++  "message.simpleradio_repeaters.monitor_bound_estimate": "Compass bound to estimated relay location in %s.",
++  "message.simpleradio_repeaters.terrain_curve_fallback": "Other settings loaded, but the terrain curve is invalid. The previous curve remains active (defaults at startup). Correct the curve and reload; the file was left unchanged."
+ }
+--- 0.7.6/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
++++ 0.9r1/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
+@@ -60,9 +60,52 @@
+             assertEquals("{invalid", Files.readString(config));
+             String badCurve = "{\"terrain\":{\"clearanceCurve\":[[8,0],[8,1]]}}";
+             Files.writeString(config, badCurve);
+-            assertFalse(RepeatersConfig.load(config));
+-            assertSame(live, RepeatersConfig.INSTANCE);
++            assertTrue(RepeatersConfig.load(config));
++            assertTrue(RepeatersConfig.usedFallbackCurve());
++            assertArrayEquals(live.terrain.clearanceCurve[4], RepeatersConfig.INSTANCE.terrain.clearanceCurve[4]);
+             assertEquals(badCurve, Files.readString(config));
++        } finally { RepeatersConfig.INSTANCE = previous; }
++    }
++
++    @Test void invalidCurveAtStartupKeepsUnrelatedSettingsAndTheOriginalFile() throws Exception {
++        Path config = directory.resolve("simpleradio-repeaters.json");
++        var previous = RepeatersConfig.INSTANCE;
++        try {
++            for (String curve : new String[]{"null", "\"bad\"", "[[8,0],[0,\"bad\"]]", "[[8,0],[8,1]]", "[[8,0],[0,5]]"}) {
++                RepeatersConfig.INSTANCE = new RepeatersConfig();
++                String json = "{\"maxRelayHops\":23,\"persistentUnloadedTowers\":false,\"antennaDependentBasePower\":false,"
++                        + "\"terrain\":{\"mode\":\"off\",\"sampleSpacing\":128,\"clearanceCurve\":" + curve + "}}";
++                Files.writeString(config, json);
++                assertTrue(RepeatersConfig.load(config));
++                assertTrue(RepeatersConfig.usedFallbackCurve());
++                assertEquals(23, RepeatersConfig.INSTANCE.maxRelayHops);
++                assertFalse(RepeatersConfig.INSTANCE.persistentUnloadedTowers);
++                assertFalse(RepeatersConfig.INSTANCE.antennaDependentBasePower);
++                assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.OFF, RepeatersConfig.INSTANCE.terrain.mode);
++                assertEquals(128, RepeatersConfig.INSTANCE.terrain.sampleSpacing);
++                assertEquals(3, loss(RepeatersConfig.INSTANCE, -128));
++                assertEquals(json, Files.readString(config));
++            }
++        } finally { RepeatersConfig.INSTANCE = previous; }
++    }
++
++    @Test void badCurveReloadKeepsThePreviousCustomCurveWithoutAliasingAndThenRecovers() throws Exception {
++        Path config = directory.resolve("simpleradio-repeaters.json");
++        var previous = RepeatersConfig.INSTANCE;
++        try {
++            RepeatersConfig.INSTANCE = RepeatersConfig.parse("{\"terrain\":{\"clearanceCurve\":[[10,0],[0,0.02],[-64,1.5]]}}");
++            var oldCurve = RepeatersConfig.INSTANCE.terrain.clearanceCurve;
++            Files.writeString(config, "{\"antennaDependentBasePower\":false,\"terrain\":{\"mode\":\"off\",\"clearanceCurve\":[[8,0],[8,1]]}}");
++            assertTrue(RepeatersConfig.load(config));
++            assertTrue(RepeatersConfig.usedFallbackCurve());
++            assertEquals(.02, loss(RepeatersConfig.INSTANCE, 0));
++            assertNotSame(oldCurve, RepeatersConfig.INSTANCE.terrain.clearanceCurve);
++            assertNotSame(oldCurve[1], RepeatersConfig.INSTANCE.terrain.clearanceCurve[1]);
++            Files.writeString(config, "{\"terrain\":{\"clearanceCurve\":[[8,0],[0,0.03],[-64,2]]}}");
++            assertTrue(RepeatersConfig.load(config));
++            assertFalse(RepeatersConfig.usedFallbackCurve());
++            assertEquals(.03, loss(RepeatersConfig.INSTANCE, 0));
++            assertTrue(Files.readString(config).contains("\"formatVersion\": 3"));
+         } finally { RepeatersConfig.INSTANCE = previous; }
+     }
+ 
+--- 0.7.6/directional/README.md
++++ 0.9r1/directional/README.md
+@@ -1,4 +1,4 @@
+-# Simple Radio Directional Antenna 0.2.9
++# Simple Radio Directional Antenna 0.9r1
+ 
+ Adds two aimable receiver arrays for Simple Radio towers. **Repeaters and Dimensional Foci are optional.** With Repeaters installed, the same arrays also improve relay reception.
+ 
+--- 0.7.6/directional/build.gradle
++++ 0.9r1/directional/build.gradle
+@@ -3,7 +3,7 @@
+ evaluationDependsOn(':core')
+ if (project.hasProperty('withFoci')) evaluationDependsOn(':foci')
+ 
+-version = '0.2.9'
++version = rootProject.directional_version
+ group = project.maven_group
+ base { archivesName = 'simple-radio-directional-antenna-fabric-1.20.1' }
+ 
+--- 0.7.6/directional/src/main/java/dev/paul/simpleradiodirectional/block/DishGeometry.java
++++ 0.9r1/directional/src/main/java/dev/paul/simpleradiodirectional/block/DishGeometry.java
+@@ -7,7 +7,6 @@
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.level.*;
+ import net.minecraft.world.level.block.Block;
+-import net.minecraft.world.level.block.state.BlockState;
+ import java.util.*;
+ 
+ /** One center and eight reservation/selection parts in a 3x3 vertical plane. */
+--- 0.7.6/docs/Antenna-Power-Balance.md
++++ 0.9r1/docs/Antenna-Power-Balance.md
+@@ -17,7 +17,7 @@
+ 
+ For example, with AM base power 4,400 and antenna aptitude 10, transmitter powers are 2,200 at ANT 0; 3,380 at ANT 8; and 4,560 at ANT 16. A receiver with base allowance 300 and aptitude 10 has 150, 305 and 460 respectively. Two matching bare stations therefore have about half their previous combined reach before other losses. The receiver still has an allowance that handhelds lack.
+ 
+-Recovery uses physical antenna strength. Relay amplifiers and elevation retain their full existing antenna bonuses; they do not turn a small physical mast into ANT 16 for base recovery. Catalyst efficiency and relay-count decay apply afterward, including the Ender Amplifier's existing decay reset. Directional reception and dimensional propagation compose with the resulting powers as before.
++The Relay screen shows raw physical ANT; the monitor adds a separate effective-strength line for amplifier/elevation bonuses. Recovery uses physical antenna strength. Relay amplifiers and elevation retain their full existing antenna bonuses; they do not turn a small physical mast into ANT 16 for base recovery. Catalyst efficiency and relay-count decay apply afterward, including the Ender Amplifier's existing decay reset. Directional reception and dimensional propagation compose with the resulting powers as before.
+ 
+ ## Configuration
+ 
+--- 0.7.6/docs/Development.md
++++ 0.9r1/docs/Development.md
+@@ -71,3 +71,11 @@
+ `TowerPower` owns the shared base multiplier. Two composable return-value hooks adjust only native block Transmitter/Receiver types; handheld, Radio and third-party frequencing types retain their power. `NativeRadioAdapter` uses the same rule for virtual tower TX and RX, before catalyst/hop limits and optional reception integrations. Recovery uses the saved raw antenna score; effective amplifier/elevation bonuses remain additive. Native source initialization picks up the adjusted power, while already-powered packets are not scaled again. No shared native configuration value is rewritten.
+ 
+ The boolean `antennaDependentBasePower` is independent of terrain mode and participates in the existing configuration fingerprint. The existing config reload path invalidates graphs without discarding terrain samples. Operator diagnostics record the flag and ANT-zero powers. `TowerPowerGameTests` covers native power/reach/travel, disabled parity, unchanged radio types, amplifier/catalyst/decay interaction and saved-only graph changes.
++
++## Release-candidate housekeeping (0.9r1)
++
++`TerrainManager.surveyLoss` can enqueue shared height profiles without changing operational pending markers. Observing an existing operational path does not clear its status. Monitor ANT reports the raw mast score, with effective strength separately; Radio distance consistently means propagation-scaled distance before terrain.
++
++A bad terrain curve is decoded independently of other settings. Startup uses the default curve; reload retains the previous valid curve. Other valid settings apply, a warning is reported, and the input file is preserved for correction. Malformed JSON still rejects the load. Quiet card extraction now uses the same change notification as normal removal, including saved routing and display cache updates; sided automation remains disabled.
++
++Run `python3 tools/export_review_pack.py /absolute/output/path` to export all English resources, ordered handbook content, screen/command templates, recipes, current model assets and retained native reference captures for editorial review. The exporter does not change gameplay resources.
+--- 0.7.6/docs/Relay-Monitor.md
++++ 0.9r1/docs/Relay-Monitor.md
+@@ -1,4 +1,4 @@
+-# Relay Monitor — Repeaters 0.7.6
++# Relay Monitor — Repeaters 0.9r1
+ 
+ The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
+ 
+@@ -6,7 +6,7 @@
+ 
+ ## Overview and pages
+ 
+-The overview shows the antenna base coordinates and dimension, effective antenna strength, TX and RX counts, and other active nodes on the channel.
++The overview shows the antenna base coordinates and dimension, physical mast strength (ANT), effective antenna strength including amplifier and elevation bonuses, TX and RX counts, and other active nodes on the channel. ANT is the raw score used for base-power recovery through ANT 16.
+ 
+ - **TX:** configured nodes this tower can directly transmit to.
+ - **RX:** configured nodes this tower can directly hear.
+@@ -18,13 +18,13 @@
+ 
+ | Page | Information |
+ | --- | --- |
+-| TX/RX | Destination antenna coordinates, dimension, direct distance, terrain extra-distance percentage |
++| TX/RX | Destination antenna coordinates, dimension, radio distance, terrain extra-distance percentage |
+ | RX only | The same details, with RX only identifying the missing return direction |
+ | TX only | Dimension, a 16-point bearing such as SSE or WNW, and approximate distance; no exact coordinates or terrain figures |
+ 
+ TX-only distances round to the nearest 500 blocks. Below 500 blocks they round to 50 blocks to avoid reporting a zero-distance target. Exact TX-only coordinates are omitted from client display data, not merely hidden by the renderer.
+ 
+-For focus-projected or cross-dimensional links, the distance is labelled **Mapped** and uses the normal effective radio distance. Coordinates identify the physical destination antenna. Interdimensional links do not acquire Overworld terrain attenuation.
++**Radio distance** includes the selected link's dimensional and propagation scaling, before terrain extra distance. In an ordinary Overworld link it equals direct distance. Coordinates identify the physical destination antenna. Interdimensional links do not acquire Overworld terrain attenuation.
+ 
+ Click the inserted card with an empty hand to remove it. Card actions work only through the front face. Hoppers have no inventory access; direct container integrations remain available as with existing card banks.
+ 
+@@ -46,7 +46,7 @@
+ 
+ Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The renderer only draws the current synchronized text page; it performs no network or terrain work.
+ 
+-Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a SCAN count. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
++Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a Surveying count on the monitor. Survey requests do not add operational SCAN/CHECK markers to either relay. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
+ 
+ ## Recipe
+ 
+--- 0.7.6/docs/Simple-Radio-Repeaters-Documentation.md
++++ 0.9r1/docs/Simple-Radio-Repeaters-Documentation.md
+@@ -1,3 +1,5 @@
++> Architecture reference with historical sections. For 0.9r1 changes and current validation, see [release notes](Release-Notes-0.9r1.md) and [development](Development.md).
++
+ # Simple Radio Repeaters 0.5.2
+ 
+ Historical implementation notes for 0.5.2. For current setup, use the [README](../README.md); for current build, test and integration details, use [Development](Development.md). Later behavior changes are recorded in the versioned release notes.
+@@ -11,7 +13,7 @@
+ | `core` / `simpleradio_repeaters` | Relay, Bank, Transponder, Frequency Cards, three amplifier tiers, antenna scanner, saved tower records, route mapping/updating and delivery hooks |
+ | `foci` / `simpleradio_repeaters_foci` | Nether and End focus items/recipes/models, projection policy, optional Nether propagation and native dimensional guards |
+ 
+-Install core on server and clients. Install the matching Foci JAR on both sides to enable its rules. Foci declares a required dependency on the matching core version; Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
++Install core on server and clients. Install Foci on both sides to enable its rules. Foci requires core 0.7.3+ with the same Foci API number; routine release numbers do not need to match. Fabric rejects an addon-only installation before game startup. Core has no dependency on the expansion. Both use Simple Radio 1.20.1-4.5.7.9, Fabric API, Fabric Loader 0.19.0+, Java 17+ and Simple Voice Chat 1.20.1-2.6.0+. Include Simple Radio's Lexiconfig dependency.
+ 
+ Replace the old 0.4.x addon JAR. Existing Relay/Bank/Transponder/card IDs are unchanged. The two focus IDs also remain `simpleradio_repeaters:nether_focus` and `simpleradio_repeaters:end_focus`, but the expansion now owns their registration and resources. Install both JARs to retain those items. Loading without the expansion follows normal missing-item handling; focus effects and saved projected sites do not remain active.
+ 
+@@ -205,12 +207,12 @@
+ 
+ `./gradlew --continue :core:runGameTest :foci:runGameTest` exercises core alone and core plus expansion. Current evidence is recorded under `validation/0.5.2/`; older validation directories remain historical. Reports distinguish addon tests from the four previously recorded native headless failures (`shortCircuit`, `garbageCollection`, `openSystem`, `closedSystem`). Their causes remain unresolved and they are not established live-server bugs.
+ 
+-`tools/PrototypeJar.java` removes addon fixtures/test entrypoints and audited test-only core overloads. It does not rename, optimize or rewrite retained gameplay methods. `tools/verify_prototypes.py` independently compares retained method bytes/debug data, fields, constant pools, resources and mixin configuration with the full builds. Production checks use the actual prototype JARs with JVM verification enabled. Real microphone playback is outside these automated checks.
++Production source sets already exclude addon fixtures and test entrypoints. `tools/prototype.gradle` makes a byte-identical copy of each normal release JAR; there is no custom shrinker, class rewriting or obfuscation. `tools/verify_prototypes.py` checks release/copy identity, Java target versions, module boundaries, metadata and absence of test classes. Real microphone playback is outside these automated checks.
+ 
+ 0.5.4 adds `NativeMathGameTests`: real native transmitters, receivers and sources provide the reach/travel/severity reference for `NativeRadioAdapter` and `RadioLinkMath`. Coverage includes AM/FM, handheld and tower sender types, native tower power, additive/multiplicative loss, partial incoming power, reception-floor branches, all standard dimensions and coordinates near ±1,000,000. Range-edge probes use an explicit margin outside float rounding uncertainty; power/severity comparisons budget native float ULPs. Cross-world cases separately cover reach passing but travel exhausting the carrier, plus native dimensional OFF. Expansion tests compare the Nether profile with native Foci hooks active and verify antenna-based projections. These fixtures never load the terrain at the radio positions.
+ 
+-Gameplay retains numeric candidate evaluation. Native reference objects exist only in development tests and are stripped from prototype distributions. The exact Simple Radio version constraint cannot identify an upstream binary republished under the same version; validation records the tested dependency hash. A future jar with that version still needs hook compatibility and parity checks.
+-
+-## 0.5.0 regression results
++Gameplay retains numeric candidate evaluation. Native reference objects exist only in development test source sets and are not packaged in production distributions. The exact Simple Radio version constraint cannot identify an upstream binary republished under the same version; validation records the tested dependency hash. A future jar with that version still needs hook compatibility and parity checks.
++
++## Historical 0.5.0 regression results
+ 
+ The core-only Minecraft run passes all **41 addon tests**. The combined installation passes all **64 addon tests**, including focus return traffic, native ON/OFF precedence, direct-crossing rejection, the speaker origin gate and live Nether-setting cache changes. All **51 unit tests** pass (49 core, 2 expansion). Both Minecraft runs also execute seven native tests and retain the same four recorded native failures; separated reports are supplied. Test packets use synthetic encoded bytes rather than live microphone audio.
+--- 0.7.6/docs/Terrain-and-Elevation.md
++++ 0.9r1/docs/Terrain-and-Elevation.md
+@@ -95,7 +95,7 @@
+ }
+ ```
+ 
+-Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. Invalid curves reject the reload and keep the live configuration. Editing the curve recalculates penalties from the saved ground samples; it does not remap the terrain.
++Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. A bad curve retains the previous valid curve, or defaults at startup; valid unrelated settings still apply. The log and reload command report this fallback, and the file is left unchanged for correction. Editing a valid curve recalculates penalties from saved ground samples; it does not remap the terrain.
+ 
+ The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
+ 
+@@ -111,7 +111,7 @@
+ | `/radiorepeaters terrain off` | Restore original propagation and stop sampling |
+ | `/radiorepeaters terrain relay_mapping` | Enable cached relay terrain and elevation |
+ | `/radiorepeaters terrain full` | Also enable endpoint checks |
+-| `/radiorepeaters terrain reload` | Reload JSON; report failure and keep current settings if invalid |
++| `/radiorepeaters terrain reload` | Reload settings; warn and retain the previous curve if that field is invalid; reject malformed JSON |
+ | `/radiorepeaters terrain clear` | Remap profiles while existing links retain their previous penalty |
+ 
+ The three mode commands save their changes. `/radiorepeaters test` captures terrain settings and cumulative work statistics. `/radiorepeaters diagnose` inspects existing results without starting height sampling.
+--- 0.7.6/foci/src/test/java/dev/paul/simpleradiofoci/FociCompatibilityTest.java
++++ 0.9r1/foci/src/test/java/dev/paul/simpleradiofoci/FociCompatibilityTest.java
+@@ -35,6 +35,7 @@
+                 && d.getModId().equals("simpleradio_repeaters")).findFirst().orElseThrow();
+         assertFalse(dependency.matches(Version.parse("0.7.2")));
+         assertTrue(dependency.matches(Version.parse("0.7.3")));
++        assertTrue(dependency.matches(Version.parse("0.9.0-rc.1")));
+         assertTrue(dependency.matches(Version.parse("0.99.0")));
+         assertEquals(FociCompatibility.class.getName(), foci.getAsJsonObject("entrypoints")
+                 .getAsJsonArray("preLaunch").get(0).getAsString());
+--- 0.7.6/gradle.properties
++++ 0.9r1/gradle.properties
+@@ -1,8 +1,9 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.6
+-foci_version=0.7.3
++mod_version=0.9.0-rc.1
++foci_version=0.9.0-rc.1
++directional_version=0.9.0-rc.1
+ foci_api_version=1
+ foci_required_api_version=1
+ maven_group=dev.paul.simpleradiorepeaters
+--- 0.7.6/tools/verify_prototypes.py
++++ 0.9r1/tools/verify_prototypes.py
+@@ -46,6 +46,7 @@
+             assert metadata['entrypoints']['preLaunch'] == ['dev.paul.simpleradiofoci.FociCompatibility']
+             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)
+         else:
++            assert metadata['version'] == properties['directional_version'].strip()
+             assert 'simpleradio_repeaters' not in metadata['depends']
+             assert 'simpleradio_repeaters_foci' not in metadata['depends']
+             assert not any(name.startswith('dev/paul/simpleradiorepeaters/') for name in names)

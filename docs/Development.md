@@ -71,3 +71,11 @@ Passive card attachments override `routingCards()` to return no forwarding cards
 `TowerPower` owns the shared base multiplier. Two composable return-value hooks adjust only native block Transmitter/Receiver types; handheld, Radio and third-party frequencing types retain their power. `NativeRadioAdapter` uses the same rule for virtual tower TX and RX, before catalyst/hop limits and optional reception integrations. Recovery uses the saved raw antenna score; effective amplifier/elevation bonuses remain additive. Native source initialization picks up the adjusted power, while already-powered packets are not scaled again. No shared native configuration value is rewritten.
 
 The boolean `antennaDependentBasePower` is independent of terrain mode and participates in the existing configuration fingerprint. The existing config reload path invalidates graphs without discarding terrain samples. Operator diagnostics record the flag and ANT-zero powers. `TowerPowerGameTests` covers native power/reach/travel, disabled parity, unchanged radio types, amplifier/catalyst/decay interaction and saved-only graph changes.
+
+## Release-candidate housekeeping (0.9r1)
+
+`TerrainManager.surveyLoss` can enqueue shared height profiles without changing operational pending markers. Observing an existing operational path does not clear its status. Monitor ANT reports the raw mast score, with effective strength separately; Radio distance consistently means propagation-scaled distance before terrain.
+
+A bad terrain curve is decoded independently of other settings. Startup uses the default curve; reload retains the previous valid curve. Other valid settings apply, a warning is reported, and the input file is preserved for correction. Malformed JSON still rejects the load. Quiet card extraction now uses the same change notification as normal removal, including saved routing and display cache updates; sided automation remains disabled.
+
+Run `python3 tools/export_review_pack.py /absolute/output/path` to export all English resources, ordered handbook content, screen/command templates, recipes, current model assets and retained native reference captures for editorial review. The exporter does not change gameplay resources.

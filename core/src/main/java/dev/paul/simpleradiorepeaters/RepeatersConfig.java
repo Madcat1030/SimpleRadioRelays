@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 public final class RepeatersConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("simpleradio_repeaters");
     public static RepeatersConfig INSTANCE = new RepeatersConfig();
+    private static boolean curveFallback;
     public int maxRelayHops = 64;
     public boolean persistentUnloadedTowers = true;
     public boolean antennaDependentBasePower = true;
@@ -61,22 +62,39 @@ public final class RepeatersConfig {
         Files.writeString(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"),
                 new GsonBuilder().setPrettyPrinting().create().toJson(INSTANCE) + "\n");
     }
-    /** Parse and validate before replacing the live settings or touching the file. */
+    private record Parsed(RepeatersConfig settings, String curveWarning) {}
+
+    /** Recover only a bad curve; unrelated settings still apply. Malformed JSON is rejected. */
     static RepeatersConfig parse(String json) {
+        return parse(json, new Terrain().clearanceCurve).settings();
+    }
+    private static Parsed parse(String json, double[][] fallbackCurve) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        RepeatersConfig loaded = new Gson().fromJson(root, RepeatersConfig.class);
+        JsonObject fields = root.deepCopy();
+        JsonObject terrain = fields.has("terrain") && fields.get("terrain").isJsonObject() ? fields.getAsJsonObject("terrain") : null;
+        // Decode the curve separately so a wrong element type cannot reject valid feature switches.
+        JsonElement curve = terrain == null ? null : terrain.remove("clearanceCurve");
+        RepeatersConfig loaded = new Gson().fromJson(fields, RepeatersConfig.class);
         if (loaded == null) throw new JsonParseException("Expected a configuration object");
         if (loaded.terrain == null) loaded.terrain = new Terrain();
-        JsonObject terrain = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
         if (terrain != null && !terrain.has("formatVersion")) {
             // Migrate only the old defaults; preserve deliberately different server settings.
             if (terrain.has("samplesPerTick") && loaded.terrain.samplesPerTick == 4) loaded.terrain.samplesPerTick = 64;
         }
-        if (terrain != null) migrateCurve(terrain, loaded.terrain);
+        String warning = null;
+        try {
+            if (curve != null) loaded.terrain.clearanceCurve = new Gson().fromJson(curve, double[][].class);
+            JsonObject source = root.has("terrain") && root.get("terrain").isJsonObject() ? root.getAsJsonObject("terrain") : null;
+            if (source != null) migrateCurve(source, loaded.terrain);
+            loaded.terrain.validate();
+        } catch (RuntimeException invalidCurve) {
+            loaded.terrain.clearanceCurve = Arrays.stream(fallbackCurve).map(double[]::clone).toArray(double[][]::new);
+            loaded.terrain.validate();
+            warning = invalidCurve.getMessage() == null ? invalidCurve.getClass().getSimpleName() : invalidCurve.getMessage();
+        }
         loaded.terrain.formatVersion = 3;
         loaded.maxRelayHops = Math.max(1, Math.min(128, loaded.maxRelayHops));
-        loaded.terrain.validate();
-        return loaded;
+        return new Parsed(loaded, warning);
     }
     private static void migrateCurve(JsonObject terrain, Terrain loaded) {
         boolean legacy = terrain.has("nearGroundHeight") || terrain.has("nearGroundLoss") || terrain.has("undergroundLosses")
@@ -100,18 +118,26 @@ public final class RepeatersConfig {
     public static boolean load() {
         return load(FabricLoader.getInstance().getConfigDir().resolve("simpleradio-repeaters.json"));
     }
+    public static boolean usedFallbackCurve() { return curveFallback; }
     static boolean load(Path path) {
-        RepeatersConfig loaded;
+        Parsed parsed;
         try {
-            loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();
+            parsed = Files.exists(path) ? parse(Files.readString(path), INSTANCE.terrain.clearanceCurve)
+                    : new Parsed(new RepeatersConfig(), null);
         } catch (Exception e) {
             LOGGER.error("Cannot load repeater configuration; keeping current settings", e);
             return false;
         }
-        INSTANCE = loaded;
+        INSTANCE = parsed.settings();
+        curveFallback = parsed.curveWarning() != null;
+        if (curveFallback) {
+            LOGGER.warn("Invalid terrain curve in {}: {}. Other settings are active; keeping the previous curve (defaults at startup). The file was left unchanged for correction.",
+                    path, parsed.curveWarning());
+            return true;
+        }
         try {
             Files.createDirectories(path.getParent());
-            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(loaded) + "\n");
+            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(INSTANCE) + "\n");
         } catch (Exception e) {
             LOGGER.warn("Repeater configuration is active, but its normalized file could not be saved to {}", path, e);
         }

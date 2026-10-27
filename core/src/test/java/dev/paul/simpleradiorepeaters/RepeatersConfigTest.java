@@ -60,9 +60,52 @@ class RepeatersConfigTest {
             assertEquals("{invalid", Files.readString(config));
             String badCurve = "{\"terrain\":{\"clearanceCurve\":[[8,0],[8,1]]}}";
             Files.writeString(config, badCurve);
-            assertFalse(RepeatersConfig.load(config));
-            assertSame(live, RepeatersConfig.INSTANCE);
+            assertTrue(RepeatersConfig.load(config));
+            assertTrue(RepeatersConfig.usedFallbackCurve());
+            assertArrayEquals(live.terrain.clearanceCurve[4], RepeatersConfig.INSTANCE.terrain.clearanceCurve[4]);
             assertEquals(badCurve, Files.readString(config));
+        } finally { RepeatersConfig.INSTANCE = previous; }
+    }
+
+    @Test void invalidCurveAtStartupKeepsUnrelatedSettingsAndTheOriginalFile() throws Exception {
+        Path config = directory.resolve("simpleradio-repeaters.json");
+        var previous = RepeatersConfig.INSTANCE;
+        try {
+            for (String curve : new String[]{"null", "\"bad\"", "[[8,0],[0,\"bad\"]]", "[[8,0],[8,1]]", "[[8,0],[0,5]]"}) {
+                RepeatersConfig.INSTANCE = new RepeatersConfig();
+                String json = "{\"maxRelayHops\":23,\"persistentUnloadedTowers\":false,\"antennaDependentBasePower\":false,"
+                        + "\"terrain\":{\"mode\":\"off\",\"sampleSpacing\":128,\"clearanceCurve\":" + curve + "}}";
+                Files.writeString(config, json);
+                assertTrue(RepeatersConfig.load(config));
+                assertTrue(RepeatersConfig.usedFallbackCurve());
+                assertEquals(23, RepeatersConfig.INSTANCE.maxRelayHops);
+                assertFalse(RepeatersConfig.INSTANCE.persistentUnloadedTowers);
+                assertFalse(RepeatersConfig.INSTANCE.antennaDependentBasePower);
+                assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.OFF, RepeatersConfig.INSTANCE.terrain.mode);
+                assertEquals(128, RepeatersConfig.INSTANCE.terrain.sampleSpacing);
+                assertEquals(3, loss(RepeatersConfig.INSTANCE, -128));
+                assertEquals(json, Files.readString(config));
+            }
+        } finally { RepeatersConfig.INSTANCE = previous; }
+    }
+
+    @Test void badCurveReloadKeepsThePreviousCustomCurveWithoutAliasingAndThenRecovers() throws Exception {
+        Path config = directory.resolve("simpleradio-repeaters.json");
+        var previous = RepeatersConfig.INSTANCE;
+        try {
+            RepeatersConfig.INSTANCE = RepeatersConfig.parse("{\"terrain\":{\"clearanceCurve\":[[10,0],[0,0.02],[-64,1.5]]}}");
+            var oldCurve = RepeatersConfig.INSTANCE.terrain.clearanceCurve;
+            Files.writeString(config, "{\"antennaDependentBasePower\":false,\"terrain\":{\"mode\":\"off\",\"clearanceCurve\":[[8,0],[8,1]]}}");
+            assertTrue(RepeatersConfig.load(config));
+            assertTrue(RepeatersConfig.usedFallbackCurve());
+            assertEquals(.02, loss(RepeatersConfig.INSTANCE, 0));
+            assertNotSame(oldCurve, RepeatersConfig.INSTANCE.terrain.clearanceCurve);
+            assertNotSame(oldCurve[1], RepeatersConfig.INSTANCE.terrain.clearanceCurve[1]);
+            Files.writeString(config, "{\"terrain\":{\"clearanceCurve\":[[8,0],[0,0.03],[-64,2]]}}");
+            assertTrue(RepeatersConfig.load(config));
+            assertFalse(RepeatersConfig.usedFallbackCurve());
+            assertEquals(.03, loss(RepeatersConfig.INSTANCE, 0));
+            assertTrue(Files.readString(config).contains("\"formatVersion\": 3"));
         } finally { RepeatersConfig.INSTANCE = previous; }
     }
 

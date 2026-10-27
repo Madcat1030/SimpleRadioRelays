@@ -264,6 +264,12 @@ public class MonitorGameTests implements FabricGameTest {
             try {
                 var profiles = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
                 var key = TerrainProfiles.Key.between(base.getX(), base.getZ(), base.getX() + 1000, base.getZ(), 64, 1024);
+                check(RelaySurvey.scan(world.getServer(), manager, home, channel).pending() == 1,
+                        "Once tips publish, an unmeasured survey path must queue its own measurement");
+                check(TerrainManager.mappingState(home.id()) == 0 && TerrainManager.mappingState(other.id()) == 0,
+                        "A passive survey must not mark either relay SCAN or CHECK");
+                check(profiles.get(key) != null || ((Number) TerrainManager.statistics().get("pending_relay_profiles")).longValue() > 0,
+                        "A passive survey must still request its own bounded terrain measurement");
                 profiles.put(key, new int[]{217, 217});
                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
@@ -282,5 +288,20 @@ public class MonitorGameTests implements FabricGameTest {
                 remove(manager, List.of(home, other)); RepeatersConfig.INSTANCE.terrain = cfg; TerrainManager.reconfigure(world.getServer());
             }
         });
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_raw_antenna")
+    public void surveyDistinguishesRawMastScoreFromAmplifierAndElevationBonuses(GameTestHelper helper) {
+        var world = helper.getLevel(); var manager = TowerManager.get(world.getServer());
+        var base = new BlockPos(2_900_000, 64, -2_900_000);
+        var home = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), base.north(), Set.of(), true,
+                RelayCatalysts.GILDED, true, 10, Set.of(), null, RelayAttachment.AMPLIFIER, null, base);
+        manager.updateSnapshot(home);
+        try {
+            var result = RelaySurvey.scan(world.getServer(), manager, home, CHANNEL);
+            check(result.antenna() == 10 && result.effectiveAntenna() == 17.5,
+                    "ANT must show raw mast progress; the effective value must include the Ender bonus separately");
+            helper.succeed();
+        } finally { remove(manager, List.of(home)); }
     }
 }

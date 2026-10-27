@@ -2,8 +2,6 @@ package dev.paul.simpleradiorepeaters.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.paul.simpleradiorepeaters.block.*;
-import dev.paul.simpleradiorepeaters.radio.RelayAttachment;
-import dev.paul.simpleradiorepeaters.radio.RelayPower;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -40,7 +38,7 @@ public final class RelayRenderer implements BlockEntityRenderer<RelayBlockEntity
         }
         int status = relay.displayStatus();
         String label = status >= 0 && status < STATUS.length ? STATUS[status] : "WAIT";
-        long antenna = Math.round(RelayPower.antennaScore(relay.getAntennaPower(), relay.attachmentType().antennaMultiplier()));
+        long antenna = Math.round(relay.getAntennaPower());
         DeviceRendering.text(font, "ANT " + antenna, 8, 11.8, -1, 8, .008f, 0xffb5d994, pose, buffers);
         DeviceRendering.text(font, label, 8, 10.6, -1, 8, .008f, status == RelayBlockEntity.READY ? 0xff91d25f : 0xffd7b766, pose, buffers);
         DeviceRendering.text(font, "LINK " + relay.displayPeers(), 8, 9.4, -1, 8, .008f, 0xffb5d994, pose, buffers);

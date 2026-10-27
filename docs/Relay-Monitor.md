@@ -1,4 +1,4 @@
-# Relay Monitor — Repeaters 0.7.6
+# Relay Monitor — Repeaters 0.9r1
 
 The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
 
@@ -6,7 +6,7 @@ Insert one tuned Frequency Card through the front. The selected frequency and AM
 
 ## Overview and pages
 
-The overview shows the antenna base coordinates and dimension, effective antenna strength, TX and RX counts, and other active nodes on the channel.
+The overview shows the antenna base coordinates and dimension, physical mast strength (ANT), effective antenna strength including amplifier and elevation bonuses, TX and RX counts, and other active nodes on the channel. ANT is the raw score used for base-power recovery through ANT 16.
 
 - **TX:** configured nodes this tower can directly transmit to.
 - **RX:** configured nodes this tower can directly hear.
@@ -18,13 +18,13 @@ Right-click the screen with an empty hand to cycle through heard towers, then TX
 
 | Page | Information |
 | --- | --- |
-| TX/RX | Destination antenna coordinates, dimension, direct distance, terrain extra-distance percentage |
+| TX/RX | Destination antenna coordinates, dimension, radio distance, terrain extra-distance percentage |
 | RX only | The same details, with RX only identifying the missing return direction |
 | TX only | Dimension, a 16-point bearing such as SSE or WNW, and approximate distance; no exact coordinates or terrain figures |
 
 TX-only distances round to the nearest 500 blocks. Below 500 blocks they round to 50 blocks to avoid reporting a zero-distance target. Exact TX-only coordinates are omitted from client display data, not merely hidden by the renderer.
 
-For focus-projected or cross-dimensional links, the distance is labelled **Mapped** and uses the normal effective radio distance. Coordinates identify the physical destination antenna. Interdimensional links do not acquire Overworld terrain attenuation.
+**Radio distance** includes the selected link's dimensional and propagation scaling, before terrain extra distance. In an ordinary Overworld link it equals direct distance. Coordinates identify the physical destination antenna. Interdimensional links do not acquire Overworld terrain attenuation.
 
 Click the inserted card with an empty hand to remove it. Card actions work only through the front face. Hoppers have no inventory access; direct container integrations remain available as with existing card banks.
 
@@ -46,7 +46,7 @@ Predictions use fresh first-relay departure power, the installed catalyst/amplif
 
 Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The renderer only draws the current synchronized text page; it performs no network or terrain work.
 
-Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a SCAN count. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
+Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a Surveying count on the monitor. Survey requests do not add operational SCAN/CHECK markers to either relay. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
 
 ## Recipe
 

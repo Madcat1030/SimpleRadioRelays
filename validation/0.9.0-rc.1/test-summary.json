@@ -1,0 +1,19 @@
+{
+  "core": {
+    "passed": 95,
+    "failed": 0
+  },
+  "combined": {
+    "passed": 141,
+    "failed": 0
+  },
+  "directional-standalone": {
+    "passed": 21,
+    "failed": 0
+  },
+  "unit": {
+    "core": 89,
+    "foci": 5,
+    "directional": 17
+  }
+}

@@ -20,6 +20,9 @@ public final class TerrainCommands {
                         return 0;
                     }
                     TerrainManager.reconfigure(c.getSource().getServer());
+                    if (RepeatersConfig.usedFallbackCurve())
+                        c.getSource().sendSuccess(() -> Component.translatable("message.simpleradio_repeaters.terrain_curve_fallback")
+                                .withStyle(net.minecraft.ChatFormatting.YELLOW), false);
                     if (previousBalance != RepeatersConfig.INSTANCE.antennaDependentBasePower)
                         dev.paul.simpleradiorepeaters.network.TowerManager.resourcesReloaded(
                                 c.getSource().getServer(), "antenna_balance_changed");

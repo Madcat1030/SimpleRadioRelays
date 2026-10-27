@@ -84,16 +84,17 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         if (index < 0) {
             text.add("TX OVERVIEW  " + channel);
             text.add(dimension(reading.dimension())); text.add(coordinates(reading.origin()));
-            text.add(String.format(Locale.ROOT, "ANT %.1f", reading.antenna()));
+            text.add(String.format(Locale.ROOT, "ANT %.1f (mast)", reading.antenna()));
+            text.add(String.format(Locale.ROOT, "Effective %.1f", reading.effectiveAntenna()));
             text.add("TX " + reading.tx() + "   RX " + reading.rx());
             text.add("Other nodes " + reading.other());
-            text.add(reading.pending() > 0 ? "SCAN " + reading.pending() + " paths" : "Nominal direct links");
+            text.add(reading.pending() > 0 ? "Surveying " + reading.pending() + " paths" : "Nominal direct links");
         } else {
             var entry = reading.entries().get(index);
             text.add(channel + "  " + entry.directionLabel()); text.add(dimension(entry.dimension()));
             if (entry.rx()) {
                 text.add(coordinates(Objects.requireNonNull(entry.position())));
-                text.add(String.format(Locale.ROOT, "%s %.0f blocks", entry.mapped() ? "Mapped" : "Distance", entry.distance()));
+                text.add(String.format(Locale.ROOT, "Radio distance %.0f blocks", entry.distance()));
                 text.add(String.format(Locale.ROOT, "Terrain +%.1f%%", entry.terrainPercent()));
             } else {
                 text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");

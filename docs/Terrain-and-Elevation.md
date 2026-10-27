@@ -95,7 +95,7 @@ Active and pending results are not evicted by packet traversal order. Idle entri
 }
 ```
 
-Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. Invalid curves reject the reload and keep the live configuration. Editing the curve recalculates penalties from the saved ground samples; it does not remap the terrain.
+Each `clearanceCurve` row is `[clearance in blocks, extra-distance fraction]`: `[-64, 2]` means +200% distance at 64 blocks below the generated surface. List 2–64 points from highest clearance to lowest. Clearances must be finite, strictly descending and within ±4096 blocks. Fractions start at zero, never decrease as depth increases, and must stay between 0 and 4. The last point caps the penalty at greater depth. A bad curve retains the previous valid curve, or defaults at startup; valid unrelated settings still apply. The log and reload command report this fallback, and the file is left unchanged for correction. Editing a valid curve recalculates penalties from saved ground samples; it does not remap the terrain.
 
 The elevation bonus increases only the antenna contribution, by up to 10%, ramping from tip Y=64 to Y=192. It does not multiply the radio's whole base power. The antenna base remains the RF coordinate origin; the tip is used for environmental clearance and elevation.
 
@@ -111,7 +111,7 @@ Operator commands:
 | `/radiorepeaters terrain off` | Restore original propagation and stop sampling |
 | `/radiorepeaters terrain relay_mapping` | Enable cached relay terrain and elevation |
 | `/radiorepeaters terrain full` | Also enable endpoint checks |
-| `/radiorepeaters terrain reload` | Reload JSON; report failure and keep current settings if invalid |
+| `/radiorepeaters terrain reload` | Reload settings; warn and retain the previous curve if that field is invalid; reject malformed JSON |
 | `/radiorepeaters terrain clear` | Remap profiles while existing links retain their previous penalty |
 
 The three mode commands save their changes. `/radiorepeaters test` captures terrain settings and cumulative work statistics. `/radiorepeaters diagnose` inspects existing results without starting height sampling.
