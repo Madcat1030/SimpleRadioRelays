@@ -1,0 +1,395 @@
+--- 0.7.5/README.md
++++ 0.7.6/README.md
+@@ -4,7 +4,7 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.5 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Repeaters 0.7.6 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+ | Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+@@ -34,4 +34,4 @@
+ 
+ Craft a book with Simple Radio copper wire to get **Simple Radio Relays**, the in-game guide. Installed addons contribute their own chapters. Saved relay towers continue working while unloaded without force-loading chunks.
+ 
+-See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.5.md), or [building and testing](docs/Development.md).
++See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.6.md), or [building and testing](docs/Development.md).
+--- 0.7.5/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
++++ 0.7.6/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java
+@@ -117,14 +117,25 @@
+                 player.setItemInHand(InteractionHand.MAIN_HAND, compass); var page = monitor.lines();
+                 check(SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen).consumesAction()
+                                 && monitor.lines().equals(page), "Using a compass must bind without cycling");
+-                check(NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase())
++                BlockPos estimate = monitor.reading().entries().stream().filter(e -> e.id().equals(destination.id())).findFirst().orElseThrow().compassTarget();
++                check(!estimate.equals(destination.antennaBase())
++                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(estimate)
+                                 && compass.getTag().getString(CompassItem.TAG_LODESTONE_DIMENSION).equals(destination.dimension())
+                                 && !compass.getTag().getBoolean(CompassItem.TAG_LODESTONE_TRACKED)
+-                                && compass.getTag().getString("CustomTest").equals("keep"), "TX-only compass binding must use the real antenna base and preserve unrelated item data");
++                                && compass.getTag().getString("CustomTest").equals("keep"), "TX-only compass binding must use only the coarse estimate and preserve unrelated item data");
+                 var restored = ItemStack.of(compass.save(new CompoundTag()));
+                 Items.COMPASS.inventoryTick(restored, world, player, 0, false);
+                 check(restored.getTag().contains(CompassItem.TAG_LODESTONE_POS) && !world.hasChunkAt(destination.antennaBase()),
+                         "A saved compass must retain its target without a lodestone or target-chunk load");
++                manager.updateSnapshot(destination.settings(Set.of(CHANNEL), true, destination.catalystItem(), null,
++                        destination.attachment(), null));
++                monitor.refresh();
++                check(monitor.lines().get(0).contains("TX/RX")
++                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(estimate),
++                        "An existing compass must stay approximate when the tower becomes hearable");
++                check(monitor.bindCompass(player, InteractionHand.MAIN_HAND)
++                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase()),
++                        "Rebinding a now-heard tower must replace the estimate with its exact antenna base");
+                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); monitor.nextPage();
+                 check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Cycling past the last target must return to the overview");
+                 var stack = new ItemStack(Items.COMPASS, 3); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+@@ -148,6 +159,58 @@
+             } catch (Exception e) { throw new RuntimeException(e); }
+             finally { remove(manager, targets); world.removeBlock(monitor.getBlockPos(), false); world.removeBlock(relay.getBlockPos(), false); }
+         });
++    }
++
++    private static void assertEstimate(ServerLevel world, ServerLevel destination, TowerRecord home,
++                                       TowerRecord target, ChannelKey channel, double unitsPerBlock) {
++        var manager = TowerManager.get(world.getServer()); manager.updateSnapshot(home); manager.updateSnapshot(target);
++        try {
++            var entries = RelaySurvey.scan(world.getServer(), manager, home, channel).entries();
++            check(entries.size() == 1 && entries.get(0).tx() && !entries.get(0).rx(), "Fixture must produce one TX-only estimate");
++            var entry = entries.get(0); var point = entry.compassTarget();
++            double scale = world.dimensionType().coordinateScale() / destination.dimensionType().coordinateScale();
++            double x = home.antennaBase().getCenter().x * scale, z = home.antennaBase().getCenter().z * scale;
++            check(Math.abs(Math.hypot(point.getX() + .5 - x, point.getZ() + .5 - z)
++                            - MonitorMath.approximateDistance(entry.distance()) / unitsPerBlock) < 2,
++                    "A compass estimate must convert the displayed radio distance into destination-world blocks");
++            check(entry.position() == null && !point.equals(target.antennaBase())
++                            && MonitorMath.bearing(point.getX() + .5 - x, point.getZ() + .5 - z).equals(entry.bearing()),
++                    "TX-only binding must use the rounded bearing without exposing a physical destination coordinate");
++            check(point.getY() == home.antennaBase().getY() && point.getY() != target.antennaBase().getY(),
++                    "An estimated compass must not leak the destination's height");
++            check(!world.hasChunkAt(home.antennaBase()) && !destination.hasChunkAt(target.antennaBase()),
++                    "Estimated and projected targets must not load chunks");
++        } finally { remove(manager, List.of(home, target)); }
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_survey")
++    public void netherCompassEstimatesUseWorldBlocksRatherThanScaledRadioBlocks(GameTestHelper helper) {
++        var world = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
++        var channel = new ChannelKey("098.27", "AM");
++        var home = node(world, new BlockPos(2_600_000, 64, -2_600_000), Set.of(), null);
++        var target = node(world, home.antennaBase().offset(137, 16, 337), Set.of(), new TransponderChannels(channel, OTHER, null, false));
++        var a = com.codinglitch.simpleradio.central.WorldlyPosition.of(home.antennaBase(), world);
++        var b = com.codinglitch.simpleradio.central.WorldlyPosition.of(target.antennaBase(), world);
++        double units = world.dimensionType().coordinateScale() * RadioSpace.nativePropagation(a, b).distanceMultiplier();
++        assertEstimate(world, world, home, target, channel, units); helper.succeed();
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_survey")
++    public void projectedCompassEstimatesResolveInThePhysicalDestinationsDimension(GameTestHelper helper) {
++        var focus = RelayAttachment.stored("NETHER_FOCUS");
++        if (focus == RelayAttachment.NONE) { helper.succeed(); return; }
++        var overworld = helper.getLevel().getServer().overworld();
++        var nether = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
++        var channel = new ChannelKey("098.28", "AM"); var base = new BlockPos(2_800_000, 64, -2_800_000);
++        var plain = node(overworld, base, Set.of(), null);
++        var focused = plain.settings(Set.of(), true, plain.catalystItem(), null, focus, null);
++        var below = node(nether, new BlockPos(base.getX() / 8 + 30, 80, base.getZ() / 8 + 70), Set.of(),
++                new TransponderChannels(channel, OTHER, null, false));
++        assertEstimate(overworld, nether, focused, below, channel, 8);
++        var talking = node(nether, new BlockPos(base.getX() / 8, 64, base.getZ() / 8), Set.of(), null);
++        var above = node(overworld, base.offset(240, 16, 560), Set.of(), new TransponderChannels(channel, OTHER, null, false));
++        above = above.settings(above.channels(), true, above.catalystItem(), null, focus, above.transponder());
++        assertEstimate(nether, overworld, talking, above, channel, 1); helper.succeed();
+     }
+ 
+     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_clicks")
+--- 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java
++++ 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java
+@@ -117,9 +117,13 @@
+         TowerManager manager = TowerManager.get(server.getServer());
+         TowerRecord target = manager == null ? null : manager.snapshot(selected == null ? lastRelay : selected);
+         if (target == null) return false;
++        var entry = selected == null ? null : reading.entries().stream().filter(e -> e.id().equals(selected)).findFirst().orElse(null);
++        if (selected != null && entry == null) return false;
++        boolean estimated = entry != null && !entry.rx();
++        BlockPos position = entry == null ? reading.origin() : entry.compassTarget();
+         ItemStack held = player.getItemInHand(hand), bound = held.copy(); bound.setCount(1);
+         CompoundTag tag = bound.getOrCreateTag();
+-        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(target.antennaBase()));
++        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(position));
+         tag.putString(CompassItem.TAG_LODESTONE_DIMENSION, target.dimension());
+         tag.putBoolean(CompassItem.TAG_LODESTONE_TRACKED, false);
+         if (held.getCount() == 1) held.setTag(tag);
+@@ -127,7 +131,8 @@
+             if (!player.getAbilities().instabuild) held.shrink(1);
+             give(player, bound);
+         }
+-        player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_bound", dimension(target.dimension())), true);
++        player.displayClientMessage(Component.translatable(estimated ? "message.simpleradio_repeaters.monitor_bound_estimate"
++                : "message.simpleradio_repeaters.monitor_bound", dimension(target.dimension())), true);
+         return true;
+     }
+     @Override public CompoundTag getUpdateTag() {
+--- 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/MonitorMath.java
++++ 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/MonitorMath.java
+@@ -2,6 +2,7 @@
+ 
+ /** Minecraft bearings: +X east, +Z south. TX-only estimates reveal no exact position. */
+ public final class MonitorMath {
++    public record Point(double x, double z) {}
+     private static final String[] BEARINGS = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+             "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+     private MonitorMath() {}
+@@ -14,4 +15,16 @@
+         long step = distance < 500 ? 50 : 500;
+         return Math.max(step, Math.round(distance / step) * step);
+     }
++
++    /** Use only the displayed sector and distance bucket, converted to destination-world blocks. */
++    public static Point compassEstimate(double originX, double originZ, String bearing, double distance, double radioUnitsPerBlock) {
++        if (!Double.isFinite(distance) || distance < 0 || !Double.isFinite(radioUnitsPerBlock) || radioUnitsPerBlock <= 0)
++            return new Point(originX, originZ);
++        for (int i = 0; i < BEARINGS.length; i++) if (BEARINGS[i].equals(bearing)) {
++            double angle = Math.toRadians(i * 22.5);
++            double radius = approximateDistance(distance) / radioUnitsPerBlock;
++            return new Point(originX + Math.sin(angle) * radius, originZ - Math.cos(angle) * radius);
++        }
++        return new Point(originX, originZ); // LOCAL has no horizontal direction.
++    }
+ }
+--- 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java
++++ 0.7.6/core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java
+@@ -12,7 +12,7 @@
+ /** One-hop, first-departure predictions. Never joins the forwarding graph or emits audio. */
+ public final class RelaySurvey {
+     public record Entry(UUID id, boolean tx, boolean rx, String dimension, @Nullable BlockPos position,
+-                        double distance, double terrainPercent, String bearing, boolean mapped) {
++                        double distance, double terrainPercent, String bearing, boolean mapped, BlockPos compassTarget) {
+         public String directionLabel() { return tx && rx ? "TX/RX" : rx ? "RX only" : "TX only"; }
+     }
+     public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna,
+@@ -44,9 +44,20 @@
+             var leg = link.leg();
+             var a = leg.from().position().scale(leg.from().level().dimensionType().coordinateScale());
+             var b = leg.to().position().scale(leg.to().level().dimensionType().coordinateScale());
++            String bearing = MonitorMath.bearing(rx ? a.x - b.x : b.x - a.x, rx ? a.z - b.z : b.z - a.z);
++            BlockPos compass = target.antennaBase();
++            if (!rx) {
++                // The physical site comes first in native/Foci policies; projections are extra sites.
++                var destination = sites.stream().filter(site -> !site.projected()).findFirst().orElse(sites.get(0)).level();
++                double scale = destination.dimensionType().coordinateScale();
++                var estimate = MonitorMath.compassEstimate(a.x / scale, a.z / scale, bearing,
++                        leg.distance(), scale * leg.propagation().distanceMultiplier());
++                int y = Math.max(destination.getMinBuildHeight(), Math.min(destination.getMaxBuildHeight() - 1, home.antennaBase().getY()));
++                compass = BlockPos.containing(estimate.x(), y, estimate.z());
++            }
+             entries.add(new Entry(target.id(), tx, rx, target.dimension(), rx ? target.antennaBase() : null,
+                     leg.distance(), leg.distance() == 0 ? 0 : link.extra() / leg.distance() * 100,
+-                    MonitorMath.bearing(rx ? a.x - b.x : b.x - a.x, rx ? a.z - b.z : b.z - a.z), leg.dimensional()));
++                    bearing, leg.dimensional(), compass));
+         }
+         entries.sort(Comparator.comparing((Entry e) -> !e.rx()).thenComparingDouble(Entry::distance).thenComparing(Entry::id));
+         return new Result(channel, home.antennaBase(), home.dimension(), NativeRadioAdapter.antennaScore(home),
+--- 0.7.5/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.7.6/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -42,5 +42,6 @@
+   "message.simpleradio_repeaters.monitor_bound": "Compass bound to relay in %s.",
+   "message.simpleradio_repeaters.monitor_target_gone": "The selected relay is no longer available.",
+   "handbook.simpleradio_repeaters.monitor.title": "The Relay Monitor",
+-  "handbook.simpleradio_repeaters.monitor.text": "Plug a Relay Monitor into the top of a Relay instead of a Repeater Bank or Transponder. It is a passive diagnostic attachment and does not repeat signals. A valid antenna, catalyst and tuned Frequency Card are required to survey links.\n\nThe overview shows this antenna's coordinates, antenna strength, direct TX and RX counts, and other active nodes on the selected frequency and modulation. TX/RX towers count in both totals. Other nodes includes TX-only towers and nodes outside direct hearing range, including saved unloaded towers; this count does not promise a path through the network.\n\nClick the screen with an empty hand to cycle through heard towers, approximate TX-only entries, then back to the overview. Heard towers show coordinates, direct distance and terrain extra distance, with TX/RX or RX only. TX-only pages show a sixteen-point bearing such as SSE or WNW and a rounded distance instead of coordinates.\n\nUse a compass on the screen to bind one compass to the selected tower. The overview binds your own tower. TX-only pages also support binding. No lodestone is needed. The compass stores a fixed position and works in the target dimension. Clicking with a compass does not change pages.\n\nPredictions use fresh first-relay power and the normal antenna, amplifier, directional and dimensional calculations. An already-weakened message may fail a nominal link. Initial terrain mapping shows SCAN; established paths keep their last environmental result during remapping."
++  "handbook.simpleradio_repeaters.monitor.text": "Plug a Relay Monitor into the top of a Relay instead of a Repeater Bank or Transponder. It is a passive diagnostic attachment and does not repeat signals. A valid antenna, catalyst and tuned Frequency Card are required to survey links.\n\nThe overview shows this antenna's coordinates, antenna strength, direct TX and RX counts, and other active nodes on the selected frequency and modulation. TX/RX towers count in both totals. Other nodes includes TX-only towers and nodes outside direct hearing range, including saved unloaded towers; this count does not promise a path through the network.\n\nClick the screen with an empty hand to cycle through heard towers, approximate TX-only entries, then back to the overview. Heard towers show coordinates, direct distance and terrain extra distance, with TX/RX or RX only. TX-only pages show a sixteen-point bearing such as SSE or WNW and a rounded distance instead of coordinates.\n\nUse a compass on the screen to bind one compass to the selected tower. The overview binds your own tower. A TX-only page binds to the displayed bearing and rounded distance, giving an approximate location. A heard tower gives an exact target. An existing compass stays unchanged if reception improves; bind it again for the exact position. No lodestone is needed. The compass stores a fixed position and works in the target dimension. Clicking with a compass does not change pages.\n\nPredictions use fresh first-relay power and the normal antenna, amplifier, directional and dimensional calculations. An already-weakened message may fail a nominal link. Initial terrain mapping shows SCAN; established paths keep their last environmental result during remapping.",
++  "message.simpleradio_repeaters.monitor_bound_estimate": "Compass bound to estimated relay location in %s."
+ }
+--- 0.7.5/core/src/test/java/dev/paul/simpleradiorepeaters/monitor/MonitorMathTest.java
++++ 0.7.6/core/src/test/java/dev/paul/simpleradiorepeaters/monitor/MonitorMathTest.java
+@@ -23,4 +23,35 @@
+         assertEquals(50, MonitorMath.approximateDistance(12));
+         assertEquals(250, MonitorMath.approximateDistance(237));
+     }
++    @Test void compassUsesTheCentreOfEveryDisplayedBearing() {
++        String[] bearings = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
++        for (int i = 0; i < bearings.length; i++) {
++            var point = MonitorMath.compassEstimate(100, -200, bearings[i], 3467, 1);
++            double angle = Math.toRadians(i * 22.5);
++            assertEquals(100 + Math.sin(angle) * 3500, point.x(), .000001);
++            assertEquals(-200 - Math.cos(angle) * 3500, point.z(), .000001);
++        }
++    }
++    @Test void differentTowersWithTheSameVisibleEstimateProduceTheSameCompassPoint() {
++        double ax = 3230, az = -1200, bx = 3300, bz = -1400;
++        assertEquals(MonitorMath.bearing(ax, az), MonitorMath.bearing(bx, bz));
++        assertEquals(MonitorMath.approximateDistance(Math.hypot(ax, az)), MonitorMath.approximateDistance(Math.hypot(bx, bz)));
++        assertEquals(MonitorMath.compassEstimate(0, 0, MonitorMath.bearing(ax, az), Math.hypot(ax, az), 1),
++                MonitorMath.compassEstimate(0, 0, MonitorMath.bearing(bx, bz), Math.hypot(bx, bz), 1));
++    }
++    @Test void scaledRadioDistancesConvertBackToWorldBlocks() {
++        for (double units : new double[]{1, 2, 4, 8}) {
++            var point = MonitorMath.compassEstimate(100, 200, "E", 3467, units);
++            assertEquals(100 + 3500 / units, point.x(), .000001);
++            assertEquals(200, point.z(), .000001);
++        }
++    }
++    @Test void localAndCloseEstimatesStayCoarseAndInvalidScalesDoNotInventATarget() {
++        assertEquals(new MonitorMath.Point(20, 30), MonitorMath.compassEstimate(20, 30, "LOCAL", 0, 1));
++        var close = MonitorMath.compassEstimate(20, 30, "E", 12, 1);
++        assertEquals(70, close.x(), .000001);
++        assertEquals(30, close.z(), .000001);
++        for (double scale : new double[]{0, -1, Double.NaN, Double.POSITIVE_INFINITY})
++            assertEquals(new MonitorMath.Point(20, 30), MonitorMath.compassEstimate(20, 30, "E", 3467, scale));
++    }
+ }
+--- 0.7.5/docs/Relay-Monitor.md
++++ 0.7.6/docs/Relay-Monitor.md
+@@ -1,4 +1,4 @@
+-# Relay Monitor — Repeaters 0.7.0
++# Relay Monitor — Repeaters 0.7.6
+ 
+ The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
+ 
+@@ -32,12 +32,13 @@
+ 
+ Use an ordinary compass on the screen to bind it without changing the page:
+ 
+-- A destination page binds to that tower's actual antenna base, including TX-only entries.
++- A TX/RX or RX-only page binds to that tower's actual antenna base.
++- A TX-only page binds to the centre of its displayed 16-point bearing at the displayed rounded distance. Scaled radio distances are converted to blocks in the destination dimension. The target height uses your antenna's height, clamped to that world's limits, rather than revealing the remote tower's height.
+ - The overview binds to this tower.
+ - One compass is bound at a time; remaining items in a stack stay unchanged.
+ - An offhand compass works when the main hand is empty.
+ 
+-The compass uses vanilla lodestone targeting without requiring a lodestone. It keeps the fixed coordinate through saves and reloads and does not load the target chunk. It works in the target dimension. Moving or rebuilding an antenna does not update an already-bound compass; bind it again if needed. Other mods or debug tools can read the exact coordinates once they are written to the compass.
++The compass uses vanilla lodestone targeting without requiring a lodestone. It keeps the fixed coordinate through saves and reloads and does not load the target chunk. It works in the target dimension. Moving or rebuilding an antenna does not update an already-bound compass; bind it again if needed. A compass bound from a TX-only page stays approximate when the tower later becomes hearable. Rebinding while it is heard replaces the estimate with the exact antenna location. Existing bound compasses are not rewritten. Repeating the same approximate binding gives the same point, rather than random offsets.
+ 
+ ## What the numbers mean
+ 
+--- 0.7.5/docs/Release-Notes-0.7.6.md
++++ 0.7.6/docs/Release-Notes-0.7.6.md
+@@ -0,0 +1,13 @@
++# Repeaters 0.7.6
++
++Relay Monitor compass bindings from TX-only pages now mark the displayed bearing and rounded distance rather than the exact antenna location. Repeated bindings with the same visible estimate produce the same point. Native dimension scaling and Foci projection coordinates are converted back to blocks in the physical destination dimension; the remote tower's height is not copied into an estimated target.
++
++TX/RX and RX-only pages retain exact antenna binding. Existing compasses remain fixed when reception changes. Rebinding once a tower is heard replaces the estimate with its exact position. Existing bound compasses are not migrated or rewritten. Stack handling, offhand use and unrelated item data are preserved. The in-game guide describes the distinction and the binding message identifies an estimated target.
++
++This release implements the requested compass behavior only. Survey/terrain status coupling, the Mapped label, strict terrain-curve validation and the zero-tower block-hook fast path remain unchanged for review.
++
++Foci API 1 is unchanged. Keep Dimensional Foci 0.7.3 and Directional Antenna 0.2.9.
++
++## Validation
++
++Passed 109 unit tests, 93 core server tests and 139 combined server tests. Tests cover static estimates, exact rebinding after RX, stack/offhand behavior, no remote chunk loading, Nether scaling and both Foci projection directions. Foci and Directional production jars remain byte-identical.
+--- 0.7.5/docs/Simple-Radio-Suite-Review-0.7.5.md
++++ 0.7.6/docs/Simple-Radio-Suite-Review-0.7.5.md
+@@ -0,0 +1,100 @@
++**Simple Radio suite review**
++
++Reviewed: Repeaters 0.7.5, Dimensional Foci 0.7.3 and Directional Antenna 0.2.9. The requested compass behavior is implemented separately in core 0.7.6. The remaining findings below are proposals; their gameplay behavior has not been changed.
++
++**Overall assessment**
++
++The suite is manageable, with sensible module boundaries. It does not need a rewrite or a shared framework. Its complexity is concentrated in lifecycle recovery, radio routing and terrain scheduling, where the features actually require it. The main risks are that these central classes become harder to change, and that players cannot always distinguish a hardware state from a prediction or an environmental measurement.
++
++The baseline has 99 runtime Java files and approximately 7,000 lines: 5,555 in core, 251 in Foci and 1,192 in Directional. The three production jars total about 640 KiB. Much of the source tree's bulk is historical validation evidence, model work and captures rather than shipped gameplay code. Size alone does not establish quality, but these figures do not suggest uncontrolled runtime growth.
++
++**Reported issues**
++
++| Report | Accuracy and impact | Recommended action |
++| --- | --- | --- |
++| A survey makes nearby relays show SCAN/CHECK | Confirmed. Surveying uses the same terrain-request function that marks operational relay pairs pending. A passive monitor can therefore affect another relay's display, despite adding no forwarding node. The status itself does not disable that relay. Surveys can also consume the shared sampling budget. | Separate survey requests from operational pending markers while continuing to share measured height profiles and the bounded queue. Show survey progress on the monitor. |
++| A TX-only compass reveals the exact position | Confirmed. This was previously intentional and explicitly tested, but conflicts with the revised requirement. The screen omitted exact coordinates while the compass wrote the real antenna base. | Implemented in 0.7.6: use the displayed direction sector and distance bucket for TX-only binding. Keep exact binding for heard towers. |
++| The “Mapped” label | A clarity problem. Its boolean means the selected radio leg is dimensional, not that terrain mapping has finished. The value is radio-scaled distance. Local Nether distances can also be scaled while receiving the plain “Distance” label. | Use “Radio distance” or “Scaled distance” consistently, or show physical distance separately where meaningful. No attenuation change is required. |
++| One invalid terrain curve value rejects the whole startup config | Confirmed. Curve validation occurs before the new configuration is installed. A startup failure leaves the defaults active, potentially ignoring valid `terrain.mode: off` or `antennaDependentBasePower: false` settings. Reload failures keep the already-active configuration; the bad file is not overwritten. | Recover at the field/section boundary: apply valid unrelated settings, retain the previous curve on reload or use the default curve on startup, and report the fallback explicitly. Malformed JSON should still be rejected. |
++| The block-change hook allocates and looks up a key with no towers | Confirmed, with narrower scope than “every block change.” The mixin filters to successful server-side block-type replacements; ordinary property changes are skipped. Once a manager exists, an empty antenna index still reaches key construction. | Add an empty-index return before constructing the dimension/chunk key. This is a small housekeeping optimization; the code already avoids a full tower/world scan per block edit. No measured TPS regression was established in this review. |
++
++There is an important implementation detail in the first fix: switching surveys to the existing read-only terrain lookup alone would be insufficient. A passive monitor does not join the forwarding graph, so its unknown paths might never be requested by real routing. It should be allowed to request measurements without marking those paths as operational relay work.
++
++**The compass change**
++
++For a TX-only page displaying ENE and approximately 3,500 blocks, a new binding targets the centre of the ENE sector at that rounded distance. The exact bearing and unrounded range are not used to choose a finer point. Repeating the same visible reading produces the same target, without random offsets that could be averaged through repeated clicks.
++
++Radio distance is converted into destination-world blocks, including Nether scaling and Foci projections. The estimated target does not copy the remote tower's Y coordinate. TX/RX and RX-only pages retain exact physical antenna binding; the overview still binds the local antenna.
++
++A compass stores a fixed position. Gaining RX does not change a previously estimated compass. Rebinding from a now-heard page replaces it with the exact antenna base. Existing compasses are not migrated or rewritten, including compasses bound by earlier versions.
++
++**Development strengths**
++
++- Core, Foci and Directional have distinct responsibilities. Foci owns its items and propagation policy; core owns forwarding and tower state; Directional owns physical dishes and reception. Directional's Repeaters integration is optional and loaded through an entrypoint. It can continue to run with Simple Radio alone.
++- Saved tower records and published directional views keep live block entities out of cached RF paths. No-op tower snapshots avoid invalidating the graph. Guarded geometry scans distinguish incomplete restoration from confirmed destruction and avoid loading missing chunks.
++- Relay path alternatives are bounded and pruned, rather than expanding every possible repeated walk into deliveries. Terrain generation is queued with a time budget and reused independently of RF power and card changes.
++- Native power hooks and the virtual tower adapter share the new base-power rule. The independent native-object parity tests cover reach as well as travel, including float-sensitive boundaries. This is more useful than testing a copied formula against itself.
++- Client card labels are cached in `displayCards()`. Renderers draw synchronized data rather than making server requests or repeatedly parsing card NBT. Shared rendering and card-container code already prevent substantial duplication.
++- The baseline's retained evidence records 105 passing unit tests, 91 core server tests and 137 combined server tests. Production verification excludes test/preview classes and confirms ordinary/prototype jars are identical.
++
++**Maintenance work worth doing**
++
++`TowerManager` is the clearest future pressure point: 797 lines cover lifecycle reconciliation, indexes, persistence updates and graph construction. `RelayRouter` is 421 lines, with delivery selection, native callbacks, wire handling and several nested candidate loops. These classes have real responsibilities, but a future feature could easily entangle them further. Extract a graph-construction helper and a per-receiver choice helper when those areas next need substantial work. Keep the current lifecycle guarantees and regression fixtures around those moves.
++
++Formatting is uneven. Several small classes compress multiple actions and branches onto one line, while other files are extensively expanded. Consistent formatting and explicit imports would improve reviewability more than adding interfaces. Keep a formatting pass separate from behavioral fixes.
++
++Concrete small leftovers found:
++
++- Unused imports: `RelayAttachment` in `RelayRenderer`, `Nullable` in `RelayBlock`, and `BlockState` in Directional's `DishGeometry`.
++- `CardDisplay` caches `frequencyLabel` and `modulationLabel`, but current runtime callers use only the combined `label` and `present`. Those extra fields can be removed if they are not intended as a rendering extension surface.
++- The long `Simple-Radio-Repeaters-Documentation.md` still describes exact matching Foci/core releases, contradicting the current API-number contract. It also describes a missing `tools/PrototypeJar.java` shrinker; current `tools/prototype.gradle` simply copies the production jar. These are stale instructions, not an orphaned runtime shrinker.
++
++I did not find a clear unused private-helper subsystem in the runtime review. Some native/virtual RF math and guarded mast scanning are intentionally duplicated across boundaries: speculative virtual links need numeric math, and Directional must remain standalone. Preserve parity tests and comparable restoration tests rather than creating a hard Repeaters dependency just to remove similar code.
++
++The alternate parabolic designs are not orphaned: `DirectionalClient` registers their built-in resource packs. Historical previews, screenshots and build evidence are outside runtime source sets. They may be archived more neatly, but they should not be deleted as dead gameplay code.
++
++One old integration edge remains: `removeItemNoUpdate` clears the visual card cache but does not mark the bank dirty or notify the relay. Hoppers are blocked, and normal player removal uses the notifying method. A direct-container integration must currently call `setChanged()` after quiet edits. Document that contract or add an explicit notification if all external removals are supposed to update immediately.
++
++The first accepted copy of a frame also remains the winner across separately invoked transmitters. Within one routing invocation, candidate selection compares direct and relay options; that is different from collecting copies from independent transmitters before delivery. Keep this as a known behavior unless a real use case justifies delayed aggregation and its extra state.
++
++**Player assessment**
++
++The core build loop is coherent: core and antenna, relay and catalyst, top-mounted module, then tuned cards. The same front-face insertion/removal rules carry between attachments. Banks keep channels separate, transponders offer explicit conversion modes, and the monitor offers diagnostics without becoming a hidden repeating node. Amplifiers and directional designs give players meaningful alternatives to simply making every mast enormous.
++
++The main player difficulty is explaining what a “working” connection means. READY confirms valid hardware; a monitor link predicts a fresh first-relay signal; neither guarantees that an already-degraded message from farther along the network can cross the same link. The handbook already explains much of this, but the survey-induced SCAN/CHECK transitions and “Mapped” wording undermine that explanation. Fix those before adding more routing features.
++
++The new ANT threshold also needs a clearer display. The relay renders amplifier-adjusted ANT, and the monitor includes elevation as well, while base-power recovery uses the raw physical score. For example, a raw ANT 10 mast with an Ender Amplifier displays approximately ANT 18, but retains only 81.25% of its base power. A player can reasonably think they have passed the ANT 16 threshold. Prefer showing raw ANT for construction progress, with effective strength separately on the monitor, or make the distinction explicit beside the displayed value.
++
++Terrain Off and antenna balancing are independent switches. Avoid wording that implies Terrain Off restores every aspect of older station behavior. Foci's installation also intentionally replaces native dimensional access regardless of its old setting; the current README communicates that, and it should remain prominent.
++
++The physical slots and small displays suit the mod's style, though their size makes the handbook and a few clear diagnostic labels important. Many status/page strings remain hardcoded English; this is a localization/readability cleanup opportunity rather than a reason to change the mechanics.
++
++This player assessment uses the code, current handbook/resources and retained server fixtures. It does not claim a new live microphone playtest or a fresh FPS/TPS benchmark.
++
++**Suggested order**
++
++1. Keep the requested compass correction isolated in 0.7.6.
++2. Fix per-field config recovery and separate survey/operational terrain status.
++3. Clarify raw versus boosted ANT and radio-distance labels; correct stale documentation and remove small unused fields/imports.
++4. Refactor the two largest core responsibilities gradually, alongside the next changes that touch them. Keep Directional standalone and retain Foci API 1 while its contract is unchanged.
++
++**Code evidence in the reviewed 0.7.5 source**
++
++| Finding | Location |
++| --- | --- |
++| Survey requests operational terrain work | `monitor/RelaySurvey.java:62`; `terrain/TerrainManager.java:100`, `116`, `146` |
++| Exact TX-only compass and ambiguous label | `block/RelayMonitorBlockEntity.java:122`, `96` |
++| Whole-config curve validation | `RepeatersConfig.java:78`, `106`, `107`, `111` |
++| Empty-index lookup overhead | `network/TowerManager.java:203`; `mixin/AntennaBlockChangeMixin.java` |
++| Boosted display versus raw recovery | `client/RelayRenderer.java:43`; `radio/NativeRadioAdapter.java:19`, `32` |
++| Quiet removal and blocked sided automation | `block/ChannelBankBlockEntity.java:91`, `100` |
++| Unused display fields | `block/ChannelBankBlockEntity.java:49` |
++| Stale compatibility/packaging instructions | `docs/Simple-Radio-Repeaters-Documentation.md:14`, `208` |
++| Active alternate packs | `directional/.../client/DirectionalClient.java:17`, `20`, `23` |
++
++Core paths above are relative to `core/src/main/java/dev/paul/simpleradiorepeaters/` unless a different root is written.
++
++
++**Validation of the compass update**
++
++Core 0.7.6 passed 109 unit tests, 93 core server tests and 139 combined server tests. Coverage includes identical points for identical visible estimates, all sixteen bearings, saved/stacked/offhand compasses, no automatic upgrade after gaining RX, precise rebinding, Nether coordinate scaling, and both directions of Foci projection. The existing Foci 0.7.3 and Directional 0.2.9 jars remain byte-identical. Production archives contain no test classes. The other reported behaviors remain unchanged, as described above.
+--- 0.7.5/gradle.properties
++++ 0.7.6/gradle.properties
+@@ -1,7 +1,7 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.5
++mod_version=0.7.6
+ foci_version=0.7.3
+ foci_api_version=1
+ foci_required_api_version=1

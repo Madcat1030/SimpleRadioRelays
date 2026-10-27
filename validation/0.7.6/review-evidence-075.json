@@ -1,0 +1,110 @@
+{
+  "monitor_survey_requests": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java",
+    "matches": [
+      {
+        "line": 62,
+        "text": "double extra = TerrainManager.relayLoss(leg, sender, receiver);"
+      }
+    ]
+  },
+  "monitor_exact_binding": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java",
+    "matches": [
+      {
+        "line": 96,
+        "text": "text.add(String.format(Locale.ROOT, \"%s %.0f blocks\", entry.mapped() ? \"Mapped\" : \"Distance\", entry.distance()));"
+      },
+      {
+        "line": 122,
+        "text": "tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(target.antennaBase()));"
+      }
+    ]
+  },
+  "terrain_pending_status": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainManager.java",
+    "matches": [
+      {
+        "line": 100,
+        "text": "RelayState state = request ? m.relayStates.computeIfAbsent(pair, ignored -> new RelayState()) : m.relayStates.get(pair);"
+      },
+      {
+        "line": 116,
+        "text": "if (request && state != null) state.pending = key;"
+      },
+      {
+        "line": 146,
+        "text": "public static int mappingState(UUID tower) {"
+      }
+    ]
+  },
+  "curve_whole_config": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java",
+    "matches": [
+      {
+        "line": 78,
+        "text": "loaded.terrain.validate();"
+      },
+      {
+        "line": 106,
+        "text": "loaded = Files.exists(path) ? parse(Files.readString(path)) : new RepeatersConfig();"
+      },
+      {
+        "line": 107,
+        "text": "} catch (Exception e) {"
+      },
+      {
+        "line": 111,
+        "text": "INSTANCE = loaded;"
+      },
+      {
+        "line": 115,
+        "text": "} catch (Exception e) {"
+      }
+    ]
+  },
+  "block_hook": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/network/TowerManager.java",
+    "matches": [
+      {
+        "line": 203,
+        "text": "var affected = manager.antennasByChunk.get(new ChunkKey(level.dimension().location().toString(), new ChunkPos(pos).toLong()));"
+      }
+    ]
+  },
+  "raw_and_boosted_ant": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/client/RelayRenderer.java",
+    "matches": [
+      {
+        "line": 43,
+        "text": "long antenna = Math.round(RelayPower.antennaScore(relay.getAntennaPower(), relay.attachmentType().antennaMultiplier()));"
+      }
+    ]
+  },
+  "raw_recovery": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.java",
+    "matches": [
+      {
+        "line": 19,
+        "text": "type.getTransmissionPower(channel.mode()), tower.antennaScore());"
+      },
+      {
+        "line": 22,
+        "text": "return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())"
+      },
+      {
+        "line": 32,
+        "text": "type.receptionPower, tower.antennaScore());"
+      }
+    ]
+  },
+  "quiet_removal": {
+    "path": "core/src/main/java/dev/paul/simpleradiorepeaters/block/ChannelBankBlockEntity.java",
+    "matches": [
+      {
+        "line": 91,
+        "text": "@Override public ItemStack removeItemNoUpdate(int slot) {"
+      }
+    ]
+  }
+}

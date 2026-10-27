@@ -117,9 +117,13 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         TowerManager manager = TowerManager.get(server.getServer());
         TowerRecord target = manager == null ? null : manager.snapshot(selected == null ? lastRelay : selected);
         if (target == null) return false;
+        var entry = selected == null ? null : reading.entries().stream().filter(e -> e.id().equals(selected)).findFirst().orElse(null);
+        if (selected != null && entry == null) return false;
+        boolean estimated = entry != null && !entry.rx();
+        BlockPos position = entry == null ? reading.origin() : entry.compassTarget();
         ItemStack held = player.getItemInHand(hand), bound = held.copy(); bound.setCount(1);
         CompoundTag tag = bound.getOrCreateTag();
-        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(target.antennaBase()));
+        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(position));
         tag.putString(CompassItem.TAG_LODESTONE_DIMENSION, target.dimension());
         tag.putBoolean(CompassItem.TAG_LODESTONE_TRACKED, false);
         if (held.getCount() == 1) held.setTag(tag);
@@ -127,7 +131,8 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
             if (!player.getAbilities().instabuild) held.shrink(1);
             give(player, bound);
         }
-        player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_bound", dimension(target.dimension())), true);
+        player.displayClientMessage(Component.translatable(estimated ? "message.simpleradio_repeaters.monitor_bound_estimate"
+                : "message.simpleradio_repeaters.monitor_bound", dimension(target.dimension())), true);
         return true;
     }
     @Override public CompoundTag getUpdateTag() {

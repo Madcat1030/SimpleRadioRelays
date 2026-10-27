@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.radio.TowerPowerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T16:53:58.366Z" hostname="0f2480f4a6d9" time="0.002">
+  <properties/>
+  <testcase name="theFirstSixteenPointsRestoreHalfTheBaseLinearly()" classname="dev.paul.simpleradiorepeaters.radio.TowerPowerTest" time="0.0"/>
+  <testcase name="onlyTheBaseIsReducedAndFractionalPowerIsRetained()" classname="dev.paul.simpleradiorepeaters.radio.TowerPowerTest" time="0.001"/>
+  <testcase name="disablingTheBalanceRestoresEveryScore()" classname="dev.paul.simpleradiorepeaters.radio.TowerPowerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+[
+  "README.md",
+  "core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/MonitorGameTests.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/block/RelayMonitorBlockEntity.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/monitor/MonitorMath.java",
+  "core/src/main/java/dev/paul/simpleradiorepeaters/monitor/RelaySurvey.java",
+  "core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json",
+  "core/src/test/java/dev/paul/simpleradiorepeaters/monitor/MonitorMathTest.java",
+  "docs/Relay-Monitor.md",
+  "docs/Release-Notes-0.7.6.md",
+  "docs/Simple-Radio-Suite-Review-0.7.5.md",
+  "gradle.properties"
+]

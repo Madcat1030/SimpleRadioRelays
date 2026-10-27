@@ -117,14 +117,25 @@ public class MonitorGameTests implements FabricGameTest {
                 player.setItemInHand(InteractionHand.MAIN_HAND, compass); var page = monitor.lines();
                 check(SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen).consumesAction()
                                 && monitor.lines().equals(page), "Using a compass must bind without cycling");
-                check(NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase())
+                BlockPos estimate = monitor.reading().entries().stream().filter(e -> e.id().equals(destination.id())).findFirst().orElseThrow().compassTarget();
+                check(!estimate.equals(destination.antennaBase())
+                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(estimate)
                                 && compass.getTag().getString(CompassItem.TAG_LODESTONE_DIMENSION).equals(destination.dimension())
                                 && !compass.getTag().getBoolean(CompassItem.TAG_LODESTONE_TRACKED)
-                                && compass.getTag().getString("CustomTest").equals("keep"), "TX-only compass binding must use the real antenna base and preserve unrelated item data");
+                                && compass.getTag().getString("CustomTest").equals("keep"), "TX-only compass binding must use only the coarse estimate and preserve unrelated item data");
                 var restored = ItemStack.of(compass.save(new CompoundTag()));
                 Items.COMPASS.inventoryTick(restored, world, player, 0, false);
                 check(restored.getTag().contains(CompassItem.TAG_LODESTONE_POS) && !world.hasChunkAt(destination.antennaBase()),
                         "A saved compass must retain its target without a lodestone or target-chunk load");
+                manager.updateSnapshot(destination.settings(Set.of(CHANNEL), true, destination.catalystItem(), null,
+                        destination.attachment(), null));
+                monitor.refresh();
+                check(monitor.lines().get(0).contains("TX/RX")
+                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(estimate),
+                        "An existing compass must stay approximate when the tower becomes hearable");
+                check(monitor.bindCompass(player, InteractionHand.MAIN_HAND)
+                                && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase()),
+                        "Rebinding a now-heard tower must replace the estimate with its exact antenna base");
                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); monitor.nextPage();
                 check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Cycling past the last target must return to the overview");
                 var stack = new ItemStack(Items.COMPASS, 3); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
@@ -148,6 +159,58 @@ public class MonitorGameTests implements FabricGameTest {
             } catch (Exception e) { throw new RuntimeException(e); }
             finally { remove(manager, targets); world.removeBlock(monitor.getBlockPos(), false); world.removeBlock(relay.getBlockPos(), false); }
         });
+    }
+
+    private static void assertEstimate(ServerLevel world, ServerLevel destination, TowerRecord home,
+                                       TowerRecord target, ChannelKey channel, double unitsPerBlock) {
+        var manager = TowerManager.get(world.getServer()); manager.updateSnapshot(home); manager.updateSnapshot(target);
+        try {
+            var entries = RelaySurvey.scan(world.getServer(), manager, home, channel).entries();
+            check(entries.size() == 1 && entries.get(0).tx() && !entries.get(0).rx(), "Fixture must produce one TX-only estimate");
+            var entry = entries.get(0); var point = entry.compassTarget();
+            double scale = world.dimensionType().coordinateScale() / destination.dimensionType().coordinateScale();
+            double x = home.antennaBase().getCenter().x * scale, z = home.antennaBase().getCenter().z * scale;
+            check(Math.abs(Math.hypot(point.getX() + .5 - x, point.getZ() + .5 - z)
+                            - MonitorMath.approximateDistance(entry.distance()) / unitsPerBlock) < 2,
+                    "A compass estimate must convert the displayed radio distance into destination-world blocks");
+            check(entry.position() == null && !point.equals(target.antennaBase())
+                            && MonitorMath.bearing(point.getX() + .5 - x, point.getZ() + .5 - z).equals(entry.bearing()),
+                    "TX-only binding must use the rounded bearing without exposing a physical destination coordinate");
+            check(point.getY() == home.antennaBase().getY() && point.getY() != target.antennaBase().getY(),
+                    "An estimated compass must not leak the destination's height");
+            check(!world.hasChunkAt(home.antennaBase()) && !destination.hasChunkAt(target.antennaBase()),
+                    "Estimated and projected targets must not load chunks");
+        } finally { remove(manager, List.of(home, target)); }
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_survey")
+    public void netherCompassEstimatesUseWorldBlocksRatherThanScaledRadioBlocks(GameTestHelper helper) {
+        var world = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+        var channel = new ChannelKey("098.27", "AM");
+        var home = node(world, new BlockPos(2_600_000, 64, -2_600_000), Set.of(), null);
+        var target = node(world, home.antennaBase().offset(137, 16, 337), Set.of(), new TransponderChannels(channel, OTHER, null, false));
+        var a = com.codinglitch.simpleradio.central.WorldlyPosition.of(home.antennaBase(), world);
+        var b = com.codinglitch.simpleradio.central.WorldlyPosition.of(target.antennaBase(), world);
+        double units = world.dimensionType().coordinateScale() * RadioSpace.nativePropagation(a, b).distanceMultiplier();
+        assertEstimate(world, world, home, target, channel, units); helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_survey")
+    public void projectedCompassEstimatesResolveInThePhysicalDestinationsDimension(GameTestHelper helper) {
+        var focus = RelayAttachment.stored("NETHER_FOCUS");
+        if (focus == RelayAttachment.NONE) { helper.succeed(); return; }
+        var overworld = helper.getLevel().getServer().overworld();
+        var nether = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+        var channel = new ChannelKey("098.28", "AM"); var base = new BlockPos(2_800_000, 64, -2_800_000);
+        var plain = node(overworld, base, Set.of(), null);
+        var focused = plain.settings(Set.of(), true, plain.catalystItem(), null, focus, null);
+        var below = node(nether, new BlockPos(base.getX() / 8 + 30, 80, base.getZ() / 8 + 70), Set.of(),
+                new TransponderChannels(channel, OTHER, null, false));
+        assertEstimate(overworld, nether, focused, below, channel, 8);
+        var talking = node(nether, new BlockPos(base.getX() / 8, 64, base.getZ() / 8), Set.of(), null);
+        var above = node(overworld, base.offset(240, 16, 560), Set.of(), new TransponderChannels(channel, OTHER, null, false));
+        above = above.settings(above.channels(), true, above.catalystItem(), null, focus, above.transponder());
+        assertEstimate(nether, overworld, talking, above, channel, 1); helper.succeed();
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = "monitor_clicks")

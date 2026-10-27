@@ -12,7 +12,7 @@ import java.util.*;
 /** One-hop, first-departure predictions. Never joins the forwarding graph or emits audio. */
 public final class RelaySurvey {
     public record Entry(UUID id, boolean tx, boolean rx, String dimension, @Nullable BlockPos position,
-                        double distance, double terrainPercent, String bearing, boolean mapped) {
+                        double distance, double terrainPercent, String bearing, boolean mapped, BlockPos compassTarget) {
         public String directionLabel() { return tx && rx ? "TX/RX" : rx ? "RX only" : "TX only"; }
     }
     public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna,
@@ -44,9 +44,20 @@ public final class RelaySurvey {
             var leg = link.leg();
             var a = leg.from().position().scale(leg.from().level().dimensionType().coordinateScale());
             var b = leg.to().position().scale(leg.to().level().dimensionType().coordinateScale());
+            String bearing = MonitorMath.bearing(rx ? a.x - b.x : b.x - a.x, rx ? a.z - b.z : b.z - a.z);
+            BlockPos compass = target.antennaBase();
+            if (!rx) {
+                // The physical site comes first in native/Foci policies; projections are extra sites.
+                var destination = sites.stream().filter(site -> !site.projected()).findFirst().orElse(sites.get(0)).level();
+                double scale = destination.dimensionType().coordinateScale();
+                var estimate = MonitorMath.compassEstimate(a.x / scale, a.z / scale, bearing,
+                        leg.distance(), scale * leg.propagation().distanceMultiplier());
+                int y = Math.max(destination.getMinBuildHeight(), Math.min(destination.getMaxBuildHeight() - 1, home.antennaBase().getY()));
+                compass = BlockPos.containing(estimate.x(), y, estimate.z());
+            }
             entries.add(new Entry(target.id(), tx, rx, target.dimension(), rx ? target.antennaBase() : null,
                     leg.distance(), leg.distance() == 0 ? 0 : link.extra() / leg.distance() * 100,
-                    MonitorMath.bearing(rx ? a.x - b.x : b.x - a.x, rx ? a.z - b.z : b.z - a.z), leg.dimensional()));
+                    bearing, leg.dimensional(), compass));
         }
         entries.sort(Comparator.comparing((Entry e) -> !e.rx()).thenComparingDouble(Entry::distance).thenComparing(Entry::id));
         return new Result(channel, home.antennaBase(), home.dimension(), NativeRadioAdapter.antennaScore(home),

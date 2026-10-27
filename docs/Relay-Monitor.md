@@ -1,4 +1,4 @@
-# Relay Monitor — Repeaters 0.7.0
+# Relay Monitor — Repeaters 0.7.6
 
 The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
 
@@ -32,12 +32,13 @@ Click the inserted card with an empty hand to remove it. Card actions work only 
 
 Use an ordinary compass on the screen to bind it without changing the page:
 
-- A destination page binds to that tower's actual antenna base, including TX-only entries.
+- A TX/RX or RX-only page binds to that tower's actual antenna base.
+- A TX-only page binds to the centre of its displayed 16-point bearing at the displayed rounded distance. Scaled radio distances are converted to blocks in the destination dimension. The target height uses your antenna's height, clamped to that world's limits, rather than revealing the remote tower's height.
 - The overview binds to this tower.
 - One compass is bound at a time; remaining items in a stack stay unchanged.
 - An offhand compass works when the main hand is empty.
 
-The compass uses vanilla lodestone targeting without requiring a lodestone. It keeps the fixed coordinate through saves and reloads and does not load the target chunk. It works in the target dimension. Moving or rebuilding an antenna does not update an already-bound compass; bind it again if needed. Other mods or debug tools can read the exact coordinates once they are written to the compass.
+The compass uses vanilla lodestone targeting without requiring a lodestone. It keeps the fixed coordinate through saves and reloads and does not load the target chunk. It works in the target dimension. Moving or rebuilding an antenna does not update an already-bound compass; bind it again if needed. A compass bound from a TX-only page stays approximate when the tower later becomes hearable. Rebinding while it is heard replaces the estimate with the exact antenna location. Existing bound compasses are not rewritten. Repeating the same approximate binding gives the same point, rather than random offsets.
 
 ## What the numbers mean
 
