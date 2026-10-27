@@ -35,6 +35,8 @@ public final class RelayDiagnostics {
         lines.add("CONFIG persistent=" + RepeatersConfig.INSTANCE.persistentUnloadedTowers + " maxHops=" + RepeatersConfig.INSTANCE.maxRelayHops
                 + " nativeDimensions=" + SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional
                 + " relayDimensions=" + RadioSpace.nativeCrossDimensional());
+        lines.add("ANTENNA BALANCE enabled=" + RepeatersConfig.INSTANCE.antennaDependentBasePower
+                + " fullBaseAt=" + TowerPower.FULL_POWER_ANTENNA);
         var tx = SimpleRadioFrequencing.TRANSMITTER; var rx = SimpleRadioFrequencing.RECEIVER;
         lines.add("RF txAM=" + tx.transmissionPowerAM + " txFM=" + tx.transmissionPowerFM + " txAptitude=" + tx.antennaAptitude
                 + " loss=" + tx.transmissionDiminishment + " method=" + tx.diminishmentMethod
@@ -50,7 +52,9 @@ public final class RelayDiagnostics {
                     + " antennaBase=" + tower.antennaBase().toShortString()
                     + " antennaTip=" + tower.antennaTip()
                     + " elevationMultiplier=" + dev.paul.simpleradiorepeaters.terrain.TerrainManager.elevationMultiplier(tower)
-                    + " antennaRaw=" + tower.antennaScore() + " antennaEffective="
+                    + " antennaRaw=" + tower.antennaScore() + " baseMultiplier="
+                    + TowerPower.baseMultiplier(tower.antennaScore(), RepeatersConfig.INSTANCE.antennaDependentBasePower)
+                    + " antennaEffective="
                     + RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
                     + " catalyst=" + tower.catalystItem() + " efficiency=" + tower.efficiency()
                     + " upgrade=" + tower.attachment() + " reset=" + tower.attachment().resetsDecay()

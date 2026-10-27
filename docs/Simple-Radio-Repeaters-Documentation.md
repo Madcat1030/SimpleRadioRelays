@@ -61,7 +61,7 @@ The existing `relay_amplifier` item is renamed Ender Amplifier and retains its r
 
 For a departure:
 
-`nominal = native transmitter base + raw antenna score × upgrade multiplier × transmitter aptitude`
+`nominal = native transmitter base × base multiplier + raw antenna score × upgrade multiplier × transmitter aptitude`
 
 `departure = nominal × current tower catalyst strength × 0.9^(decay count − 1)`
 
@@ -69,7 +69,7 @@ Fresh traffic starts at zero visits/decay. Each ordinary Relay increments both. 
 
 At count 1, gilded blackstone's 90% strength gives 90% of nominal; amethyst's 60% gives 60%. At counts 2 and 3 they give 81%/72.9% and 54%/48.6%. Each tower applies its own catalyst once. Strengths are not multiplied across the whole route. Custom strengths above 100% receive the same shared 10% retention, so cycles cannot grow output without limit. There is no arbitrary 1% cutoff; a weak carrier can still reach a very close receiver.
 
-Reception uses native receiver base plus effective antenna contribution. Catalyst strength limits departure, not receiver gain. Amplification restores RF reach and does not repair inherited audio noise. Every candidate preserves the worst interference on its route. Final selection admits candidates within one interference point of the cleanest viable candidate, then prefers the stronger remaining carrier, followed by cleaner audio/fewer visits.
+Reception uses native receiver base × base multiplier plus effective antenna contribution. The optional 0.7.5 base multiplier rises from 0.5 at raw ANT 0 to 1 at ANT 16; see [antenna power balance](Antenna-Power-Balance.md). Catalyst strength limits departure, not receiver gain. Amplification restores RF reach and does not repair inherited audio noise. Every candidate preserves the worst interference on its route. Final selection admits candidates within one interference point of the cleanest viable candidate, then prefers the stronger remaining carrier, followed by cleaner audio/fewer visits.
 
 A distant player hearing a tower does not establish a return link. Their handheld must still reach a physical or projected receiving site. Wired RX-to-TX bridges retain their incoming carrier and counts; native wiring alone does not reset an already-frequenced source to full antenna departure power.
 
@@ -122,10 +122,10 @@ Operators can save/apply a live change using `/radiofoci config netherTweaks fal
 `config/simpleradio-repeaters.json` contains:
 
 ```json
-{ "maxRelayHops": 64, "persistentUnloadedTowers": true }
+{ "maxRelayHops": 64, "persistentUnloadedTowers": true, "antennaDependentBasePower": true }
 ```
 
-The hop budget is clamped to 1–128. Disabling persistence makes unloaded towers unavailable. The former core dimensional switches are removed and omitted when this config is saved. Catalysts remain mandatory.
+The hop budget is clamped to 1–128. Disabling persistence makes unloaded towers unavailable. Set `antennaDependentBasePower` to `false` to restore pre-0.7.5 station power independently of terrain mode. The former core dimensional switches are removed and omitted when this config is saved. Catalysts remain mandatory.
 
 `/radiorepeaters status` reports counts. Operator `/radiorepeaters list` reports tower positions, raw/effective antenna details, channels, catalyst and attachment/module mode. `/radiorepeaters refresh` reconciles loaded components, refreshes resource settings and requests antenna checks.
 

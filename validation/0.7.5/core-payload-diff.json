@@ -1,0 +1,15 @@
+[
+  "assets/simpleradio_repeaters/lang/en_us.json",
+  "dev/paul/simpleradiorepeaters/RepeatersConfig$Terrain.class",
+  "dev/paul/simpleradiorepeaters/RepeatersConfig.class",
+  "dev/paul/simpleradiorepeaters/mixin/TowerReceiverPowerMixin.class",
+  "dev/paul/simpleradiorepeaters/mixin/TowerTransmitterPowerMixin.class",
+  "dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.class",
+  "dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.class",
+  "dev/paul/simpleradiorepeaters/radio/RelayPerformance$Sample.class",
+  "dev/paul/simpleradiorepeaters/radio/RelayPerformance.class",
+  "dev/paul/simpleradiorepeaters/radio/TowerPower.class",
+  "dev/paul/simpleradiorepeaters/terrain/TerrainCommands.class",
+  "fabric.mod.json",
+  "simpleradio_repeaters.mixins.json"
+]

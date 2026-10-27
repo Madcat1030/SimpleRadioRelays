@@ -15,7 +15,8 @@ public final class NativeRadioAdapter {
     }
     public static float towerPower(TowerRecord tower, ChannelKey channel) {
         FrequencingType type = SimpleRadioFrequencing.TRANSMITTER;
-        return (float) (type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude);
+        return (float) TowerPower.apply(type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude,
+                type.getTransmissionPower(channel.mode()), tower.antennaScore());
     }
     public static double antennaScore(TowerRecord tower) {
         return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
@@ -25,10 +26,14 @@ public final class NativeRadioAdapter {
         return RelayPower.departure(towerPower(tower, channel), tower.efficiency(),
                 relayCount > 0 && tower.attachment().resetsDecay() ? 1 : relayCount);
     }
+    public static double towerReception(TowerRecord tower) {
+        FrequencingType type = SimpleRadioFrequencing.RECEIVER;
+        return TowerPower.apply(type.receptionPower + antennaScore(tower) * type.antennaAptitude,
+                type.receptionPower, tower.antennaScore());
+    }
     public static RadioLinkMath.Result receiveAtTower(double distance, double power, double cap,
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
-        return receive(distance, power, cap, sender, SimpleRadioFrequencing.RECEIVER.receptionPower
-                + antennaScore(receiver) * SimpleRadioFrequencing.RECEIVER.antennaAptitude,
+        return receive(distance, power, cap, sender, towerReception(receiver),
                 SimpleRadioFrequencing.RECEIVER.receptionFloor, channel, false, RadioPropagation.NORMAL);
     }
     public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
@@ -39,7 +44,7 @@ public final class NativeRadioAdapter {
                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel, double terrainLoss) {
         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
         double reception = RelayIntegrations.receptionAtTower(
-                type.receptionPower + antennaScore(receiver) * type.antennaAptitude, leg, receiver, channel);
+                towerReception(receiver), leg, receiver, channel);
         return receive(leg.distance() + terrainLoss, power, cap, sender, reception,
                 type.receptionFloor, channel, leg.dimensional(), leg.propagation());
     }
@@ -78,6 +83,7 @@ public final class NativeRadioAdapter {
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional,
                 SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference,
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
+                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.antennaDependentBasePower,
                 RadioSpace.policyFingerprint(), RelayIntegrations.configurationStamp(),
                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers,
                 dev.paul.simpleradiorepeaters.terrain.TerrainManager.configurationStamp());

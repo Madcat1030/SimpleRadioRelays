@@ -123,7 +123,8 @@ public class NativeMathGameTests implements FabricGameTest {
                 var a = new WorldlyPosition((float) origin.x, (float) origin.y, (float) origin.z, world);
                 double multiplier = RadioSpace.nativePropagation(a, a).distanceMultiplier();
                 double physicalScale = world.dimensionType().coordinateScale() * multiplier;
-                double edge = (2000 + SimpleRadioFrequencing.RECEIVER.receptionPower) / type.transmissionDiminishment / physicalScale;
+                double reception = SimpleRadioFrequencing.RECEIVER.receptionPower;
+                double edge = (2000 + TowerPower.apply(reception, reception, 0)) / type.transmissionDiminishment / physicalScale;
                 // At least half a physical block, and comfortably outside the coordinate float rounding band.
                 double margin = Math.max(.5, 8 * Math.ulp((float) (Math.abs(coordinate) * world.dimensionType().coordinateScale())) / physicalScale);
                 var inside = compare(world, origin, world, origin.add(edge - margin, 0, 0), mode, type, 2000, 2000, "inside reach");

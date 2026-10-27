@@ -10,7 +10,7 @@ import java.util.Set;
 @Mixin(value=GameTestRegistry.class,remap=false)
 public abstract class ParityTestFilter {
     private static final Set<String> CLASSES = Set.of("repeatergametests", "relaydiagnosticsgametests", "catalystgametests",
-        "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests",
+        "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests", "towerpowergametests",
         "antennaorigingametests", "antennamutationgametests", "performancegametests", "terraingametests", "monitorgametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
     @Inject(method="getAllTestFunctions",at=@At("RETURN"),cancellable=true,remap=false)
     private static void parityChecks(CallbackInfoReturnable<Collection<TestFunction>> result) {

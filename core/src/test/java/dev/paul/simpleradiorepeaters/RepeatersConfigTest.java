@@ -11,6 +11,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class RepeatersConfigTest {
     @TempDir Path directory;
 
+    @Test void antennaBalanceDefaultsOnAndCanBeDisabledIndependentlyOfTerrain() {
+        assertTrue(RepeatersConfig.parse("{}").antennaDependentBasePower);
+        var cfg = RepeatersConfig.parse("{\"antennaDependentBasePower\":false,\"terrain\":{\"mode\":\"full\"}}");
+        assertFalse(cfg.antennaDependentBasePower);
+        assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.FULL, cfg.terrain.mode);
+        assertFalse(RepeatersConfig.parse(new com.google.gson.Gson().toJson(cfg)).antennaDependentBasePower);
+        assertTrue(RepeatersConfig.parse("{\"terrain\":{\"mode\":\"off\"}}").antennaDependentBasePower);
+    }
+
     @Test void validReadOnlyConfigIsAppliedWithoutRequiringANormalizationSave() throws Exception {
         Path archive = directory.resolve("read-only.jar");
         String json = "{\"maxRelayHops\":23,\"persistentUnloadedTowers\":false,\"terrain\":{\"mode\":\"off\"}}";

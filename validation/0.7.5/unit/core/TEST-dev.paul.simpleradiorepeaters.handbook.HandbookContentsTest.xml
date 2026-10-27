@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiorepeaters.handbook.HandbookContentsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T02:46:35.294Z" hostname="a1e7ddb3a2b4" time="0.02">
+  <properties/>
+  <testcase name="coreResourcesHaveCompleteTextAndOnlyCoreRecipes()" classname="dev.paul.simpleradiorepeaters.handbook.HandbookContentsTest" time="0.011"/>
+  <testcase name="malformedEntriesCannotPretendToBeBothTextAndRecipes()" classname="dev.paul.simpleradiorepeaters.handbook.HandbookContentsTest" time="0.002"/>
+  <testcase name="onlySuppliedChaptersAppearAndOrderingIsStable()" classname="dev.paul.simpleradiorepeaters.handbook.HandbookContentsTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

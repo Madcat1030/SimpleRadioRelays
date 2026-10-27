@@ -888,7 +888,8 @@ public class RepeaterGameTests implements FabricGameTest {
         for (BlockPos pos : towerPositions) {
             check(!level.hasChunkAt(pos), "Fixture tower chunk must start unloaded");
             UUID id = UUID.randomUUID(); ids.add(id);
-            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, RelayCatalysts.GILDED, true, 2, Set.of(pos.asLong())));
+            // These 3500-block hops require an established mast under antenna-dependent base power.
+            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, RelayCatalysts.GILDED, true, 16, Set.of(pos.asLong())));
         }
         BlockPos receiverPos = sourcePos.offset(9000, 0, 0);
         // Only the listener's chunk is explicitly loaded, representing a player at the far end.

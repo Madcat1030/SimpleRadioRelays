@@ -240,6 +240,11 @@ public final class RelayPerformance {
         rf.put("tx_loss", tx.transmissionDiminishment); rf.put("tx_loss_method", tx.diminishmentMethod.name());
         rf.put("threshold_am", tx.diminishThresholdAM); rf.put("threshold_fm", tx.diminishThresholdFM);
         rf.put("rx_base", rx.receptionPower); rf.put("rx_floor", rx.receptionFloor); rf.put("rx_antenna_aptitude", rx.antennaAptitude);
+        rf.put("antenna_dependent_base_power", dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.antennaDependentBasePower);
+        rf.put("full_base_power_at_ant", TowerPower.FULL_POWER_ANTENNA);
+        rf.put("block_tx_am_at_ant0", TowerPower.apply(tx.transmissionPowerAM, tx.transmissionPowerAM, 0));
+        rf.put("block_tx_fm_at_ant0", TowerPower.apply(tx.transmissionPowerFM, tx.transmissionPowerFM, 0));
+        rf.put("block_rx_at_ant0", TowerPower.apply(rx.receptionPower, rx.receptionPower, 0));
         rf.put("base_noise_am", frequency.baseAMInterference); rf.put("base_noise_fm", frequency.baseFMInterference);
         rf.put("native_dimensional_enabled", frequency.crossDimensional); rf.put("dimensional_interference", frequency.dimensionalInterference);
         rf.put("relay_dimensional_enabled", RadioSpace.nativeCrossDimensional()); rf.put("policy_fingerprint", RadioSpace.policyFingerprint());

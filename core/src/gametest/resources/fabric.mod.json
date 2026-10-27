@@ -13,6 +13,7 @@
       "dev.paul.simpleradiorepeaters.gametest.TransponderRoutingGameTests",
       "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
       "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
+      "dev.paul.simpleradiorepeaters.gametest.TowerPowerGameTests",
       "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests",
       "dev.paul.simpleradiorepeaters.gametest.AntennaMutationGameTests",
       "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests",

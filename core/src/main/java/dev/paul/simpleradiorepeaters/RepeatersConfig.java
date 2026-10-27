@@ -14,6 +14,7 @@ public final class RepeatersConfig {
     public static RepeatersConfig INSTANCE = new RepeatersConfig();
     public int maxRelayHops = 64;
     public boolean persistentUnloadedTowers = true;
+    public boolean antennaDependentBasePower = true;
     public Terrain terrain = new Terrain();
 
     public static final class Terrain {

@@ -64,3 +64,10 @@ Passive card attachments override `routingCards()` to return no forwarding cards
 ## Confirmed antenna edits (0.7.4)
 
 `AntennaBlockChangeMixin` observes successful block-identity replacements through `LevelChunk.setBlockState`. It does not run for chunk unloading or ordinary property changes such as transmitter activity flags. `TowerManager` narrows those events through a chunk index and the saved footprint. Known structural destruction immediately persists an invalid record; geometry scans are coalesced and wait until the next server tick so zero-delay native antenna ticks can settle. Confirmed complete scans may publish zero immediately. Non-destructive changes still wait when historical dependencies are unavailable. The existing wire lifecycle path and periodic restoration verification keep their original semantics.
+
+
+## Antenna-dependent station power (0.7.5)
+
+`TowerPower` owns the shared base multiplier. Two composable return-value hooks adjust only native block Transmitter/Receiver types; handheld, Radio and third-party frequencing types retain their power. `NativeRadioAdapter` uses the same rule for virtual tower TX and RX, before catalyst/hop limits and optional reception integrations. Recovery uses the saved raw antenna score; effective amplifier/elevation bonuses remain additive. Native source initialization picks up the adjusted power, while already-powered packets are not scaled again. No shared native configuration value is rewritten.
+
+The boolean `antennaDependentBasePower` is independent of terrain mode and participates in the existing configuration fingerprint. The existing config reload path invalidates graphs without discarding terrain samples. Operator diagnostics record the flag and ANT-zero powers. `TowerPowerGameTests` covers native power/reach/travel, disabled parity, unchanged radio types, amplifier/catalyst/decay interaction and saved-only graph changes.

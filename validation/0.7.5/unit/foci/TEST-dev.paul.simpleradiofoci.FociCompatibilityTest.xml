@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.paul.simpleradiofoci.FociCompatibilityTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T02:46:38.734Z" hostname="a1e7ddb3a2b4" time="0.261">
+  <properties/>
+  <testcase name="actualMetadataAcceptsDifferentCoreVersionsWithTheSameApi()" classname="dev.paul.simpleradiofoci.FociCompatibilityTest" time="0.168"/>
+  <testcase name="differentApiIsRejectedWithInstalledVersionsAndRequiredApi()" classname="dev.paul.simpleradiofoci.FociCompatibilityTest" time="0.025"/>
+  <testcase name="missingOrMalformedMarkersFailClosedIncludingFractionalNumbers()" classname="dev.paul.simpleradiofoci.FociCompatibilityTest" time="0.033"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

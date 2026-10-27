@@ -14,11 +14,16 @@ public final class TerrainCommands {
         var root = literal("terrain").requires(s -> s.hasPermission(2)).executes(c -> status(c.getSource()));
         for (TerrainMode mode : TerrainMode.values()) root.then(literal(mode.id()).executes(c -> select(c, mode)));
         return root.then(literal("reload").executes(c -> {
+                    boolean previousBalance = RepeatersConfig.INSTANCE.antennaDependentBasePower;
                     if (!RepeatersConfig.load()) {
                         c.getSource().sendFailure(Component.literal("Could not reload simpleradio-repeaters.json. Current settings were kept; see latest.log for details."));
                         return 0;
                     }
-                    TerrainManager.reconfigure(c.getSource().getServer()); return status(c.getSource());
+                    TerrainManager.reconfigure(c.getSource().getServer());
+                    if (previousBalance != RepeatersConfig.INSTANCE.antennaDependentBasePower)
+                        dev.paul.simpleradiorepeaters.network.TowerManager.resourcesReloaded(
+                                c.getSource().getServer(), "antenna_balance_changed");
+                    return status(c.getSource());
                 }))
                 .then(literal("clear").executes(c -> {
                     TerrainManager.clear(c.getSource().getServer());

@@ -1,0 +1,632 @@
+--- 0.7.4/README.md
++++ 0.7.5/README.md
+@@ -4,7 +4,7 @@
+ 
+ | Mod | Adds | Requires |
+ | --- | --- | --- |
+-| Repeaters 0.7.4 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
++| Repeaters 0.7.5 | Relays, Repeater Banks, Transponders, Relay Monitors, Frequency Cards and amplifiers | Simple Radio |
+ | Dimensional Foci 0.7.3 | Focus-controlled links between dimensions and optional Nether reception tweaks | Repeaters with matching Foci API |
+ | Directional Antenna 0.2.9 | Aimable parabolic receivers and wide-angle arrays | Simple Radio; Repeaters is optional |
+ 
+@@ -26,10 +26,12 @@
+ 
+ Each relay gives the signal fresh transmit power, limited by its catalyst and accumulated relay decay. Amplifiers improve the antenna contribution; the Ender Amplifier also resets power decay. They do not repair audio already damaged along the way. Hearing a tower does not guarantee your handheld can reach it in reply.
+ 
+-Overworld relay links use coarse, saved terrain profiles. Taller masts can clear intervening hills. Ordinary device links keep their existing behavior unless the server enables terrain checks. See [terrain settings](docs/Terrain-and-Elevation.md).
++By default, block Transmitters, block Receivers and Relays start at 50% of their base power. Physical antenna strength restores it linearly: 75% at ANT 8 and 100% at ANT 16, plus the normal antenna bonuses throughout. Handhelds are unchanged. Set `antennaDependentBasePower` to `false` to disable this [balance rule](docs/Antenna-Power-Balance.md).
++
++Overworld relay links use coarse, saved terrain profiles. Taller masts can clear intervening hills. Terrain checks for ordinary device links are off unless the server enables Full mode. See [terrain settings](docs/Terrain-and-Elevation.md).
+ 
+ Plug a [Relay Monitor](docs/Relay-Monitor.md) on top instead to survey one channel without forwarding it. Cycle its screen with an empty hand, or use a compass to mark the selected tower.
+ 
+ Craft a book with Simple Radio copper wire to get **Simple Radio Relays**, the in-game guide. Installed addons contribute their own chapters. Saved relay towers continue working while unloaded without force-loading chunks.
+ 
+-See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.0.md), or [building and testing](docs/Development.md).
++See [Directional setup](directional/README.md), [release notes](docs/Release-Notes-0.7.5.md), or [building and testing](docs/Development.md).
+--- 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/NativeMathGameTests.java
++++ 0.7.5/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/NativeMathGameTests.java
+@@ -123,7 +123,8 @@
+                 var a = new WorldlyPosition((float) origin.x, (float) origin.y, (float) origin.z, world);
+                 double multiplier = RadioSpace.nativePropagation(a, a).distanceMultiplier();
+                 double physicalScale = world.dimensionType().coordinateScale() * multiplier;
+-                double edge = (2000 + SimpleRadioFrequencing.RECEIVER.receptionPower) / type.transmissionDiminishment / physicalScale;
++                double reception = SimpleRadioFrequencing.RECEIVER.receptionPower;
++                double edge = (2000 + TowerPower.apply(reception, reception, 0)) / type.transmissionDiminishment / physicalScale;
+                 // At least half a physical block, and comfortably outside the coordinate float rounding band.
+                 double margin = Math.max(.5, 8 * Math.ulp((float) (Math.abs(coordinate) * world.dimensionType().coordinateScale())) / physicalScale);
+                 var inside = compare(world, origin, world, origin.add(edge - margin, 0, 0), mode, type, 2000, 2000, "inside reach");
+--- 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java
++++ 0.7.5/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RelayDiagnosticsGameTests.java
+@@ -66,12 +66,16 @@
+         net.minecraft.resources.ResourceLocation relayCatalyst = edge ? TestCatalysts.neutral() : RelayCatalysts.GILDED;
+         if (edge) { a.removeCatalyst(); a.installCatalyst(new ItemStack(Items.NETHER_STAR), false); }
+         BlockPos bPos = coreA.offset(4000, 0, 0); UUID bId = UUID.randomUUID();
+-        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, relayCatalyst, true, 114, Set.of(bPos.asLong()));
++        // The non-edge return bridge uses sub-16 masts; give B enough power for their reduced RX allowance.
++        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, relayCatalyst, true,
++                edge ? 114 : 128, Set.of(bPos.asLong()));
+         int dx = 4000, dz = 0;
+         if (edge) {
+             int smallScore = AntennaScanner.scan(level, a.getBlockPos(), coreA).score();
+             double limit = NativeRadioAdapter.departurePower(b, ChannelKey.from(incoming), 2)
+-                    + SimpleRadioFrequencing.RECEIVER.receptionPower + smallScore * SimpleRadioFrequencing.RECEIVER.antennaAptitude;
++                    + TowerPower.apply(SimpleRadioFrequencing.RECEIVER.receptionPower
++                                    + smallScore * SimpleRadioFrequencing.RECEIVER.antennaAptitude,
++                            SimpleRadioFrequencing.RECEIVER.receptionPower, smallScore);
+             // Keep this far-side fixture's forced chunks separate from the other bridge tests.
+             int firstZ = nearSide ? 1024 : 1;
+             dx = (nearSide ? (int) Math.floor(Math.sqrt(limit * limit - firstZ * firstZ)) - 3 : (int) Math.floor(limit) - 1);
+@@ -90,7 +94,7 @@
+         level.setBlock(coreC, Blocks.IRON_BLOCK.defaultBlockState(), 3);
+         for (int height = 1; height <= 32; height++) level.setBlock(coreC.above(height), Blocks.AIR.defaultBlockState(), 3);
+         level.setBlock(coreC.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+-        if (edge) for (int height = 2; height <= mastHeight; height++)
++        for (int height = 2; height <= mastHeight; height++)
+             level.setBlock(coreC.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
+         RelayBlockEntity c = relay(level, coreC, incoming, returning, nearSide ? Direction.EAST : Direction.NORTH);
+         if (edge) { TestCatalysts.boosted(); c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.ENDER_PEARL), false); }
+--- 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java
++++ 0.7.5/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/RepeaterGameTests.java
+@@ -888,7 +888,8 @@
+         for (BlockPos pos : towerPositions) {
+             check(!level.hasChunkAt(pos), "Fixture tower chunk must start unloaded");
+             UUID id = UUID.randomUUID(); ids.add(id);
+-            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, RelayCatalysts.GILDED, true, 2, Set.of(pos.asLong())));
++            // These 3500-block hops require an established mast under antenna-dependent base power.
++            manager.updateSnapshot(new TowerRecord(id, level.dimension().location().toString(), pos, Set.of(key), true, RelayCatalysts.GILDED, true, 16, Set.of(pos.asLong())));
+         }
+         BlockPos receiverPos = sourcePos.offset(9000, 0, 0);
+         // Only the listener's chunk is explicitly loaded, representing a player at the far end.
+--- 0.7.4/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/TowerPowerGameTests.java
++++ 0.7.5/core/src/gametest/java/dev/paul/simpleradiorepeaters/gametest/TowerPowerGameTests.java
+@@ -0,0 +1,166 @@
++package dev.paul.simpleradiorepeaters.gametest;
++
++import com.codinglitch.simpleradio.ServerSimpleRadioApi;
++import com.codinglitch.simpleradio.central.*;
++import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
++import com.codinglitch.simpleradio.radio.*;
++import dev.paul.simpleradiorepeaters.RepeatersConfig;
++import dev.paul.simpleradiorepeaters.network.*;
++import dev.paul.simpleradiorepeaters.radio.*;
++import dev.paul.simpleradiorepeaters.terrain.TerrainMode;
++import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
++import net.minecraft.core.BlockPos;
++import net.minecraft.gametest.framework.*;
++import net.minecraft.server.level.ServerLevel;
++import java.util.*;
++
++/** Real native power/reach/travel hooks and unloaded relay graphs, without voice decoding. */
++public class TowerPowerGameTests implements FabricGameTest {
++    private static void check(boolean value, String message) { if (!value) throw new GameTestAssertException(message); }
++    private static WorldlyPosition at(ServerLevel world, double x) { return new WorldlyPosition((float) x, 64.5f, -2100000.5f, world); }
++    private static Frequency frequency(Frequency.Modulation mode) {
++        return ServerSimpleRadioApi.getInstance().frequencies().getOrCreate("097.83", mode);
++    }
++    private static double multiplier(int score, boolean enabled) { return enabled ? .5 + Math.min(16, score) / 32d : 1; }
++    private static RadioSource packet(WorldlyPosition location, Frequency channel) {
++        RadioSource source = new RadioSource(UUID.randomUUID(), location, new byte[]{1}, 1);
++        source.frequencyMedium = channel; return source;
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
++    public void native_blocks_and_virtual_towers_share_the_linear_base_curve(GameTestHelper helper) {
++        var world = helper.getLevel(); var cfg = RepeatersConfig.INSTANCE;
++        boolean old = cfg.antennaDependentBasePower; TerrainMode terrain = cfg.terrain.mode;
++        var tx = SimpleRadioFrequencing.TRANSMITTER; var rx = SimpleRadioFrequencing.RECEIVER;
++        int oldAM = tx.transmissionPowerAM, oldFM = tx.transmissionPowerFM, oldReception = rx.receptionPower;
++        try {
++            cfg.terrain.mode = TerrainMode.OFF;
++            // Odd custom values catch unwanted integer rounding, and must remain configured values.
++            tx.transmissionPowerAM = 4401; tx.transmissionPowerFM = 3301; rx.receptionPower = 301;
++            for (boolean enabled : new boolean[]{true, false}) {
++                cfg.antennaDependentBasePower = enabled;
++                for (var mode : Frequency.Modulation.values()) for (int score : new int[]{0, 2, 8, 15, 16, 32}) {
++                    Frequency frequency = frequency(mode); var location = at(world, 2100000.5);
++                    var sender = new RadioTransmitter(frequency, location).frequencingType(tx); sender.antennaPower = score;
++                    var receiver = new RadioReceiver(frequency, location).frequencingType(rx); receiver.antennaPower = score;
++                    double expectedTx = tx.getTransmissionPower(mode) * multiplier(score, enabled) + score * tx.antennaAptitude;
++                    double expectedRx = rx.receptionPower * multiplier(score, enabled) + score * rx.antennaAptitude;
++                    check(sender.getPower(mode) == (float) expectedTx && receiver.getPower() == (float) expectedRx,
++                            "Native block power must match the curve for " + mode + "/ANT " + score + "/enabled=" + enabled);
++                    var tower = new TowerRecord(UUID.randomUUID(), world.dimension().location().toString(), location.blockPos(),
++                            Set.of(ChannelKey.from(frequency)), true, RelayCatalysts.GILDED, true, score, Set.of());
++                    check(NativeRadioAdapter.towerPower(tower, ChannelKey.from(frequency)) == sender.getPower(mode)
++                                    && NativeRadioAdapter.towerReception(tower) == expectedRx,
++                            "Unloaded tower math must match the native block hooks");
++                    check(tower.eligible() == (score > 0), "A relay still requires a positive antenna score");
++                }
++            }
++            check(tx.transmissionPowerAM == 4401 && tx.transmissionPowerFM == 3301 && rx.receptionPower == 301,
++                    "Balancing must not rewrite the native shared configuration");
++            check(!world.hasChunkAt(at(world, 2100000.5).blockPos()), "Numeric probes must not load the mast chunk");
++        } finally {
++            tx.transmissionPowerAM = oldAM; tx.transmissionPowerFM = oldFM; rx.receptionPower = oldReception;
++            cfg.antennaDependentBasePower = old; cfg.terrain.mode = terrain;
++        }
++        helper.succeed();
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
++    public void native_reach_and_travel_use_the_balanced_power_once(GameTestHelper helper) {
++        var world = helper.getLevel(); var cfg = RepeatersConfig.INSTANCE;
++        boolean old = cfg.antennaDependentBasePower; TerrainMode terrain = cfg.terrain.mode;
++        try {
++            cfg.antennaDependentBasePower = true; cfg.terrain.mode = TerrainMode.OFF;
++            for (var mode : Frequency.Modulation.values()) for (int score : new int[]{0, 8, 16, 32}) {
++                Frequency f = frequency(mode); var location = at(world, 2100000.5);
++                var txType = SimpleRadioFrequencing.TRANSMITTER; var rxType = SimpleRadioFrequencing.RECEIVER;
++                var sender = new RadioTransmitter(f, location).frequencingType(txType); sender.antennaPower = score;
++                double power = txType.getTransmissionPower(mode) * multiplier(score, true) + score * txType.antennaAptitude;
++                double reception = rxType.receptionPower * multiplier(score, true) + score * rxType.antennaAptitude;
++                double edge = (power + reception) / txType.transmissionDiminishment;
++                for (double offset : new double[]{-2, 2}) {
++                    var receiver = new RadioReceiver(f, at(world, location.x + edge + offset)).frequencingType(rxType);
++                    receiver.antennaPower = score;
++                    check(sender.shouldRouteTo(packet(location, f), receiver) == (offset < 0),
++                            "The native reach gate must use the balanced base at ANT " + score);
++                }
++                var receiver = new RadioReceiver(f, at(world, location.x + 500)).frequencingType(rxType); receiver.antennaPower = score;
++                RadioSource source = sender.prepareSource(packet(location, f), receiver);
++                double expected = power - Math.max(rxType.receptionFloor, 500 - reception) * txType.transmissionDiminishment;
++                check(source.transmissionCap == (float) power && Math.abs(source.transmissionPower - expected) < .01,
++                        "Source initialization and native travel must apply the balance exactly once");
++                var alreadyPowered = packet(location, f); alreadyPowered.frequencingType = txType.id;
++                alreadyPowered.transmissionCap = alreadyPowered.transmissionPower = (float) power;
++                check(sender.prepareSource(alreadyPowered, receiver).transmissionPower == source.transmissionPower,
++                        "An already powered wired packet must not be scaled again");
++            }
++        } finally { cfg.antennaDependentBasePower = old; cfg.terrain.mode = terrain; }
++        helper.succeed();
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
++    public void handhelds_radios_and_other_frequencing_types_are_unchanged(GameTestHelper helper) {
++        var cfg = RepeatersConfig.INSTANCE; boolean old = cfg.antennaDependentBasePower;
++        try {
++            cfg.antennaDependentBasePower = true;
++            var custom = new FrequencingType(); custom.transmissionPowerAM = 1234; custom.transmissionPowerFM = 987;
++            custom.receptionPower = 231; custom.antennaAptitude = 7;
++            for (var type : new FrequencingType[]{SimpleRadioFrequencing.TRANSCEIVER, SimpleRadioFrequencing.WALKIE_TALKIE,
++                    SimpleRadioFrequencing.RADIO, custom}) for (var mode : Frequency.Modulation.values()) {
++                var f = frequency(mode); var location = at(helper.getLevel(), 2100000.5);
++                var sender = new RadioTransmitter(f, location).frequencingType(type);
++                var receiver = new RadioReceiver(f, location).frequencingType(type);
++                for (int score : new int[]{0, 8, 32}) {
++                    sender.antennaPower = receiver.antennaPower = score;
++                    check(sender.getPower(mode) == type.getTransmissionPower(mode) + score * type.antennaAptitude
++                                    && receiver.getPower() == type.receptionPower + score * type.antennaAptitude,
++                            "Other radio types must retain their original power, including custom addon types");
++                }
++            }
++        } finally { cfg.antennaDependentBasePower = old; }
++        helper.succeed();
++    }
++
++    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
++    public void relay_upgrades_keep_their_bonus_and_config_changes_rebuild_saved_links(GameTestHelper helper) {
++        var world = helper.getLevel(); var cfg = RepeatersConfig.INSTANCE; var manager = TowerManager.get(world.getServer());
++        boolean old = cfg.antennaDependentBasePower; TerrainMode terrain = cfg.terrain.mode;
++        BlockPos first = new BlockPos(2100000, 64, -2100000), second = first.east(3000);
++        Frequency f = frequency(Frequency.Modulation.AMPLITUDE); ChannelKey channel = ChannelKey.from(f);
++        UUID a = UUID.randomUUID(), b = UUID.randomUUID();
++        try {
++            cfg.terrain.mode = TerrainMode.OFF; cfg.antennaDependentBasePower = true;
++            for (var upgrade : new RelayAttachment[]{RelayAttachment.NONE, RelayAttachment.COPPER_AMPLIFIER,
++                    RelayAttachment.REDSTONE_AMPLIFIER, RelayAttachment.AMPLIFIER}) {
++                var tower = new TowerRecord(a, world.dimension().location().toString(), first, Set.of(channel), true,
++                        RelayCatalysts.GILDED, true, 8, Set.of(), null, upgrade, null);
++                double expected = SimpleRadioFrequencing.TRANSMITTER.getTransmissionPower(f.getModulation()) * .75
++                        + 8 * upgrade.antennaMultiplier() * SimpleRadioFrequencing.TRANSMITTER.antennaAptitude;
++                check(NativeRadioAdapter.towerPower(tower, channel) == (float) expected,
++                        "An amplifier keeps its full antenna bonus without advancing physical base recovery");
++                check(Math.abs(NativeRadioAdapter.departurePower(tower, channel, 3)
++                        - expected * tower.efficiency() * (upgrade.resetsDecay() ? 1 : .81)) < .001,
++                        "Catalyst efficiency and hop reset must act on the new tower ceiling");
++            }
++            TowerRecord left = new TowerRecord(a, world.dimension().location().toString(), first, Set.of(channel), true,
++                    RelayCatalysts.GILDED, true, 2, Set.of());
++            TowerRecord right = new TowerRecord(b, left.dimension(), second, left.channels(), true,
++                    RelayCatalysts.GILDED, true, 2, Set.of());
++            manager.updateSnapshot(left); manager.updateSnapshot(right);
++            TowerManager.resourcesReloaded(world.getServer());
++            int stamp = NativeRadioAdapter.configurationStamp(); var balanced = manager.network(world, channel);
++            check(balanced.edges().stream().allMatch(List::isEmpty), "Two ANT 2 relays should no longer bridge 3000 blocks");
++            cfg.antennaDependentBasePower = false;
++            check(NativeRadioAdapter.configurationStamp() != stamp, "The switch must participate in graph invalidation");
++            TowerManager.resourcesReloaded(world.getServer()); var original = manager.network(world, channel);
++            check(original != balanced && original.edges().stream().anyMatch(edges -> !edges.isEmpty())
++                            && manager.snapshot(a).equals(left) && manager.snapshot(b).equals(right),
++                    "Disabling must restore the original links without rebuilding antennas or rewriting saved hardware");
++            check(!world.hasChunkAt(first) && !world.hasChunkAt(second), "Saved-only links must not load either tower");
++        } finally {
++            manager.removeAt(world.dimension().location().toString(), first); manager.removeAt(world.dimension().location().toString(), second);
++            cfg.antennaDependentBasePower = old; cfg.terrain.mode = terrain; TowerManager.resourcesReloaded(world.getServer());
++        }
++        helper.succeed();
++    }
++}
+--- 0.7.4/core/src/gametest/resources/fabric.mod.json
++++ 0.7.5/core/src/gametest/resources/fabric.mod.json
+@@ -13,6 +13,7 @@
+       "dev.paul.simpleradiorepeaters.gametest.TransponderRoutingGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.HandbookGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.NativeMathGameTests",
++      "dev.paul.simpleradiorepeaters.gametest.TowerPowerGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.AntennaOriginGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.AntennaMutationGameTests",
+       "dev.paul.simpleradiorepeaters.gametest.PerformanceGameTests",
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/RepeatersConfig.java
+@@ -14,6 +14,7 @@
+     public static RepeatersConfig INSTANCE = new RepeatersConfig();
+     public int maxRelayHops = 64;
+     public boolean persistentUnloadedTowers = true;
++    public boolean antennaDependentBasePower = true;
+     public Terrain terrain = new Terrain();
+ 
+     public static final class Terrain {
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/TowerReceiverPowerMixin.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/TowerReceiverPowerMixin.java
+@@ -0,0 +1,19 @@
++package dev.paul.simpleradiorepeaters.mixin;
++
++import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
++import com.codinglitch.simpleradio.radio.RadioReceiver;
++import com.llamalad7.mixinextras.injector.ModifyReturnValue;
++import dev.paul.simpleradiorepeaters.radio.TowerPower;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++
++@Mixin(value = RadioReceiver.class, remap = false)
++public abstract class TowerReceiverPowerMixin {
++    @ModifyReturnValue(method = "getPower()F", at = @At("RETURN"))
++    private float repeaters$basePower(float original) {
++        var receiver = (RadioReceiver) (Object) this;
++        return receiver.frequencingType == SimpleRadioFrequencing.RECEIVER
++                ? (float) TowerPower.apply(original, receiver.frequencingType.receptionPower, receiver.antennaPower)
++                : original;
++    }
++}
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/TowerTransmitterPowerMixin.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/mixin/TowerTransmitterPowerMixin.java
+@@ -0,0 +1,20 @@
++package dev.paul.simpleradiorepeaters.mixin;
++
++import com.codinglitch.simpleradio.central.Frequency;
++import com.codinglitch.simpleradio.core.registry.SimpleRadioFrequencing;
++import com.codinglitch.simpleradio.radio.RadioTransmitter;
++import com.llamalad7.mixinextras.injector.ModifyReturnValue;
++import dev.paul.simpleradiorepeaters.radio.TowerPower;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++
++@Mixin(value = RadioTransmitter.class, remap = false)
++public abstract class TowerTransmitterPowerMixin {
++    @ModifyReturnValue(method = "getPower(Lcom/codinglitch/simpleradio/central/Frequency$Modulation;)F", at = @At("RETURN"))
++    private float repeaters$basePower(float original, Frequency.Modulation mode) {
++        var transmitter = (RadioTransmitter) (Object) this;
++        return transmitter.frequencingType == SimpleRadioFrequencing.TRANSMITTER
++                ? (float) TowerPower.apply(original, transmitter.frequencingType.getTransmissionPower(mode), transmitter.antennaPower)
++                : original;
++    }
++}
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/radio/NativeRadioAdapter.java
+@@ -15,7 +15,8 @@
+     }
+     public static float towerPower(TowerRecord tower, ChannelKey channel) {
+         FrequencingType type = SimpleRadioFrequencing.TRANSMITTER;
+-        return (float) (type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude);
++        return (float) TowerPower.apply(type.getTransmissionPower(channel.mode()) + antennaScore(tower) * type.antennaAptitude,
++                type.getTransmissionPower(channel.mode()), tower.antennaScore());
+     }
+     public static double antennaScore(TowerRecord tower) {
+         return RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
+@@ -25,10 +26,14 @@
+         return RelayPower.departure(towerPower(tower, channel), tower.efficiency(),
+                 relayCount > 0 && tower.attachment().resetsDecay() ? 1 : relayCount);
+     }
++    public static double towerReception(TowerRecord tower) {
++        FrequencingType type = SimpleRadioFrequencing.RECEIVER;
++        return TowerPower.apply(type.receptionPower + antennaScore(tower) * type.antennaAptitude,
++                type.receptionPower, tower.antennaScore());
++    }
+     public static RadioLinkMath.Result receiveAtTower(double distance, double power, double cap,
+                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel) {
+-        return receive(distance, power, cap, sender, SimpleRadioFrequencing.RECEIVER.receptionPower
+-                + antennaScore(receiver) * SimpleRadioFrequencing.RECEIVER.antennaAptitude,
++        return receive(distance, power, cap, sender, towerReception(receiver),
+                 SimpleRadioFrequencing.RECEIVER.receptionFloor, channel, false, RadioPropagation.NORMAL);
+     }
+     public static RadioLinkMath.Result receiveAtTower(RadioSpace.Leg leg, double power, double cap,
+@@ -39,7 +44,7 @@
+                                                       FrequencingType sender, TowerRecord receiver, ChannelKey channel, double terrainLoss) {
+         FrequencingType type = SimpleRadioFrequencing.RECEIVER;
+         double reception = RelayIntegrations.receptionAtTower(
+-                type.receptionPower + antennaScore(receiver) * type.antennaAptitude, leg, receiver, channel);
++                towerReception(receiver), leg, receiver, channel);
+         return receive(leg.distance() + terrainLoss, power, cap, sender, reception,
+                 type.receptionFloor, channel, leg.dimensional(), leg.propagation());
+     }
+@@ -78,6 +83,7 @@
+                 SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional,
+                 SimpleRadioLibrary.SERVER_CONFIG.frequency.dimensionalInterference,
+                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.maxRelayHops,
++                dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.antennaDependentBasePower,
+                 RadioSpace.policyFingerprint(), RelayIntegrations.configurationStamp(),
+                 dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.persistentUnloadedTowers,
+                 dev.paul.simpleradiorepeaters.terrain.TerrainManager.configurationStamp());
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayDiagnostics.java
+@@ -35,6 +35,8 @@
+         lines.add("CONFIG persistent=" + RepeatersConfig.INSTANCE.persistentUnloadedTowers + " maxHops=" + RepeatersConfig.INSTANCE.maxRelayHops
+                 + " nativeDimensions=" + SimpleRadioLibrary.SERVER_CONFIG.frequency.crossDimensional
+                 + " relayDimensions=" + RadioSpace.nativeCrossDimensional());
++        lines.add("ANTENNA BALANCE enabled=" + RepeatersConfig.INSTANCE.antennaDependentBasePower
++                + " fullBaseAt=" + TowerPower.FULL_POWER_ANTENNA);
+         var tx = SimpleRadioFrequencing.TRANSMITTER; var rx = SimpleRadioFrequencing.RECEIVER;
+         lines.add("RF txAM=" + tx.transmissionPowerAM + " txFM=" + tx.transmissionPowerFM + " txAptitude=" + tx.antennaAptitude
+                 + " loss=" + tx.transmissionDiminishment + " method=" + tx.diminishmentMethod
+@@ -50,7 +52,9 @@
+                     + " antennaBase=" + tower.antennaBase().toShortString()
+                     + " antennaTip=" + tower.antennaTip()
+                     + " elevationMultiplier=" + dev.paul.simpleradiorepeaters.terrain.TerrainManager.elevationMultiplier(tower)
+-                    + " antennaRaw=" + tower.antennaScore() + " antennaEffective="
++                    + " antennaRaw=" + tower.antennaScore() + " baseMultiplier="
++                    + TowerPower.baseMultiplier(tower.antennaScore(), RepeatersConfig.INSTANCE.antennaDependentBasePower)
++                    + " antennaEffective="
+                     + RelayPower.antennaScore(tower.antennaScore(), tower.attachment().antennaMultiplier())
+                     + " catalyst=" + tower.catalystItem() + " efficiency=" + tower.efficiency()
+                     + " upgrade=" + tower.attachment() + " reset=" + tower.attachment().resetsDecay()
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayPerformance.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/radio/RelayPerformance.java
+@@ -240,6 +240,11 @@
+         rf.put("tx_loss", tx.transmissionDiminishment); rf.put("tx_loss_method", tx.diminishmentMethod.name());
+         rf.put("threshold_am", tx.diminishThresholdAM); rf.put("threshold_fm", tx.diminishThresholdFM);
+         rf.put("rx_base", rx.receptionPower); rf.put("rx_floor", rx.receptionFloor); rf.put("rx_antenna_aptitude", rx.antennaAptitude);
++        rf.put("antenna_dependent_base_power", dev.paul.simpleradiorepeaters.RepeatersConfig.INSTANCE.antennaDependentBasePower);
++        rf.put("full_base_power_at_ant", TowerPower.FULL_POWER_ANTENNA);
++        rf.put("block_tx_am_at_ant0", TowerPower.apply(tx.transmissionPowerAM, tx.transmissionPowerAM, 0));
++        rf.put("block_tx_fm_at_ant0", TowerPower.apply(tx.transmissionPowerFM, tx.transmissionPowerFM, 0));
++        rf.put("block_rx_at_ant0", TowerPower.apply(rx.receptionPower, rx.receptionPower, 0));
+         rf.put("base_noise_am", frequency.baseAMInterference); rf.put("base_noise_fm", frequency.baseFMInterference);
+         rf.put("native_dimensional_enabled", frequency.crossDimensional); rf.put("dimensional_interference", frequency.dimensionalInterference);
+         rf.put("relay_dimensional_enabled", RadioSpace.nativeCrossDimensional()); rf.put("policy_fingerprint", RadioSpace.policyFingerprint());
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/radio/TowerPower.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/radio/TowerPower.java
+@@ -0,0 +1,18 @@
++package dev.paul.simpleradiorepeaters.radio;
++
++import dev.paul.simpleradiorepeaters.RepeatersConfig;
++
++/** Physical antenna strength restores the station's base power; antenna bonuses stay additive. */
++public final class TowerPower {
++    public static final int FULL_POWER_ANTENNA = 16;
++    private TowerPower() {}
++
++    public static double baseMultiplier(int antenna, boolean enabled) {
++        return enabled ? .5 + .5 * Math.max(0, Math.min(FULL_POWER_ANTENNA, antenna)) / FULL_POWER_ANTENNA : 1;
++    }
++
++    /** Subtract only the missing base contribution, preserving bonuses supplied by other hooks. */
++    public static double apply(double original, double base, int antenna) {
++        return original - base * (1 - baseMultiplier(antenna, RepeatersConfig.INSTANCE.antennaDependentBasePower));
++    }
++}
+--- 0.7.4/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainCommands.java
++++ 0.7.5/core/src/main/java/dev/paul/simpleradiorepeaters/terrain/TerrainCommands.java
+@@ -14,11 +14,16 @@
+         var root = literal("terrain").requires(s -> s.hasPermission(2)).executes(c -> status(c.getSource()));
+         for (TerrainMode mode : TerrainMode.values()) root.then(literal(mode.id()).executes(c -> select(c, mode)));
+         return root.then(literal("reload").executes(c -> {
++                    boolean previousBalance = RepeatersConfig.INSTANCE.antennaDependentBasePower;
+                     if (!RepeatersConfig.load()) {
+                         c.getSource().sendFailure(Component.literal("Could not reload simpleradio-repeaters.json. Current settings were kept; see latest.log for details."));
+                         return 0;
+                     }
+-                    TerrainManager.reconfigure(c.getSource().getServer()); return status(c.getSource());
++                    TerrainManager.reconfigure(c.getSource().getServer());
++                    if (previousBalance != RepeatersConfig.INSTANCE.antennaDependentBasePower)
++                        dev.paul.simpleradiorepeaters.network.TowerManager.resourcesReloaded(
++                                c.getSource().getServer(), "antenna_balance_changed");
++                    return status(c.getSource());
+                 }))
+                 .then(literal("clear").executes(c -> {
+                     TerrainManager.clear(c.getSource().getServer());
+--- 0.7.4/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
++++ 0.7.5/core/src/main/resources/assets/simpleradio_repeaters/lang/en_us.json
+@@ -23,7 +23,7 @@
+   "handbook.simpleradio_repeaters.start.title": "Your First Relay",
+   "handbook.simpleradio_repeaters.start.text_0": "You will need five things to start up your new radio network:\n1) An existing tower\n2) A Relay\n3) A Repeater Bank\n4) A Frequency Card\n5) A Catalyst\n\nAttach your new Relay to an existing Simple Radio tower's core. Unlike a Receiver or Transmitter, the Relay does not work on its own. It requires an antenna atop the core, or an antenna connected through wired insulators. Install a Catalyst as well, which sets the maximum strength of relayed transmissions.\n\nConnect a Repeater Bank to the top of your new Relay. While this block does nothing on its own, it is required to process the signals for relaying.\n\nCraft one or more Frequency Cards and tune them at the Radiosmithing Station. Each Repeater Bank allows a Relay to repeat up to six frequencies. Install a tuned Frequency Card into your Repeater Bank, and it's good to go.\n\nCongratulations! You have set up a Simple Radio Relay! Users with transceivers or other Simple Radio devices in receiving range of this tower can now hear signals from users who can transmit to it, even if those users are out of range of each other.\n\nBuild more Simple Radio Relay Towers to extend the network even further! Signals lose power over successive hops. Better Catalysts and upgrades can help on larger networks.",
+   "handbook.simpleradio_repeaters.relay.title": "The Relay",
+-  "handbook.simpleradio_repeaters.relay.text_1": "The Relay block is the core of your new relay network. Place it beside a metal core with an attached antenna to extend your network through the other compatible devices. It has two slots and one connection point.\n\nThe Relay requires a Catalyst to function. The standard catalysts are an amethyst block and gilded blackstone. Your choice determines how much of the tower's power this Relay can use to boost transmissions.\n\nWith each successive jump across a network, the available boost drops by 10%. A better catalyst means your towers don't need to be as enormous to carry messages across a few extreme-distance jumps.\n\nThe optional upgrade slot can improve the Relay's power, counter relay degradation, or add other abilities. See Amplifiers for more details.",
++  "handbook.simpleradio_repeaters.relay.text_1": "The Relay block is the core of your new relay network. Place it beside a metal core with an attached antenna to extend your network through the other compatible devices. It has two slots and one connection point.\n\nWith default settings, block Transmitters, block Receivers and Relays use half their base power without an antenna. Each antenna point restores some of it: 75% at ANT 8 and full base power at ANT 16. Normal antenna bonuses are added throughout. Handhelds are unchanged. A Relay still needs a real antenna to work.\n\nThe Relay requires a Catalyst to function. The standard catalysts are an amethyst block and gilded blackstone. Your choice determines how much of the tower's power this Relay can use to boost transmissions.\n\nWith each successive jump across a network, the available boost drops by 10%. A better catalyst means your towers don't need to be as enormous to carry messages across a few extreme-distance jumps.\n\nThe optional upgrade slot can improve the Relay's power, counter relay degradation, or add other abilities. See Amplifiers for more details.",
+   "handbook.simpleradio_repeaters.bank.title": "The Repeater Bank",
+   "handbook.simpleradio_repeaters.bank.text_1": "The Repeater Bank lets you select which frequencies your new Relay forwards. Attach it directly to the top of your Relay block to get it working.\n\nInstall tuned cards by right-clicking an available front slot. Right-click an inserted card with an empty hand to remove it.\n\nForwarding multiple signals on a single Relay does not combine those channels; they are all kept separate.",
+   "handbook.simpleradio_repeaters.transponder.title": "The Transponder",
+--- 0.7.4/core/src/main/resources/simpleradio_repeaters.mixins.json
++++ 0.7.5/core/src/main/resources/simpleradio_repeaters.mixins.json
+@@ -7,6 +7,8 @@
+     "RadioSourceMixin",
+     "RadioRouterMixin",
+     "RadioReceiverMixin",
++    "TowerTransmitterPowerMixin",
++    "TowerReceiverPowerMixin",
+     "RadioBlockActivationMixin",
+     "FrequencyChannelLifecycleMixin",
+     "AntennaWireMixin",
+--- 0.7.4/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
++++ 0.7.5/core/src/test/java/dev/paul/simpleradiorepeaters/RepeatersConfigTest.java
+@@ -10,6 +10,15 @@
+ 
+ class RepeatersConfigTest {
+     @TempDir Path directory;
++
++    @Test void antennaBalanceDefaultsOnAndCanBeDisabledIndependentlyOfTerrain() {
++        assertTrue(RepeatersConfig.parse("{}").antennaDependentBasePower);
++        var cfg = RepeatersConfig.parse("{\"antennaDependentBasePower\":false,\"terrain\":{\"mode\":\"full\"}}");
++        assertFalse(cfg.antennaDependentBasePower);
++        assertEquals(dev.paul.simpleradiorepeaters.terrain.TerrainMode.FULL, cfg.terrain.mode);
++        assertFalse(RepeatersConfig.parse(new com.google.gson.Gson().toJson(cfg)).antennaDependentBasePower);
++        assertTrue(RepeatersConfig.parse("{\"terrain\":{\"mode\":\"off\"}}").antennaDependentBasePower);
++    }
+ 
+     @Test void validReadOnlyConfigIsAppliedWithoutRequiringANormalizationSave() throws Exception {
+         Path archive = directory.resolve("read-only.jar");
+--- 0.7.4/core/src/test/java/dev/paul/simpleradiorepeaters/radio/TowerPowerTest.java
++++ 0.7.5/core/src/test/java/dev/paul/simpleradiorepeaters/radio/TowerPowerTest.java
+@@ -0,0 +1,33 @@
++package dev.paul.simpleradiorepeaters.radio;
++
++import dev.paul.simpleradiorepeaters.RepeatersConfig;
++import org.junit.jupiter.api.Test;
++import static org.junit.jupiter.api.Assertions.*;
++
++class TowerPowerTest {
++    @Test void theFirstSixteenPointsRestoreHalfTheBaseLinearly() {
++        for (int score = 0; score <= 16; score++)
++            assertEquals(.5 + score / 32d, TowerPower.baseMultiplier(score, true));
++        assertEquals(.5, TowerPower.baseMultiplier(-10, true));
++        assertEquals(1, TowerPower.baseMultiplier(10000, true));
++    }
++    @Test void disablingTheBalanceRestoresEveryScore() {
++        for (int score : new int[]{-1, 0, 2, 8, 15, 16, 32, 10000})
++            assertEquals(1, TowerPower.baseMultiplier(score, false));
++    }
++    @Test void onlyTheBaseIsReducedAndFractionalPowerIsRetained() {
++        var previous = RepeatersConfig.INSTANCE;
++        try {
++            RepeatersConfig.INSTANCE = new RepeatersConfig();
++            assertEquals(2337.5 + 10, TowerPower.apply(4410, 4400, 1));
++            assertEquals(3300 + 80, TowerPower.apply(4480, 4400, 8));
++            assertEquals(4400 + 160, TowerPower.apply(4560, 4400, 16));
++            assertEquals(4400 + 320, TowerPower.apply(4720, 4400, 32));
++            // An amplified antenna bonus must not also advance recovery of the base.
++            assertEquals(3300 + 140, TowerPower.apply(4540, 4400, 8));
++            assertEquals(225 + 80, TowerPower.apply(380, 300, 8));
++            RepeatersConfig.INSTANCE.antennaDependentBasePower = false;
++            assertEquals(4540, TowerPower.apply(4540, 4400, 8));
++        } finally { RepeatersConfig.INSTANCE = previous; }
++    }
++}
+--- 0.7.4/docs/Antenna-Power-Balance.md
++++ 0.7.5/docs/Antenna-Power-Balance.md
+@@ -0,0 +1,32 @@
++# Antenna power balance
++
++Repeaters 0.7.5 enables an antenna-dependent base-power rule for Simple Radio's block Transmitters, block Receivers and virtual relay towers. Handheld transceivers, walkie-talkies, placed Radios and third-party radio types keep their original power.
++
++| Physical antenna score | Base contribution | Antenna contribution |
++| --- | --- | --- |
++| 0 | 50% | Normal |
++| 2 | 56.25% | Normal |
++| 8 | 75% | Normal |
++| 16 or more | 100% | Normal |
++
++Between 0 and 16 the recovery is linear. Above 16 the base stays at 100%, while normal antenna bonuses continue growing. A relay still requires a verified positive antenna score, a valid catalyst and a configured forwarding module.
++
++`power = configured base × (0.5 + clamp(raw ANT, 0, 16) / 32) + normal antenna contribution`
++
++The transmitter uses its configured AM/FM base. The receiver uses its configured reception allowance. These are separate quantities: actual one-way reach depends on the transmitting device's power plus the receiving device's allowance, travel loss and any terrain/dimensional penalties. This does not impose a fixed listening radius on receivers hearing a powerful distant transmitter.
++
++For example, with AM base power 4,400 and antenna aptitude 10, transmitter powers are 2,200 at ANT 0; 3,380 at ANT 8; and 4,560 at ANT 16. A receiver with base allowance 300 and aptitude 10 has 150, 305 and 460 respectively. Two matching bare stations therefore have about half their previous combined reach before other losses. The receiver still has an allowance that handhelds lack.
++
++Recovery uses physical antenna strength. Relay amplifiers and elevation retain their full existing antenna bonuses; they do not turn a small physical mast into ANT 16 for base recovery. Catalyst efficiency and relay-count decay apply afterward, including the Ender Amplifier's existing decay reset. Directional reception and dimensional propagation compose with the resulting powers as before.
++
++## Configuration
++
++In `config/simpleradio-repeaters.json`:
++
++```json
++"antennaDependentBasePower": true
++```
++
++Set it to `false` to restore the previous station/relay base powers at every antenna score. The flag is independent of the terrain mode: terrain Off does not disable antenna balancing. Restart the server after editing, or use the existing `/radiorepeaters terrain reload` command, which reloads this complete config file. Reloading invalidates affected RF graphs while retaining measured terrain profiles.
++
++No Simple Radio configuration or saved antenna score is rewritten. Foci API 1 is unchanged; existing Foci 0.7.3 and Directional 0.2.9 installations can remain installed.
+--- 0.7.4/docs/Development.md
++++ 0.7.5/docs/Development.md
+@@ -64,3 +64,10 @@
+ ## Confirmed antenna edits (0.7.4)
+ 
+ `AntennaBlockChangeMixin` observes successful block-identity replacements through `LevelChunk.setBlockState`. It does not run for chunk unloading or ordinary property changes such as transmitter activity flags. `TowerManager` narrows those events through a chunk index and the saved footprint. Known structural destruction immediately persists an invalid record; geometry scans are coalesced and wait until the next server tick so zero-delay native antenna ticks can settle. Confirmed complete scans may publish zero immediately. Non-destructive changes still wait when historical dependencies are unavailable. The existing wire lifecycle path and periodic restoration verification keep their original semantics.
++
++
++## Antenna-dependent station power (0.7.5)
++
++`TowerPower` owns the shared base multiplier. Two composable return-value hooks adjust only native block Transmitter/Receiver types; handheld, Radio and third-party frequencing types retain their power. `NativeRadioAdapter` uses the same rule for virtual tower TX and RX, before catalyst/hop limits and optional reception integrations. Recovery uses the saved raw antenna score; effective amplifier/elevation bonuses remain additive. Native source initialization picks up the adjusted power, while already-powered packets are not scaled again. No shared native configuration value is rewritten.
++
++The boolean `antennaDependentBasePower` is independent of terrain mode and participates in the existing configuration fingerprint. The existing config reload path invalidates graphs without discarding terrain samples. Operator diagnostics record the flag and ANT-zero powers. `TowerPowerGameTests` covers native power/reach/travel, disabled parity, unchanged radio types, amplifier/catalyst/decay interaction and saved-only graph changes.
+--- 0.7.4/docs/Release-Notes-0.7.5.md
++++ 0.7.5/docs/Release-Notes-0.7.5.md
+@@ -0,0 +1,13 @@
++# Repeaters 0.7.5
++
++Block Transmitters, block Receivers and relay towers now start at 50% of their configured base power. Physical antenna strength restores it linearly to 75% at ANT 8 and 100% at ANT 16. Their normal antenna bonuses are added throughout, and continue growing above ANT 16. Handhelds, placed Radios and other frequencing types are unchanged.
++
++The new `antennaDependentBasePower` flag defaults to `true` in `config/simpleradio-repeaters.json`. Set it to `false` to restore the previous behavior. It is independent of terrain mode. Restart after editing, or use the existing `/radiorepeaters terrain reload` command to reload the config and refresh RF graphs without discarding terrain profiles.
++
++Native endpoint power and virtual relay power use the same rule. Amplifier/elevation antenna bonuses remain intact; catalyst efficiency and hop decay apply afterward. Relays still require a valid antenna and catalyst. The in-game guide and diagnostics describe the new balance.
++
++Use the existing Dimensional Foci 0.7.3 and Directional Antenna 0.2.9 jars. Foci API 1 is unchanged.
++
++## Validation
++
++Passed 105 unit tests, 91 core server tests, and 137 combined server tests with the existing Foci and Directional addons. Production jars contain no test classes; travel math and terrain sampling are unchanged.
+--- 0.7.4/docs/Simple-Radio-Repeaters-Documentation.md
++++ 0.7.5/docs/Simple-Radio-Repeaters-Documentation.md
+@@ -61,7 +61,7 @@
+ 
+ For a departure:
+ 
+-`nominal = native transmitter base + raw antenna score × upgrade multiplier × transmitter aptitude`
++`nominal = native transmitter base × base multiplier + raw antenna score × upgrade multiplier × transmitter aptitude`
+ 
+ `departure = nominal × current tower catalyst strength × 0.9^(decay count − 1)`
+ 
+@@ -69,7 +69,7 @@
+ 
+ At count 1, gilded blackstone's 90% strength gives 90% of nominal; amethyst's 60% gives 60%. At counts 2 and 3 they give 81%/72.9% and 54%/48.6%. Each tower applies its own catalyst once. Strengths are not multiplied across the whole route. Custom strengths above 100% receive the same shared 10% retention, so cycles cannot grow output without limit. There is no arbitrary 1% cutoff; a weak carrier can still reach a very close receiver.
+ 
+-Reception uses native receiver base plus effective antenna contribution. Catalyst strength limits departure, not receiver gain. Amplification restores RF reach and does not repair inherited audio noise. Every candidate preserves the worst interference on its route. Final selection admits candidates within one interference point of the cleanest viable candidate, then prefers the stronger remaining carrier, followed by cleaner audio/fewer visits.
++Reception uses native receiver base × base multiplier plus effective antenna contribution. The optional 0.7.5 base multiplier rises from 0.5 at raw ANT 0 to 1 at ANT 16; see [antenna power balance](Antenna-Power-Balance.md). Catalyst strength limits departure, not receiver gain. Amplification restores RF reach and does not repair inherited audio noise. Every candidate preserves the worst interference on its route. Final selection admits candidates within one interference point of the cleanest viable candidate, then prefers the stronger remaining carrier, followed by cleaner audio/fewer visits.
+ 
+ A distant player hearing a tower does not establish a return link. Their handheld must still reach a physical or projected receiving site. Wired RX-to-TX bridges retain their incoming carrier and counts; native wiring alone does not reset an already-frequenced source to full antenna departure power.
+ 
+@@ -122,10 +122,10 @@
+ `config/simpleradio-repeaters.json` contains:
+ 
+ ```json
+-{ "maxRelayHops": 64, "persistentUnloadedTowers": true }
++{ "maxRelayHops": 64, "persistentUnloadedTowers": true, "antennaDependentBasePower": true }
+ ```
+ 
+-The hop budget is clamped to 1–128. Disabling persistence makes unloaded towers unavailable. The former core dimensional switches are removed and omitted when this config is saved. Catalysts remain mandatory.
++The hop budget is clamped to 1–128. Disabling persistence makes unloaded towers unavailable. Set `antennaDependentBasePower` to `false` to restore pre-0.7.5 station power independently of terrain mode. The former core dimensional switches are removed and omitted when this config is saved. Catalysts remain mandatory.
+ 
+ `/radiorepeaters status` reports counts. Operator `/radiorepeaters list` reports tower positions, raw/effective antenna details, channels, catalyst and attachment/module mode. `/radiorepeaters refresh` reconciles loaded components, refreshes resource settings and requests antenna checks.
+ 
+--- 0.7.4/gradle.properties
++++ 0.7.5/gradle.properties
+@@ -1,7 +1,7 @@
+ org.gradle.jvmargs=-Xmx3G
+ org.gradle.parallel=false
+ org.gradle.daemon=false
+-mod_version=0.7.4
++mod_version=0.7.5
+ foci_version=0.7.3
+ foci_api_version=1
+ foci_required_api_version=1
+--- 0.7.4/tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java
++++ 0.7.5/tools/gametest/java/dev/paul/paritychecks/ParityTestFilter.java
+@@ -10,7 +10,7 @@
+ @Mixin(value=GameTestRegistry.class,remap=false)
+ public abstract class ParityTestFilter {
+     private static final Set<String> CLASSES = Set.of("repeatergametests", "relaydiagnosticsgametests", "catalystgametests",
+-        "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests",
++        "splitboundarygametests", "transponderroutinggametests", "handbookgametests", "nativemathgametests", "towerpowergametests",
+         "antennaorigingametests", "antennamutationgametests", "performancegametests", "terraingametests", "monitorgametests", "expansiongametests", "expansionhardwaregametests", "directionalgametests", "widearraygametests", "wiredantennagametests");
+     @Inject(method="getAllTestFunctions",at=@At("RETURN"),cancellable=true,remap=false)
+     private static void parityChecks(CallbackInfoReturnable<Collection<TestFunction>> result) {

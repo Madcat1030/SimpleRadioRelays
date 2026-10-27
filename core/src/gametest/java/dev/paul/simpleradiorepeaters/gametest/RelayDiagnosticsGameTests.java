@@ -66,12 +66,16 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         net.minecraft.resources.ResourceLocation relayCatalyst = edge ? TestCatalysts.neutral() : RelayCatalysts.GILDED;
         if (edge) { a.removeCatalyst(); a.installCatalyst(new ItemStack(Items.NETHER_STAR), false); }
         BlockPos bPos = coreA.offset(4000, 0, 0); UUID bId = UUID.randomUUID();
-        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, relayCatalyst, true, 114, Set.of(bPos.asLong()));
+        // The non-edge return bridge uses sub-16 masts; give B enough power for their reduced RX allowance.
+        TowerRecord b = new TowerRecord(bId, level.dimension().location().toString(), bPos, channels, true, relayCatalyst, true,
+                edge ? 114 : 128, Set.of(bPos.asLong()));
         int dx = 4000, dz = 0;
         if (edge) {
             int smallScore = AntennaScanner.scan(level, a.getBlockPos(), coreA).score();
             double limit = NativeRadioAdapter.departurePower(b, ChannelKey.from(incoming), 2)
-                    + SimpleRadioFrequencing.RECEIVER.receptionPower + smallScore * SimpleRadioFrequencing.RECEIVER.antennaAptitude;
+                    + TowerPower.apply(SimpleRadioFrequencing.RECEIVER.receptionPower
+                                    + smallScore * SimpleRadioFrequencing.RECEIVER.antennaAptitude,
+                            SimpleRadioFrequencing.RECEIVER.receptionPower, smallScore);
             // Keep this far-side fixture's forced chunks separate from the other bridge tests.
             int firstZ = nearSide ? 1024 : 1;
             dx = (nearSide ? (int) Math.floor(Math.sqrt(limit * limit - firstZ * firstZ)) - 3 : (int) Math.floor(limit) - 1);
@@ -90,7 +94,7 @@ public class RelayDiagnosticsGameTests implements FabricGameTest {
         level.setBlock(coreC, Blocks.IRON_BLOCK.defaultBlockState(), 3);
         for (int height = 1; height <= 32; height++) level.setBlock(coreC.above(height), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(coreC.above(), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
-        if (edge) for (int height = 2; height <= mastHeight; height++)
+        for (int height = 2; height <= mastHeight; height++)
             level.setBlock(coreC.above(height), SimpleRadioBlocks.ANTENNA.defaultBlockState(), 3);
         RelayBlockEntity c = relay(level, coreC, incoming, returning, nearSide ? Direction.EAST : Direction.NORTH);
         if (edge) { TestCatalysts.boosted(); c.removeCatalyst(); c.installCatalyst(new ItemStack(Items.ENDER_PEARL), false); }
