@@ -1,0 +1,492 @@
+[
+  {
+    "name": "Simple-Radio-Repeaters-0.1.2-source.zip",
+    "library_file_id": "libfile_40363798c29c81918f40a40f75dbe5c2",
+    "file_id": "file_000000003dec81f58b4d5c57b356e585",
+    "version_id": "3",
+    "created_at": "2026-10-12T18:20:05.236758Z",
+    "modified_at": "2026-10-13T17:47:15.306806Z",
+    "size_bytes": 263862,
+    "sha256": "7f3f1411eb7c858bba8867a78864b203f167b3032dbbd9d27f6d600c2ae810c9"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.1.3-source.zip",
+    "library_file_id": "libfile_6ee3a32431008191ba1d8c8e2769a4da",
+    "file_id": "file_00000000b5dc81f5bca22cc65083b67a",
+    "version_id": null,
+    "created_at": "2026-10-13T19:10:12.815868Z",
+    "modified_at": "2026-10-13T19:10:12.815868Z",
+    "size_bytes": 276822,
+    "sha256": "11306ed8e95de583f793aa9b7bee3947340505af4d24014178b2e7f8b0442532"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.0-source.zip",
+    "library_file_id": "libfile_06278332ab508191acc8e0768596c162",
+    "file_id": "file_00000000370881f59059d82d42c11137",
+    "version_id": null,
+    "created_at": "2026-10-14T00:07:15.412028Z",
+    "modified_at": "2026-10-14T00:07:15.412028Z",
+    "size_bytes": 394069,
+    "sha256": "99b1e2ff1cd3607345f45747ffa337546e9a2d43d6e04c46ed430555c1aadaa1"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.1-source.zip",
+    "library_file_id": "libfile_f8e246adad048191bdf5b80968421fd8",
+    "file_id": "file_00000000bbf88211b296977b17fd11ac",
+    "version_id": null,
+    "created_at": "2026-10-14T18:03:11.140085Z",
+    "modified_at": "2026-10-14T18:03:11.140085Z",
+    "size_bytes": 418827,
+    "sha256": "5757db8286cdb0c5a5fe07821876a94232b7cf580bea916791ddc706566c2ab1"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.2-source.zip",
+    "library_file_id": "libfile_b0f8d6334c2c8191845c723d067d495e",
+    "file_id": "file_00000000ff988246aa47843d142cca76",
+    "version_id": null,
+    "created_at": "2026-10-14T18:47:18.263070Z",
+    "modified_at": "2026-10-14T18:47:18.263070Z",
+    "size_bytes": 426318,
+    "sha256": "f3e7f718e9d54919815932a1044e01b5803896ec31bc8753d5cb100dc344e047"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.3-source.zip",
+    "library_file_id": "libfile_268971c234a88191a148a6923ed268f0",
+    "file_id": "file_00000000a62881f5ba2d25a293149e42",
+    "version_id": null,
+    "created_at": "2026-10-14T18:56:14.092743Z",
+    "modified_at": "2026-10-14T18:56:14.092743Z",
+    "size_bytes": 428992,
+    "sha256": "a5c3cb9895dfabe9e115c5dc2d2ae7a9f937827321b58871124e4ff56368306a"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.4-source.zip",
+    "library_file_id": "libfile_2dc0faacf7188191ad79965d07d5daba",
+    "file_id": "file_00000000bf8881f58537998aaf3daa01",
+    "version_id": null,
+    "created_at": "2026-10-14T20:37:17.025931Z",
+    "modified_at": "2026-10-14T20:37:17.025931Z",
+    "size_bytes": 449331,
+    "sha256": "8ddca8309081c997960a3e1d2d53cb27abc6a62f1a3f4b077a7c3596d4496c81"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.5-source.zip",
+    "library_file_id": "libfile_ea2a1e9e6e1c8191b6c1a7a264e4d14e",
+    "file_id": "file_0000000004f0822fb6c071a916690b80",
+    "version_id": null,
+    "created_at": "2026-10-15T18:53:41.780869Z",
+    "modified_at": "2026-10-15T18:53:41.780869Z",
+    "size_bytes": 464237,
+    "sha256": "3588d1a21e54de89357378a122067de5211095c0453d20cfa9d64615c1879525"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.6-source.zip",
+    "library_file_id": "libfile_22e3449aade881919584165b07364f73",
+    "file_id": "file_00000000e14081f6ac209eb13d299119",
+    "version_id": null,
+    "created_at": "2026-10-16T06:11:41.757063Z",
+    "modified_at": "2026-10-16T06:11:41.757063Z",
+    "size_bytes": 531946,
+    "sha256": "8ea66cc679c9d7aa716c00c8c1bd5e80e060b141bbf9971bb38f4a572cac5f89"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.7-source.zip",
+    "library_file_id": "libfile_8c68b6307518819185b338edac4623ec",
+    "file_id": "file_0000000056f881f6a183ce8393107447",
+    "version_id": null,
+    "created_at": "2026-10-16T06:52:34.453827Z",
+    "modified_at": "2026-10-16T06:52:34.453827Z",
+    "size_bytes": 591907,
+    "sha256": "5cd190e6728edb271b16fd074b4c45bffd988e05ee1d2a5922e8b2132e6a41b2"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.2.8-source.zip",
+    "library_file_id": "libfile_04f0e719f6388191bc67493ec15e6ef0",
+    "file_id": "file_000000001f8081f496d099867c2d9354",
+    "version_id": null,
+    "created_at": "2026-10-16T16:19:33.867739Z",
+    "modified_at": "2026-10-16T16:19:33.867739Z",
+    "size_bytes": 608337,
+    "sha256": "9d815ca5778d6de29ab968f88ecb6a2fd8b7a2a117fadf9b7c90011f846d10b5"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.3.0-source.zip",
+    "library_file_id": "libfile_553fd42a1b248191a88e54ed110b94d2",
+    "file_id": "file_00000000dbcc81fd95c05d33244d6123",
+    "version_id": null,
+    "created_at": "2026-10-16T17:15:52.678313Z",
+    "modified_at": "2026-10-16T17:15:52.678313Z",
+    "size_bytes": 734082,
+    "sha256": "697835cc65374430e9e5ee08aaed067b9dbfe4ea5145ca1ce6c5a09591bbad84"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.3.1-source.zip",
+    "library_file_id": "libfile_917b0b85e1408191a9070d11c979a8c5",
+    "file_id": "file_00000000d284820c8fa6c70125c0af76",
+    "version_id": null,
+    "created_at": "2026-10-16T18:22:15.797476Z",
+    "modified_at": "2026-10-16T18:22:15.797476Z",
+    "size_bytes": 760234,
+    "sha256": "af96815f33f614b3da5ea295b40a102adf80dca7d77004819248244424dbc437"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.3.2-source.zip",
+    "library_file_id": "libfile_4654034e4ee08191b5182f1b3191b034",
+    "file_id": "file_00000000bc0881f68aae0b4da79a570f",
+    "version_id": null,
+    "created_at": "2026-10-16T20:54:22.995584Z",
+    "modified_at": "2026-10-16T20:54:22.995584Z",
+    "size_bytes": 808288,
+    "sha256": "ec323a38595c8eacd32326811c9bd4f1265f6b8b9cdfbcd621bdb8af558b53f9"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.0-source.zip",
+    "library_file_id": "libfile_533c41416ee08191af20bebf8a848a5b",
+    "file_id": "file_00000000c92c81f99feab5cc1cc40ac0",
+    "version_id": null,
+    "created_at": "2026-10-16T22:12:28.294345Z",
+    "modified_at": "2026-10-16T22:12:28.294345Z",
+    "size_bytes": 1051390,
+    "sha256": "8e614ca56e55ac50dbe1809a153b47e4de1c1a181212fd748f1d0416ba2d746f"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.0-prototype-source.zip",
+    "library_file_id": "libfile_8791523240108191841ba73dea89e729",
+    "file_id": "file_00000000a7f081f58bccd47e72e1b340",
+    "version_id": null,
+    "created_at": "2026-10-16T22:28:12.733746Z",
+    "modified_at": "2026-10-16T22:28:12.733746Z",
+    "size_bytes": 1068269,
+    "sha256": "23b69113c9c808ebf6f5c66e585eada6e1b20ac52167f1a76f2aa3075bf2298e"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.1-prototype-source.zip",
+    "library_file_id": "libfile_a84373678c988191bde4711af06fb157",
+    "file_id": "file_0000000023b881f998f155743e2b11ec",
+    "version_id": null,
+    "created_at": "2026-10-16T23:36:01.058275Z",
+    "modified_at": "2026-10-16T23:36:01.058275Z",
+    "size_bytes": 1106339,
+    "sha256": "46e542180d85e5e1d129690be1f0808ea46f904b2b652bab6aa491c6c044e05a"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.2-prototype-source.zip",
+    "library_file_id": "libfile_d8ec7ec96aa88191b8121ba6c33dcb9e",
+    "file_id": "file_00000000e34081f5bc87610cb7e95158",
+    "version_id": null,
+    "created_at": "2026-10-17T00:04:04.831868Z",
+    "modified_at": "2026-10-17T00:04:04.831868Z",
+    "size_bytes": 1143483,
+    "sha256": "2d095d455d033b791acb09c87589ad4d923ae68e5ed2c503505a3a30a3aad775"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.3-prototype-source.zip",
+    "library_file_id": "libfile_b446d26ccae08191a736da54a6e36acd",
+    "file_id": "file_00000000135c81f586b5e7a23f036b6d",
+    "version_id": null,
+    "created_at": "2026-10-17T00:20:46.892221Z",
+    "modified_at": "2026-10-17T00:20:46.892221Z",
+    "size_bytes": 1179474,
+    "sha256": "0121542ab9845d0f83e032e24f68ea581a095c706bddda3777fb49de42cc483a"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.4.4-prototype-source.zip",
+    "library_file_id": "libfile_dd55b6c9bd948191add84cb21779896e",
+    "file_id": "file_00000000221881f5a3c2d4eadd903cec",
+    "version_id": null,
+    "created_at": "2026-10-17T00:55:06.462897Z",
+    "modified_at": "2026-10-17T00:55:06.462897Z",
+    "size_bytes": 1360865,
+    "sha256": "2621945f0e89046aabc3ffb93634fc5bc7f802f18fe4f75fc01df0d410b0acd8"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.5.0-split-source.zip",
+    "library_file_id": "libfile_205d1b59b2b881918623a2f140a00e20",
+    "file_id": "file_00000000b59081f5926833c0a0445b6d",
+    "version_id": null,
+    "created_at": "2026-10-20T21:34:28.336165Z",
+    "modified_at": "2026-10-20T21:34:28.336165Z",
+    "size_bytes": 1394055,
+    "sha256": "e9e326a2e1f5ce91bfa6a4170f94603336574c4cee99853b9b4bb8861fa39731"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.1.0-Source.zip",
+    "library_file_id": "libfile_ff8b924e08248191a73d0d947714fdeb",
+    "file_id": "file_00000000a4e88230b7c30364791c3a6f",
+    "version_id": null,
+    "created_at": "2026-10-20T22:33:07.985623Z",
+    "modified_at": "2026-10-20T22:33:07.985623Z",
+    "size_bytes": 1498639,
+    "sha256": "5bd2c2ec4bfdac761579dfd07adf31492c40ea4aeca8815a968703236057b86c"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.1.1-Source.zip",
+    "library_file_id": "libfile_9e423a4eb72c819187bfe11735f3a362",
+    "file_id": "file_000000008a9c820cad201f7aa86cfb87",
+    "version_id": null,
+    "created_at": "2026-10-21T02:25:33.503987Z",
+    "modified_at": "2026-10-21T02:25:33.503987Z",
+    "size_bytes": 1537418,
+    "sha256": "c67313e026e19d52da86a1a80a99057a53685c7c358083be14f8bc596c43fa6c"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.5.1-Source.zip",
+    "library_file_id": "libfile_dea68c8b36288191924148f3844a94f4",
+    "file_id": "file_000000003ba881f590fed58784b3c277",
+    "version_id": null,
+    "created_at": "2026-10-21T03:18:36.934698Z",
+    "modified_at": "2026-10-21T03:18:36.934698Z",
+    "size_bytes": 1596565,
+    "sha256": "f77cdf9a2be2b457b22ca12277854e1ce20662738c16724b612252986020e2e1"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.5.2-Source.zip",
+    "library_file_id": "libfile_50e02c138060819182d60e2e2f6f606d",
+    "file_id": "file_000000003b3081f5b9fb397c7bc4ce0d",
+    "version_id": null,
+    "created_at": "2026-10-21T03:41:38.755921Z",
+    "modified_at": "2026-10-21T03:41:38.755921Z",
+    "size_bytes": 1653747,
+    "sha256": "4340a472d0fe88dbf0856ef82057904be2a46dec3b34557fbf2faacd09b925fa"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.0-Source.zip",
+    "library_file_id": "libfile_ef6ea4fa338c81919dbd8ea735016111",
+    "file_id": "file_00000000465c81f4868b0f688d6ea543",
+    "version_id": null,
+    "created_at": "2026-10-21T17:02:54.182741Z",
+    "modified_at": "2026-10-21T17:02:54.182741Z",
+    "size_bytes": 1851045,
+    "sha256": "a3f9433915da6eea11e3925d974ca213eb8468b70f334603e693d9a090f89010"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.1-Source.zip",
+    "library_file_id": "libfile_f744079d077c8191bdecb8db1a602ae8",
+    "file_id": "file_00000000492481f9a86ca862b37346e7",
+    "version_id": null,
+    "created_at": "2026-10-21T17:25:20.219580Z",
+    "modified_at": "2026-10-21T17:25:20.219580Z",
+    "size_bytes": 2094087,
+    "sha256": "a22d5074942d4e95bf4f79a43aa032eb10fffa3785fd6f53a51ee5bc50920e4c"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.2-Source.zip",
+    "library_file_id": "libfile_3322f07df4208191af53da7e353a48fb",
+    "file_id": "file_00000000b78481f581d172a166c6601c",
+    "version_id": null,
+    "created_at": "2026-10-21T17:58:10.323471Z",
+    "modified_at": "2026-10-21T17:58:10.323471Z",
+    "size_bytes": 2497211,
+    "sha256": "0a4f1edcdbcffe1426b0cf5d0fb68a331985a67a75046039ef4a74cf3d95bef3"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.3-Source.zip",
+    "library_file_id": "libfile_10c0969e68788191a74cc39b7a821483",
+    "file_id": "file_00000000313481f69e36f52d432e6c1c",
+    "version_id": null,
+    "created_at": "2026-10-21T19:05:11.202460Z",
+    "modified_at": "2026-10-21T19:05:11.202460Z",
+    "size_bytes": 3000887,
+    "sha256": "d04e4d8e225b08ee8ea342c99ce55138625b068697d2fbbc1c71c19483cb8a3d"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.4-Source.zip",
+    "library_file_id": "libfile_ccd2c23f2dac8191937d8e4746af1d32",
+    "file_id": "file_00000000c1e481f588f3591f07b71312",
+    "version_id": null,
+    "created_at": "2026-10-21T20:34:58.823238Z",
+    "modified_at": "2026-10-21T20:34:58.823238Z",
+    "size_bytes": 3565186,
+    "sha256": "886e2d3065c31e4d0ad8bc31e8fa83c4c2eb685fce5f0b1279b5384669b39248"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.5-Source.zip",
+    "library_file_id": "libfile_197ab624ee08819190edca46f8466081",
+    "file_id": "file_0000000036bc81fd9bcac3e5c02c03f2",
+    "version_id": null,
+    "created_at": "2026-10-22T00:27:28.357523Z",
+    "modified_at": "2026-10-22T00:27:28.357523Z",
+    "size_bytes": 4455218,
+    "sha256": "71913e71c036cf86242be50e816b7f37367efd1db55bea69b5a261b78b191ab2"
+  },
+  {
+    "name": "Simple-Radio-Directional-Antenna-0.2.6-Source.zip",
+    "library_file_id": "libfile_b6a0cd8ba99c8191a04f69f68fe020fd",
+    "file_id": "file_00000000b2b881fbb37b188d7b7f0a38",
+    "version_id": null,
+    "created_at": "2026-10-22T01:03:08.439362Z",
+    "modified_at": "2026-10-22T01:03:08.439362Z",
+    "size_bytes": 4467194,
+    "sha256": "8e965d02ca328ca97f12e49cc6f5c5257d554ddc366e43ecb97e1c289a3c7488"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.3-Handbook-Source.zip",
+    "library_file_id": "libfile_4aa22e03803c8191b877c7529d023375",
+    "file_id": "file_00000000a69481f8a88730466d432327",
+    "version_id": null,
+    "created_at": "2026-10-22T01:20:19.024362Z",
+    "modified_at": "2026-10-22T01:20:19.024362Z",
+    "size_bytes": 4763956,
+    "sha256": "f0c679f3ac645d433bb8d668634cd78c4a7deedbae7eb87f4ef180315223366a"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.4-Source.zip",
+    "library_file_id": "libfile_bb148cae3e3081918092b4c12da0d17a",
+    "file_id": "file_000000002ff481f5a2c4d6f5b76b0459",
+    "version_id": null,
+    "created_at": "2026-10-22T21:36:40.822241Z",
+    "modified_at": "2026-10-22T21:36:40.822241Z",
+    "size_bytes": 4775382,
+    "sha256": "5d081e98b39ce80e3b5ab5b1e94fe636ca54d72cc817a1638c8d7bec5d716d4c"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.5-Source.zip",
+    "library_file_id": "libfile_29be55f2144481919452a72e548ef26f",
+    "file_id": "file_0000000031a881fd94d0757725586d53",
+    "version_id": null,
+    "created_at": "2026-10-22T22:35:07.215716Z",
+    "modified_at": "2026-10-22T22:35:07.215716Z",
+    "size_bytes": 4839103,
+    "sha256": "d9518969df4c79fcfff93bb276277aa0919b8f56ce52e38d4cf57c6f165dedb1"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.6-Source.zip",
+    "library_file_id": "libfile_b2b8218a8718819195d30ca8b4a58ee2",
+    "file_id": "file_000000003f8c81fdab69d8f861c70382",
+    "version_id": null,
+    "created_at": "2026-10-23T17:13:58.745532Z",
+    "modified_at": "2026-10-23T17:13:58.745532Z",
+    "size_bytes": 5310525,
+    "sha256": "91126b3e1419c25345c566d76ddeebd8b01ebbf860ace91d9526d0504d8a382b"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.7-Source.zip",
+    "library_file_id": "libfile_5a1bd2d380dc8191b9d2531d3b5fc122",
+    "file_id": "file_00000000715c81f5922f47f0c3c6c945",
+    "version_id": null,
+    "created_at": "2026-10-23T21:28:56.707261Z",
+    "modified_at": "2026-10-23T21:28:56.707261Z",
+    "size_bytes": 5347030,
+    "sha256": "690abb4a3698546d0c5059e32117d09c5c2ae9204947a89d27b65474b12eda8a"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.5.8-Source.zip",
+    "library_file_id": "libfile_2ba2ef671d108191a4ee46ba335cba3f",
+    "file_id": "file_000000001a8881f799392743c8ca1299",
+    "version_id": null,
+    "created_at": "2026-10-24T09:00:19.183407Z",
+    "modified_at": "2026-10-24T09:00:19.183407Z",
+    "size_bytes": 5456537,
+    "sha256": "e23e050eb86a01faff0ff05fd7a9076bae2776a2dc6726e78630d35cdca3ba1c"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.6.0-Source.zip",
+    "library_file_id": "libfile_e94c789f0ca88191889965f2b3e09021",
+    "file_id": "file_00000000632481fda267bc97b0f76f0b",
+    "version_id": null,
+    "created_at": "2026-10-25T03:41:52.828909Z",
+    "modified_at": "2026-10-25T03:41:52.828909Z",
+    "size_bytes": 5493797,
+    "sha256": "df83d4c683f3577d9c450036c41181d1faddaf832986b2cc0a3ea88b20d374b7"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.6.1-Source.zip",
+    "library_file_id": "libfile_f9e7f01fda1881919b1e52a5bdde76f7",
+    "file_id": "file_0000000056d081f58dd973cdb0c1ffcd",
+    "version_id": null,
+    "created_at": "2026-10-25T07:44:59.999317Z",
+    "modified_at": "2026-10-25T07:44:59.999317Z",
+    "size_bytes": 5550645,
+    "sha256": "0b09d3f11c19fda41b4e01dad890190d363120156b0968a6e08ebcc6e491d742"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.0-Source.zip",
+    "library_file_id": "libfile_6410baabcec8819183fcb1896480ad46",
+    "file_id": "file_00000000c5c881f6b602f9cffc80b785",
+    "version_id": null,
+    "created_at": "2026-10-25T09:11:29.437669Z",
+    "modified_at": "2026-10-25T09:11:29.437669Z",
+    "size_bytes": 5676088,
+    "sha256": "a316bb0b428c3ef5489c3c1abdc2eace7f4b9830f9f91718f1b7511b61b865ea"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.1-Source.zip",
+    "library_file_id": "libfile_4306e7a971348191a1b23b0b1e5e080e",
+    "file_id": "file_00000000b4ac81f9b1f90869402a7483",
+    "version_id": null,
+    "created_at": "2026-10-25T17:54:20.267887Z",
+    "modified_at": "2026-10-25T17:54:20.267887Z",
+    "size_bytes": 5736630,
+    "sha256": "9ad8c5eb4080837b9f3218ec48f50d3b7bed372419289bc5e5ef932db0adc1d9"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.2-Source.zip",
+    "library_file_id": "libfile_b9a4c40a6fe881919940cdbd42ed0573",
+    "file_id": "file_00000000c25081f5b623bc0f834e0071",
+    "version_id": null,
+    "created_at": "2026-10-25T19:09:56.306177Z",
+    "modified_at": "2026-10-25T19:09:56.306177Z",
+    "size_bytes": 5792077,
+    "sha256": "a927a08c6c48c7b1a0a762faf8c8405905dfbe45512e6396da395be238c7564f"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.3-Source.zip",
+    "library_file_id": "libfile_9156c212cb588191bfca0859122c9eca",
+    "file_id": "file_000000001ea081f5b0e98e7413b3a7ad",
+    "version_id": null,
+    "created_at": "2026-10-25T19:50:02.617840Z",
+    "modified_at": "2026-10-25T19:50:02.617840Z",
+    "size_bytes": 5853370,
+    "sha256": "e6bbd8f8302846ced8e934213a995e8be86378d84e825b0ebc7bd6436d4ea221"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.4-Source.zip",
+    "library_file_id": "libfile_714430ab0f388191a7b47c89c31a3737",
+    "file_id": "file_00000000ad9881f59358bbcde6911c00",
+    "version_id": null,
+    "created_at": "2026-10-25T20:18:56.602238Z",
+    "modified_at": "2026-10-25T20:18:56.602238Z",
+    "size_bytes": 5915762,
+    "sha256": "bcffe4589bdf773fda9bb451dac17d12b121f724033d504cc555fc23726e50e3"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.5-Source.zip",
+    "library_file_id": "libfile_5393a77a0cec8191995d78b1a0000775",
+    "file_id": "file_00000000849c81f6ac984205c1d90b82",
+    "version_id": null,
+    "created_at": "2026-10-27T02:55:39.522540Z",
+    "modified_at": "2026-10-27T02:55:39.522540Z",
+    "size_bytes": 6029902,
+    "sha256": "a5202e3f6aa859495d25850f58c0be3e4f279fd2f433cdae7caa43badcf8f6ee"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.7.6-Source.zip",
+    "library_file_id": "libfile_97ee6374c9a08191bb79a3549ae0884a",
+    "file_id": "file_00000000eeb88210b4acd7d055c5c2a4",
+    "version_id": null,
+    "created_at": "2026-10-27T16:59:46.185834Z",
+    "modified_at": "2026-10-27T16:59:46.185834Z",
+    "size_bytes": 6118721,
+    "sha256": "8c3a03921d5b8e673873655f4e9e688f227239fa11bdfe826d0e58454d1acc2b"
+  },
+  {
+    "name": "Simple-Radio-Addons-0.9r1-Source.zip",
+    "library_file_id": "libfile_4e08ee4bd6588191a6f18e42a589d43f",
+    "file_id": "file_000000007554823097d65585b2d0f462",
+    "version_id": null,
+    "created_at": "2026-10-27T18:22:00.397220Z",
+    "modified_at": "2026-10-27T18:22:00.397220Z",
+    "size_bytes": 6231380,
+    "sha256": "d5a4c2a1d6adbbcce50a29a88743a86b3a09a51af17e22def5c1351100f4d184"
+  },
+  {
+    "name": "Simple-Radio-Repeaters-0.1.1-handheld-audit.zip",
+    "library_file_id": "libfile_4eee80c45ee881919904fe256fe54e17",
+    "file_id": "file_0000000044c481fd91108617989c99b7",
+    "version_id": null,
+    "created_at": "2026-10-13T04:17:03.998368Z",
+    "modified_at": "2026-10-13T04:17:03.998368Z",
+    "size_bytes": 12894,
+    "sha256": "4972404cf6b852e691a8a6eeef3328518b806c63b830afc0ca9a955174ba1f50"
+  }
+]

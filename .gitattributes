@@ -1,0 +1,4 @@
+# Preserve historical source bytes; mark real binary assets explicitly.
+*.png binary
+*.jar binary
+*.pdf binary

@@ -1,0 +1,22 @@
+# Local output; archived validation evidence is intentionally tracked.
+**/.gradle/
+**/build/
+**/run/
+**/run-client/
+**/run-server/
+**/logs/
+**/crash-reports/
+**/__pycache__/
+**/node_modules/
+**/.idea/
+**/.vscode/
+*.log
+*.class
+*.pyc
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+.DS_Store
+Thumbs.db
+local.properties
+.env
+.env.*
