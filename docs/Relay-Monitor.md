@@ -36,9 +36,9 @@ The map puts this antenna at **O** in the center, with north up. Positions are r
 | --- | --- |
 | Green label | The monitor can reach and hear this tower. |
 | White label | The monitor can hear this tower, but none of the outbound paths on the map reaches it. |
-| Orange `?` | The first unheard tower on an outbound branch. Its location is estimated from the last audible tower's rounded bearing and distance. |
+| Orange `0-?`, `A-?`, etc. | The first unheard tower on an outbound branch. The prefix identifies the last known tower; the position is estimated from its rounded bearing and distance. |
 
-The nearest direct neighbors are labeled **O-a** through **O-n**. Up to nine towers in the next layer use their parent's letter, such as **a-1** or **b-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
+The nearest direct neighbors are labeled **O-A** through **O-N**. Up to nine towers in the next layer use their parent's letter, such as **A-1** or **B-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
 
 The map follows the card's frequency and modulation within this dimension and accounts for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
 

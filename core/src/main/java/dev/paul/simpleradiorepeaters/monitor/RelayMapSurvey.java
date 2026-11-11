@@ -66,7 +66,8 @@ public final class RelayMapSurvey {
         var anchor = stations.get(node.parent()).site().position();
         double dx = target.x - anchor.x, dz = target.z - anchor.z;
         var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz), Math.hypot(dx, dz), 1);
-        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, 0);
+        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z,
+                MonitorMap.Kind.ESTIMATE, MonitorMap.estimateAddress(branch));
     }
 
     private static final class SurveyLinks implements MonitorReach.Links {

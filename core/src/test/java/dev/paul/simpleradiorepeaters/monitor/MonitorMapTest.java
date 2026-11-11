@@ -10,9 +10,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class MonitorMapTest {
     @Test void usesOneNorthUpScaleAndKeepsOnlyDisplayCellsInThePayload() {
         var map = MonitorMap.plot(List.of(new MonitorMap.Site(4000, -4000, RX_ONLY, MonitorMap.address(0, 0)),
-                new MonitorMap.Site(8000, 0, TX_RX, MonitorMap.address(0, 1)), new MonitorMap.Site(-3000, 0, ESTIMATE, 0)), true);
-        assertEquals(List.of("O-a", "a-1", "?"), map.markers().stream().map(MonitorMap.Marker::label).toList());
-        assertEquals(List.of(RX_ONLY, TX_RX, ESTIMATE), map.markers().stream().map(MonitorMap.Marker::kind).toList());
+                new MonitorMap.Site(8000, 0, TX_RX, MonitorMap.address(0, 1)),
+                new MonitorMap.Site(-3000, 0, ESTIMATE, MonitorMap.estimateAddress(0)),
+                new MonitorMap.Site(0, 3500, ESTIMATE, MonitorMap.estimateAddress(-1))), true);
+        assertEquals(List.of("O-A", "A-1", "A-?", "0-?"), map.markers().stream().map(MonitorMap.Marker::label).toList());
+        assertEquals(List.of(RX_ONLY, TX_RX, ESTIMATE, ESTIMATE), map.markers().stream().map(MonitorMap.Marker::kind).toList());
         assertEquals(5, MonitorMap.east(map.markers().get(1).cell(), map.density()));
         double east = MonitorMap.east(map.markers().get(0).cell(), map.density());
         double south = MonitorMap.south(map.markers().get(0).cell(), map.density());

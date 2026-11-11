@@ -56,7 +56,8 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
             used[cell] = true;
             Kind kind = KINDS[code % KINDS.length];
             int address = code / KINDS.length % LABELS;
-            markers.add(new Marker(cell, kind, address, kind == Kind.ESTIMATE ? "?" : label(address)));
+            if (kind == Kind.ESTIMATE && address > BRANCHES) return new MonitorMap(List.of(), pending);
+            markers.add(new Marker(cell, kind, address, label(kind, address)));
         }
         return new MonitorMap(markers, pending);
     }
@@ -66,11 +67,15 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
     }
 
     private static int encode(int cell, Kind kind, int address) {
-        return cell * CODES_PER_CELL + (kind == Kind.ESTIMATE ? 0 : address) * KINDS.length + kind.ordinal();
+        return cell * CODES_PER_CELL + address * KINDS.length + kind.ordinal();
     }
     static int address(int branch, int child) { return branch * (CHILDREN + 1) + child; }
-    private static String label(int address) {
-        char branch = (char) ('a' + address / (CHILDREN + 1));
+    // Estimates carry only their last known tower's letter; -1 is the origin.
+    static int estimateAddress(int branch) { return branch + 1; }
+    private static char letter(int branch) { return (char) ('A' + branch); }
+    private static String label(Kind kind, int address) {
+        if (kind == Kind.ESTIMATE) return address == 0 ? "0-?" : letter(address - 1) + "-?";
+        char branch = letter(address / (CHILDREN + 1));
         int child = address % (CHILDREN + 1);
         return child == 0 ? "O-" + branch : branch + "-" + child;
     }
