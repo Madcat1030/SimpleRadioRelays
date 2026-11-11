@@ -20,7 +20,17 @@ class MonitorMapTest {
         double south = MonitorMap.south(map.markers().get(0).cell(), map.density());
         assertTrue(east > 0 && south < 0 && Math.abs(east + south) <= 1.34);
         assertTrue(MonitorMap.east(map.markers().get(2).cell(), map.density()) < 0);
-        assertEquals(map, MonitorMap.fromCells(map.cells(), true));
+        assertEquals(map, MonitorMap.fromCells(map.cells(), true, false));
+    }
+
+    @Test void wideMapPreservesTheThreeLinkColorsWithOneGlyph() {
+        var map = MonitorMap.plot(List.of(new MonitorMap.Site(1000, 0, TX_RX, 0),
+                new MonitorMap.Site(3000, 0, RX_ONLY, 0), new MonitorMap.Site(5000, 0, ESTIMATE, 0)), false, true);
+        var decoded = MonitorMap.fromCells(map.cells(), false, true);
+        assertEquals(map, decoded);
+        assertTrue(decoded.wide());
+        assertEquals(List.of(TX_RX, RX_ONLY, ESTIMATE), decoded.markers().stream().map(MonitorMap.Marker::kind).toList());
+        assertTrue(decoded.markers().stream().allMatch(marker -> marker.label().equals("o")));
     }
 
     @Test void colocatedTowersGetSeparateCellsAndLeaveTheOriginFree() {

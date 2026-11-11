@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /** Display cells and labels only: the client does not need tower IDs, world coordinates, or paths. */
-public record MonitorMap(List<Marker> markers, boolean pending) {
+public record MonitorMap(List<Marker> markers, boolean pending, boolean wide) {
     public enum Kind { TX_RX, RX_ONLY, ESTIMATE }
     public record Marker(int cell, Kind kind, int address, String label) {}
     record Site(double east, double south, Kind kind, int address) {}
@@ -18,7 +18,11 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
     public MonitorMap { markers = List.copyOf(markers); }
 
     static MonitorMap plot(List<Site> sites, boolean pending) {
-        int density = density(sites.size()), side = side(density);
+        return plot(sites, pending, false);
+    }
+
+    static MonitorMap plot(List<Site> sites, boolean pending, boolean wide) {
+        int density = density(sites.size(), wide), side = side(density);
         boolean[] used = new boolean[side * side];
         used[used.length / 2] = true; // Reserve the origin even for a tower with the same X/Z.
         double extent = sites.stream().mapToDouble(s -> Math.max(Math.abs(s.east()) / HALF_WIDTH,
@@ -42,24 +46,24 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
             used[best] = true;
             cells[i] = encode(best, site.kind(), site.address());
         }
-        return fromCells(cells, pending);
+        return fromCells(cells, pending, wide);
     }
 
-    public static MonitorMap fromCells(int[] cells, boolean pending) {
-        int side = side(density(cells.length)), size = side * side;
+    public static MonitorMap fromCells(int[] cells, boolean pending, boolean wide) {
+        int side = side(density(cells.length, wide)), size = side * side;
         boolean[] used = new boolean[size];
         used[size / 2] = true;
         List<Marker> markers = new ArrayList<>(cells.length);
         for (int code : cells) {
             int cell = code / CODES_PER_CELL;
-            if (code < 0 || cell >= size || used[cell]) return new MonitorMap(List.of(), pending);
+            if (code < 0 || cell >= size || used[cell]) return new MonitorMap(List.of(), pending, wide);
             used[cell] = true;
             Kind kind = KINDS[code % KINDS.length];
             int address = code / KINDS.length % LABELS;
-            if (kind == Kind.ESTIMATE && address > BRANCHES) return new MonitorMap(List.of(), pending);
-            markers.add(new Marker(cell, kind, address, label(kind, address)));
+            if (kind == Kind.ESTIMATE && address > BRANCHES) return new MonitorMap(List.of(), pending, wide);
+            markers.add(new Marker(cell, kind, address, wide ? "o" : label(kind, address)));
         }
-        return new MonitorMap(markers, pending);
+        return new MonitorMap(markers, pending, wide);
     }
 
     public int[] cells() {
@@ -80,7 +84,7 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
         return child == 0 ? "O-" + branch : branch + "-" + child;
     }
 
-    public int density() { return density(markers.size()); }
+    public int density() { return density(markers.size(), wide); }
     public static double east(int cell, int density) {
         return (cell % side(density) - 3 * density) * columnSpacing(density);
     }
@@ -90,8 +94,8 @@ public record MonitorMap(List<Marker> markers, boolean pending) {
     public static double columnSpacing(int density) { return HALF_WIDTH / (3.0 * density); }
     public static double rowSpacing(int density) { return HALF_HEIGHT / (3.0 * density); }
 
-    private static int density(int count) {
-        int density = 1;
+    private static int density(int count, boolean wide) {
+        int density = wide ? 2 : 1;
         while ((long) side(density) * side(density) <= count) density++;
         return density;
     }

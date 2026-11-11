@@ -129,6 +129,14 @@ public class MonitorGameTests implements FabricGameTest {
                 monitor.refresh();
                 check(map.equals(monitor.displayedMap()), "Restoring the relay must restore its marker");
                 pages.put("map", mapTag.toString());
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                var wide = monitor.displayedMap(); var wideTag = monitor.getUpdateTag();
+                check(wide != null && wide.wide() && wide.markers().size() == 1
+                                && wide.markers().get(0).kind() == MonitorMap.Kind.TX_RX && wide.markers().get(0).label().equals("o"),
+                        "The next page must be the wide map, with one small glyph per visible tower");
+                clientMonitor.load(wideTag);
+                check(wide.equals(clientMonitor.displayedMap()), "The client must reconstruct the wide map with the same zoom and colors");
+                pages.put("wide", wideTag.toString());
                 for (String name : List.of("both", "rx", "tx")) {
                     SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                     pages.put(name, monitor.getUpdateTag().toString());

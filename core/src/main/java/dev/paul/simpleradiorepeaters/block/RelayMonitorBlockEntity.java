@@ -20,9 +20,11 @@ import java.util.*;
 /** The client receives only the visible page. Exact TX-only coordinates stay server-side. */
 public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     private static final List<String> INSERT_CARD = List.of("Insert tuned card", "for Relay diagnostics");
+    private enum MapPage { CLOSE, WIDE }
     private List<String> lines = INSERT_CARD;
-    @Nullable private MonitorMap displayedMap, mapReading;
-    private boolean mapPage;
+    @Nullable private MonitorMap displayedMap;
+    private final Map<MapPage, MonitorMap> mapReadings = new EnumMap<>(MapPage.class);
+    @Nullable private MapPage mapPage;
     @Nullable private RelaySurvey.Result reading;
     @Nullable private UUID selected, lastRelay;
     @Nullable private ChannelKey lastChannel;
@@ -46,10 +48,10 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         long revision = manager == null ? -1 : manager.revision();
         if (revision == lastRevision && Objects.equals(channel, lastChannel) && Objects.equals(id, lastRelay)) return;
         if (!Objects.equals(channel, lastChannel) || !Objects.equals(id, lastRelay)) {
-            selected = null; mapPage = false;
+            selected = null; mapPage = null;
         }
         lastChannel = channel; lastRelay = id; lastRevision = revision;
-        reading = null; mapReading = null;
+        reading = null; mapReadings.clear();
         if (channel == null) { setLines(INSERT_CARD); return; }
         if (relay == null || manager == null) { setLines(List.of("RELAY MONITOR", "Attach atop a Relay")); return; }
         TowerRecord home = manager.snapshot(id);
@@ -65,11 +67,12 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     public void nextPage() {
         refresh();
         if (reading == null) return;
-        if (!mapPage && selected == null) mapPage = true;
+        if (mapPage == null && selected == null) mapPage = MapPage.CLOSE;
+        else if (mapPage == MapPage.CLOSE) mapPage = MapPage.WIDE;
         else {
             int next = selectedIndex() + 1;
             selected = next >= reading.entries().size() ? null : reading.entries().get(next).id();
-            mapPage = false;
+            mapPage = null;
         }
         updateDisplay();
     }
@@ -87,14 +90,16 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     private static String coordinates(BlockPos pos) { return "X " + pos.getX() + " Y " + pos.getY() + " Z " + pos.getZ(); }
     private void updateDisplay() {
         if (reading == null) return;
-        if (mapPage && level instanceof ServerLevel server) {
-            if (mapReading == null) {
+        if (mapPage != null && level instanceof ServerLevel server) {
+            MonitorMap map = mapReadings.get(mapPage);
+            if (map == null) {
                 TowerManager manager = TowerManager.get(server.getServer());
                 TowerRecord home = manager == null ? null : manager.snapshot(lastRelay);
                 if (home == null) return;
-                mapReading = RelayMapSurvey.scan(server, manager, home, reading.channel());
+                map = RelayMapSurvey.scan(server, manager, home, reading.channel(), mapPage == MapPage.WIDE);
+                mapReadings.put(mapPage, map);
             }
-            setDisplay(List.of(), mapReading);
+            setDisplay(List.of(), map);
             return;
         }
         List<String> text = new ArrayList<>();
@@ -118,7 +123,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
             } else {
                 text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
             }
-            text.add("Screen " + (index + 3) + "/" + (reading.entries().size() + 2));
+            text.add("Screen " + (index + 4) + "/" + (reading.entries().size() + 3));
         }
         setLines(List.copyOf(text));
     }
@@ -133,7 +138,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     public boolean bindCompass(Player player, InteractionHand hand) {
         UUID requested = selected;
         refresh();
-        if (!(level instanceof ServerLevel server) || reading == null || mapPage || !player.getItemInHand(hand).is(Items.COMPASS)) return false;
+        if (!(level instanceof ServerLevel server) || reading == null || mapPage != null || !player.getItemInHand(hand).is(Items.COMPASS)) return false;
         if (requested != null && !requested.equals(selected)) {
             player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_target_gone"), true); return false;
         }
@@ -163,6 +168,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         if (displayedMap != null) {
             tag.putIntArray("MonitorMap", displayedMap.cells());
             tag.putBoolean("MonitorMapPending", displayedMap.pending());
+            tag.putBoolean("MonitorMapWide", displayedMap.wide());
         } else {
             lines.forEach(line -> text.add(StringTag.valueOf(line))); tag.put("MonitorLines", text);
         }
@@ -173,9 +179,9 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         var text = tag.getList("MonitorLines", Tag.TAG_STRING); List<String> value = new ArrayList<>();
         for (int i = 0; i < Math.min(8, text.size()); i++) value.add(text.getString(i));
         displayedMap = tag.contains("MonitorMap", Tag.TAG_INT_ARRAY)
-                ? MonitorMap.fromCells(tag.getIntArray("MonitorMap"), tag.getBoolean("MonitorMapPending")) : null;
+                ? MonitorMap.fromCells(tag.getIntArray("MonitorMap"), tag.getBoolean("MonitorMapPending"), tag.getBoolean("MonitorMapWide")) : null;
         lines = value.isEmpty() && displayedMap == null ? INSERT_CARD : List.copyOf(value);
-        reading = null; mapReading = null; mapPage = false;
+        reading = null; mapReadings.clear(); mapPage = null;
         selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
     }
 }

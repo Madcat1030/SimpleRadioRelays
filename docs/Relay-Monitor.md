@@ -14,7 +14,7 @@ The overview shows the antenna base coordinates and dimension, physical mast str
 
 A TX/RX node counts in both direction totals. Nodes are counted once even if a Transponder has several matching ports. The monitor itself is not an active forwarding node. Saved unloaded nodes count when persistent unloaded relays are enabled.
 
-Right-click the screen with an empty hand to cycle from the overview to the map, then through the direct-link pages and back to the overview. The direct-link pages list heard towers first:
+Right-click the screen with an empty hand to cycle through the overview, close map, wide map, and direct-link pages. The direct-link pages list heard towers first:
 
 | Page | Information |
 | --- | --- |
@@ -30,7 +30,7 @@ Click the inserted card with an empty hand to remove it. Card actions work only 
 
 ## Network map
 
-The map puts this antenna at **O** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
+The close map puts this antenna at **O** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
 
 | Marker | Meaning |
 | --- | --- |
@@ -40,7 +40,9 @@ The map puts this antenna at **O** in the center, with north up. Positions are r
 
 The nearest direct neighbors are labeled **O-A** through **O-N**. Up to nine towers in the next layer use their parent's letter, such as **A-1** or **B-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
 
-The map follows the card's frequency and modulation within this dimension and accounts for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
+The next page zooms out to the wider network. The origin is **0** and every other tower is a small **o**. Green still means two-way, white means receive-only, and orange marks an approximate position at the first unheard tower of an outbound branch. The wide map surveys up to 12 hops in either direction, or the server's relay hop limit if it is lower.
+
+Both maps follow the card's frequency and modulation within this dimension and account for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
 
 ## Compass binding
 

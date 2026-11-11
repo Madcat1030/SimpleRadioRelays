@@ -23,9 +23,13 @@ public final class RelayMapSurvey {
     private RelayMapSurvey() {}
 
     public static MonitorMap scan(ServerLevel level, TowerManager manager, TowerRecord home, ChannelKey channel) {
+        return scan(level, manager, home, channel, false);
+    }
+
+    public static MonitorMap scan(ServerLevel level, TowerManager manager, TowerRecord home, ChannelKey channel, boolean wide) {
         List<Station> stations = new ArrayList<>();
         Station origin = station(level, home);
-        if (origin == null) return MonitorMap.plot(List.of(), false);
+        if (origin == null) return MonitorMap.plot(List.of(), false, wide);
         stations.add(origin);
         manager.activeTowers().stream().filter(t -> !t.id().equals(home.id()) && t.dimension().equals(home.dimension()))
                 .filter(t -> t.ports().stream().anyMatch(p -> p.input().equals(channel) && p.output().equals(channel)))
@@ -35,7 +39,14 @@ public final class RelayMapSurvey {
         var center = origin.site().position();
         stations.subList(1, stations.size()).sort(Comparator.comparingDouble(s -> distance(s.site().position(), center)));
         var links = new SurveyLinks(stations, channel);
-        var nodes = MonitorReach.solve(stations.size(), RepeatersConfig.INSTANCE.maxRelayHops, links);
+        int maxVisits = RepeatersConfig.INSTANCE.maxRelayHops;
+        if (wide) {
+            var nodes = MonitorNetworkReach.solve(stations.size(), maxVisits, links,
+                    index -> stations.get(index).tower().attachment().resetsDecay());
+            var sites = nodes.stream().map(node -> marker(stations, center, node, 0)).toList();
+            return MonitorMap.plot(sites, links.pending, true);
+        }
+        var nodes = MonitorReach.solve(stations.size(), maxVisits, links);
 
         List<MonitorMap.Site> visible = new ArrayList<>();
         int[] branch = new int[stations.size()], children = new int[stations.size()];
@@ -60,14 +71,17 @@ public final class RelayMapSurvey {
     private static double distance(Vec3 a, Vec3 b) { return Math.hypot(a.x - b.x, a.z - b.z); }
 
     private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int branch, int child) {
+        return marker(stations, center, node, node.rx() ? MonitorMap.address(branch, child) : MonitorMap.estimateAddress(branch));
+    }
+
+    private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int address) {
         var target = stations.get(node.tower()).site().position();
         if (node.rx()) return new MonitorMap.Site(target.x - center.x, target.z - center.z,
-                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, MonitorMap.address(branch, child));
+                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, address);
         var anchor = stations.get(node.parent()).site().position();
         double dx = target.x - anchor.x, dz = target.z - anchor.z;
         var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz), Math.hypot(dx, dz), 1);
-        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z,
-                MonitorMap.Kind.ESTIMATE, MonitorMap.estimateAddress(branch));
+        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, address);
     }
 
     private static final class SurveyLinks implements MonitorReach.Links {
