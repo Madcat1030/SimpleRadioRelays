@@ -89,7 +89,7 @@ public final class RelaySurvey {
         return new Probe(signal == null ? null : new Arrival(leg, extra, signal), false);
     }
 
-    @Nullable static RadioLinkMath.Result receive(RadioSpace.Leg leg, TowerRecord receiver, ChannelKey channel, double power, double extra) {
+    @Nullable private static RadioLinkMath.Result receive(RadioSpace.Leg leg, TowerRecord receiver, ChannelKey channel, double power, double extra) {
         return NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel, extra);
     }
 }

@@ -30,15 +30,17 @@ Click the inserted card with an empty hand to remove it. Card actions work only 
 
 ## Network map
 
-The map puts this antenna at **0** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
+The map puts this antenna at **O** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
 
 | Marker | Meaning |
 | --- | --- |
-| Green number | The monitor can hear this tower and can reach it through audible relays. |
-| White number | The monitor can hear this tower, but none of the outbound paths on the map reaches it. |
+| Green label | The monitor can reach and hear this tower. |
+| White label | The monitor can hear this tower, but none of the outbound paths on the map reaches it. |
 | Orange `?` | The first unheard tower on an outbound branch. Its location is estimated from the last audible tower's rounded bearing and distance. |
 
-The map stops tracing a branch at its first unheard tower. An independent route can still reveal a tower beyond it. The map follows the card's frequency and modulation within this dimension, including multiple hops, relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
+The nearest direct neighbors are labeled **O-a** through **O-n**. Up to nine towers in the next layer use their parent's letter, such as **a-1** or **b-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
+
+The map follows the card's frequency and modulation within this dimension and accounts for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
 
 ## Compass binding
 

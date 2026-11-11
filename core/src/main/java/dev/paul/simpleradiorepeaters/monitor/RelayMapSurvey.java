@@ -5,11 +5,14 @@ import dev.paul.simpleradiorepeaters.network.ChannelKey;
 import dev.paul.simpleradiorepeaters.network.TowerManager;
 import dev.paul.simpleradiorepeaters.network.TowerRecord;
 import dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter;
+import dev.paul.simpleradiorepeaters.radio.RadioLinkMath;
 import dev.paul.simpleradiorepeaters.radio.RadioSpace;
-import dev.paul.simpleradiorepeaters.radio.RelayPower;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,62 +32,64 @@ public final class RelayMapSurvey {
                 .sorted(Comparator.comparing(TowerRecord::id))
                 .forEach(t -> { Station station = station(level, t); if (station != null) stations.add(station); });
 
-        int maxVisits = Math.max(1, RepeatersConfig.INSTANCE.maxRelayHops);
-        boolean[] resets = new boolean[stations.size()];
-        List<List<MonitorReach.Link>> links = new ArrayList<>();
-        boolean pending = false;
-        for (int from = 0; from < stations.size(); from++) {
-            Station sender = stations.get(from);
-            TowerRecord tower = sender.tower();
-            resets[from] = tower.attachment().resetsDecay();
-            double nominal = NativeRadioAdapter.towerPower(tower, channel), efficiency = tower.efficiency();
-            double power = RelayPower.departure(nominal, efficiency, 1);
-            List<MonitorReach.Link> row = new ArrayList<>();
-            for (int to = 0; to < stations.size(); to++) {
-                if (from == to) continue;
-                Station receiver = stations.get(to);
-                var leg = RadioSpace.between(sender.site(), receiver.site(), false);
-                if (leg == null) continue;
-                var probe = RelaySurvey.probe(leg, tower, receiver.tower(), channel, power);
-                pending |= probe.pending();
-                var arrival = probe.arrival();
-                if (arrival == null || !(arrival.signal().severity() < 100)) continue;
-                // Propagation uses the same receiver math as the live graph. Find the last
-                // usable departure with that link's sampled terrain, without sampling again.
-                int low = 1, high = from == 0 || resets[from] ? 1 : maxVisits;
-                while (low < high) {
-                    int mid = (low + high + 1) / 2;
-                    double decayed = RelayPower.departure(nominal, efficiency, mid);
-                    var signal = RelaySurvey.receive(leg, receiver.tower(), channel, decayed, arrival.extra());
-                    if (signal != null && signal.severity() < 100) low = mid;
-                    else high = mid - 1;
-                }
-                row.add(new MonitorReach.Link(to, resets[from] ? maxVisits : low));
-            }
-            links.add(row);
-        }
-
-        MonitorReach.Result reach = MonitorReach.solve(links, resets, maxVisits);
         var center = origin.site().position();
+        stations.subList(1, stations.size()).sort(Comparator.comparingDouble(s -> distance(s.site().position(), center)));
+        var links = new SurveyLinks(stations, channel);
+        var nodes = MonitorReach.solve(stations.size(), RepeatersConfig.INSTANCE.maxRelayHops, links);
+
         List<MonitorMap.Site> visible = new ArrayList<>();
-        for (int i = 1; i < stations.size(); i++) {
-            var target = stations.get(i).site().position();
-            int via = reach.via()[i];
-            if (reach.audible()[i]) {
-                var kind = via < 0 ? MonitorMap.Kind.RX_ONLY : MonitorMap.Kind.TX_RX;
-                visible.add(new MonitorMap.Site(target.x - center.x, target.z - center.z, kind));
-            } else if (via >= 0) {
-                var anchor = stations.get(via).site().position();
-                double dx = target.x - anchor.x, dz = target.z - anchor.z;
-                var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz),
-                        Math.hypot(dx, dz), 1);
-                visible.add(new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE));
-            }
+        int[] branch = new int[stations.size()], children = new int[stations.size()];
+        Arrays.fill(branch, -1);
+        int next = 0;
+        for (var node : nodes) if (node.parent() == 0) {
+            if (node.rx()) branch[node.tower()] = next++;
+            visible.add(marker(stations, center, node, branch[node.tower()], 0));
         }
-        return MonitorMap.plot(visible, pending);
+        var secondary = nodes.stream().filter(n -> n.parent() != 0)
+                .sorted(Comparator.comparing((MonitorReach.Node n) -> !n.rx()).thenComparingDouble(n ->
+                        distance(stations.get(n.tower()).site().position(), stations.get(n.parent()).site().position())))
+                .toList();
+        for (var node : secondary) {
+            int parent = node.parent();
+            if (branch[parent] >= 0 && children[parent] < MonitorMap.CHILDREN)
+                visible.add(marker(stations, center, node, branch[parent], ++children[parent]));
+        }
+        return MonitorMap.plot(visible, links.pending);
     }
 
-    private static Station station(ServerLevel level, TowerRecord tower) {
+    private static double distance(Vec3 a, Vec3 b) { return Math.hypot(a.x - b.x, a.z - b.z); }
+
+    private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int branch, int child) {
+        var target = stations.get(node.tower()).site().position();
+        if (node.rx()) return new MonitorMap.Site(target.x - center.x, target.z - center.z,
+                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, MonitorMap.address(branch, child));
+        var anchor = stations.get(node.parent()).site().position();
+        double dx = target.x - anchor.x, dz = target.z - anchor.z;
+        var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz), Math.hypot(dx, dz), 1);
+        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, 0);
+    }
+
+    private static final class SurveyLinks implements MonitorReach.Links {
+        private final List<Station> stations;
+        private final ChannelKey channel;
+        private boolean pending;
+
+        SurveyLinks(List<Station> stations, ChannelKey channel) { this.stations = stations; this.channel = channel; }
+
+        @Override @Nullable public RadioLinkMath.Result receive(int from, int to, int decay) {
+            var sender = stations.get(from);
+            var receiver = stations.get(to);
+            var leg = RadioSpace.between(sender.site(), receiver.site(), false);
+            if (leg == null) return null;
+            double power = NativeRadioAdapter.departurePower(sender.tower(), channel, decay);
+            var probe = RelaySurvey.probe(leg, sender.tower(), receiver.tower(), channel, power);
+            pending |= probe.pending();
+            var arrival = probe.arrival();
+            return arrival != null && arrival.signal().severity() < 100 ? arrival.signal() : null;
+        }
+    }
+
+    @Nullable private static Station station(ServerLevel level, TowerRecord tower) {
         for (var site : RadioSpace.sites(level.getServer(), tower, false))
             if (site.level() == level && !site.projected()) return new Station(tower, site);
         return null;

@@ -36,7 +36,7 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
 
     private void renderMap(MonitorMap map, PoseStack pose, MultiBufferSource buffers) {
         DeviceRendering.centeredText(font, "N", 8, 13.68, 0, 1, .46, .0065f, 0xffa4cfad, pose, buffers);
-        DeviceRendering.centeredText(font, "0", 8, 10, 0, 1, .82, .0065f, 0xff79d9ff, pose, buffers);
+        DeviceRendering.centeredText(font, "O", 8, 10, 0, 1, .82, .0065f, 0xff79d9ff, pose, buffers);
         int density = map.density();
         for (var marker : map.markers()) {
             int color = switch (marker.kind()) {
@@ -46,7 +46,8 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
             };
             // A north-facing block's model X runs leftward when viewed from the front.
             DeviceRendering.centeredText(font, marker.label(), 8 - MonitorMap.east(marker.cell(), density),
-                    10 - MonitorMap.south(marker.cell(), density), 0, .95 / density, .82 / density, .0065f, color, pose, buffers);
+                    10 - MonitorMap.south(marker.cell(), density), 0, MonitorMap.columnSpacing(density) * .9,
+                    MonitorMap.rowSpacing(density) * .82, .0065f, color, pose, buffers);
         }
         if (map.pending())
             DeviceRendering.centeredText(font, "Surveying", 8, 6.3, 0, 5, .4, .0065f, 0xffa4cfad, pose, buffers);

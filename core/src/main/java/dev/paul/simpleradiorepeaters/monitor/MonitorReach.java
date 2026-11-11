@@ -1,57 +1,75 @@
 package dev.paul.simpleradiorepeaters.monitor;
 
+import dev.paul.simpleradiorepeaters.radio.RadioLinkMath;
+import dev.paul.simpleradiorepeaters.radio.RelayDeliverySelection;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Reachability only: accumulated noise affects quality, but never improves a later radio leg. */
+/** A direct layer and one relay beyond it. Node zero is Home; other nodes are ordered by distance. */
 final class MonitorReach {
-    /** A leg works at every decay count from one through lastDecay. Node zero is the monitor. */
-    record Link(int to, int lastDecay) {}
-    record Result(boolean[] audible, int[] via) {}
+    @FunctionalInterface interface Links { RadioLinkMath.Result receive(int from, int to, int decay); }
+    record Node(int tower, int parent, boolean tx, boolean rx) {}
 
     private MonitorReach() {}
 
-    static Result solve(List<List<Link>> links, boolean[] resets, int maxVisits) {
-        int size = links.size();
-        // For each tower, find the most decay a return path can tolerate within the visit budget.
-        int[] allowed = new int[size];
-        for (int visits = 1; visits <= maxVisits; visits++) {
-            int[] next = allowed.clone();
-            for (int from = 1; from < size; from++) for (Link link : links.get(from)) {
-                int to = link.to();
-                int limit = to == 0 || resets[to] && allowed[to] > 0 ? maxVisits : allowed[to] - 1;
-                next[from] = Math.max(next[from], Math.min(link.lastDecay(), limit));
+    static List<Node> solve(int size, int maxVisits, Links links) {
+        int[] rx = new int[size], tx = new int[size];
+        Arrays.fill(rx, -1);
+        Arrays.fill(tx, -1);
+        var directTx = new RadioLinkMath.Result[size];
+        var returns = new RadioLinkMath.Result[size];
+        var direct = new boolean[size];
+        var first = new ArrayList<Integer>();
+        for (int tower = 1; tower < size; tower++) {
+            directTx[tower] = links.receive(0, tower, 1);
+            var directRx = links.receive(tower, 0, 1);
+            direct[tower] = directTx[tower] != null || directRx != null;
+            if (!direct[tower] || first.size() == MonitorMap.BRANCHES) continue;
+            first.add(tower);
+            if (directTx[tower] != null) tx[tower] = 0;
+            if (directRx != null) {
+                rx[tower] = 0;
+                if (maxVisits > 1) returns[tower] = links.receive(tower, 0, 2);
             }
-            if (Arrays.equals(next, allowed)) break;
-            allowed = next;
         }
-        boolean[] audible = new boolean[size];
-        for (int i = 1; i < size; i++) audible[i] = allowed[i] > 0;
+        if (maxVisits > 1) {
+            // Only a direct return leg can finish a two-visit inbound path. That leg leaves
+            // the second relay at decay two (or one when it resets decay).
+            for (int tower = 1; tower < size; tower++) {
+                if (rx[tower] >= 0 || direct[tower] && !first.contains(tower)) continue;
+                var candidates = new ArrayList<RelayDeliverySelection.Candidate<Integer>>();
+                for (int via : first) if (via != tower && returns[via] != null)
+                    offer(candidates, via, links.receive(tower, via, 1), returns[via]);
+                rx[tower] = best(candidates);
+            }
+            for (int tower = 1; tower < size; tower++) {
+                if (tx[tower] >= 0 || direct[tower] && !first.contains(tower)) continue;
+                var candidates = new ArrayList<RelayDeliverySelection.Candidate<Integer>>();
+                for (int via : first) if (via != tower && rx[via] >= 0 && directTx[via] != null)
+                    offer(candidates, via, directTx[via], links.receive(via, tower, 1));
+                tx[tower] = best(candidates);
+            }
+        }
+        List<Node> visible = new ArrayList<>();
+        for (int tower : first) visible.add(new Node(tower, 0, tx[tower] >= 0, rx[tower] >= 0));
+        for (int tower = 1; tower < size; tower++) {
+            if (direct[tower] || (rx[tower] < 0 && tx[tower] < 0)) continue;
+            // Prefer the best outward route for the label; a heard-only tower uses its return route.
+            visible.add(new Node(tower, tx[tower] >= 0 ? tx[tower] : rx[tower], tx[tower] >= 0, rx[tower] >= 0));
+        }
+        return visible;
+    }
 
-        int[] via = new int[size];
-        int[] decay = new int[size];
-        Arrays.fill(via, -1);
-        Arrays.fill(decay, Integer.MAX_VALUE);
-        // Home is a virtual transmitter. The first real relay enters at visit and decay one.
-        for (Link link : links.get(0)) {
-            via[link.to()] = 0;
-            if (audible[link.to()]) decay[link.to()] = 1;
-        }
-        for (int visits = 1; visits < maxVisits; visits++) {
-            int[] next = decay.clone();
-            for (int from = 1; from < size; from++) {
-                if (decay[from] == Integer.MAX_VALUE) continue;
-                for (Link link : links.get(from)) {
-                    int to = link.to();
-                    if (to == 0 || decay[from] > link.lastDecay()) continue;
-                    if (via[to] < 0) via[to] = from;
-                    // Unheard towers are terminal markers. Only audible ones can extend the search.
-                    if (audible[to]) next[to] = Math.min(next[to], resets[to] ? 1 : decay[from] + 1);
-                }
-            }
-            if (Arrays.equals(next, decay)) break;
-            decay = next;
-        }
-        return new Result(audible, via);
+    private static void offer(List<RelayDeliverySelection.Candidate<Integer>> candidates, int via,
+                              RadioLinkMath.Result first, RadioLinkMath.Result last) {
+        if (first != null && last != null)
+            candidates.add(new RelayDeliverySelection.Candidate<>(via, Math.max(first.severity(), last.severity()), last.power(), 2));
+    }
+
+    private static int best(List<RelayDeliverySelection.Candidate<Integer>> candidates) {
+        var chosen = RelayDeliverySelection.select(candidates);
+        return chosen == null ? -1 : chosen.source();
     }
 }

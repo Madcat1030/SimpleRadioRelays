@@ -108,7 +108,7 @@ public class MonitorGameTests implements FabricGameTest {
                 SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                 var map = monitor.displayedMap();
                 check(map != null && map.markers().size() == 1 && map.markers().get(0).kind() == MonitorMap.Kind.TX_RX
-                                && map.markers().get(0).label().equals("1"),
+                                && map.markers().get(0).label().equals("O-a"),
                         "The map must show the one reachable same-channel tower once, without frequency translations or FM");
                 var mapTag = monitor.getUpdateTag();
                 check(mapTag.getIntArray("MonitorMap").length == 1 && !mapTag.contains("MonitorLines")
