@@ -105,6 +105,30 @@ public class MonitorGameTests implements FabricGameTest {
                 var cached = monitor.reading(); monitor.refresh(); check(monitor.reading() == cached, "An unchanged revision/card must reuse its survey");
                 pages.put("overview", monitor.getUpdateTag().toString());
                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                var map = monitor.displayedMap();
+                check(map != null && map.markers().size() == 1 && map.markers().get(0).kind() == MonitorMap.Kind.TX_RX
+                                && map.markers().get(0).label().equals("1"),
+                        "The map must show the one reachable same-channel tower once, without frequency translations or FM");
+                var mapTag = monitor.getUpdateTag();
+                check(mapTag.getIntArray("MonitorMap").length == 1 && !mapTag.contains("MonitorLines")
+                                && !monitor.saveWithoutMetadata().contains("MonitorMap"),
+                        "Only the displayed map cells belong in the client update, never in saved inventory data");
+                var clientMonitor = new RelayMonitorBlockEntity(monitor.getBlockPos(), monitor.getBlockState());
+                clientMonitor.load(mapTag);
+                check(map.equals(clientMonitor.displayedMap()), "A tracking client must reconstruct the displayed map");
+                monitor.refresh();
+                check(monitor.displayedMap() == map, "An unchanged map must not be resurveyed");
+                var reachable = targets.get(0);
+                manager.updateSnapshot(reachable.settings(reachable.channels(), false, reachable.catalystItem(),
+                        null, reachable.attachment(), reachable.transponder()));
+                monitor.refresh();
+                check(monitor.displayedMap() != null && monitor.displayedMap().markers().isEmpty(),
+                        "Disabling a relay must remove its marker while the map stays open");
+                manager.updateSnapshot(reachable);
+                monitor.refresh();
+                check(map.equals(monitor.displayedMap()), "Restoring the relay must restore its marker");
+                pages.put("map", mapTag.toString());
                 for (String name : List.of("both", "rx", "tx")) {
                     SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                     pages.put(name, monitor.getUpdateTag().toString());
@@ -260,6 +284,8 @@ public class MonitorGameTests implements FabricGameTest {
                 RelayCatalysts.GILDED, true, 64, Set.of(), null, RelayAttachment.NONE, null, base.east(1000), home.antennaTip().east(1000));
         manager.updateSnapshot(home); manager.updateSnapshot(other);
         check(RelaySurvey.scan(world.getServer(), manager, home, channel).pending() == 1, "Initial unknown terrain must be identified as pending mapping");
+        var pendingMap = RelayMapSurvey.scan(world, manager, home, channel);
+        check(pendingMap.pending() && pendingMap.markers().isEmpty(), "A map must not guess reach while terrain is unknown");
         helper.runAfterDelay(210, () -> {
             try {
                 var profiles = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
@@ -274,6 +300,9 @@ public class MonitorGameTests implements FabricGameTest {
                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
                         "Sixteen blocks below the sampled ground must display +25%, using the shared saved profile");
+                var mapped = RelayMapSurvey.scan(world, manager, home, channel);
+                check(!mapped.pending() && mapped.markers().size() == 1 && mapped.markers().get(0).kind() == MonitorMap.Kind.TX_RX,
+                        "A completed terrain profile must make the real two-way link visible on the map");
                 long sampled = ((Number) TerrainManager.statistics().get("sampled_columns")).longValue();
                 replacement.clearanceCurve[4][1] = .4;
                 TerrainManager.reconfigure(world.getServer());

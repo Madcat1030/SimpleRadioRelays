@@ -17,10 +17,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
-/** The client receives only the visible text page. Exact TX-only coordinates stay server-side. */
+/** The client receives only the visible page. Exact TX-only coordinates stay server-side. */
 public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     private static final List<String> INSERT_CARD = List.of("Insert tuned card", "for Relay diagnostics");
     private List<String> lines = INSERT_CARD;
+    @Nullable private MonitorMap displayedMap, mapReading;
+    private boolean mapPage;
     @Nullable private RelaySurvey.Result reading;
     @Nullable private UUID selected, lastRelay;
     @Nullable private ChannelKey lastChannel;
@@ -29,6 +31,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     public RelayMonitorBlockEntity(BlockPos pos, BlockState state) { super(SimpleRadioRepeaters.RELAY_MONITOR_ENTITY, 1, pos, state); }
     @Override public List<CardState> routingCards() { return List.of(); }
     public List<String> lines() { return lines; }
+    @Nullable public MonitorMap displayedMap() { return displayedMap; }
     @Nullable public RelaySurvey.Result reading() { return reading; }
     public static void tick(Level level, BlockPos pos, BlockState state, RelayMonitorBlockEntity monitor) {
         ChannelBankBlockEntity.tick(level, pos, state, monitor);
@@ -42,9 +45,11 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         UUID id = relay == null ? null : relay.relayId();
         long revision = manager == null ? -1 : manager.revision();
         if (revision == lastRevision && Objects.equals(channel, lastChannel) && Objects.equals(id, lastRelay)) return;
-        if (!Objects.equals(channel, lastChannel) || !Objects.equals(id, lastRelay)) selected = null;
+        if (!Objects.equals(channel, lastChannel) || !Objects.equals(id, lastRelay)) {
+            selected = null; mapPage = false;
+        }
         lastChannel = channel; lastRelay = id; lastRevision = revision;
-        reading = null;
+        reading = null; mapReading = null;
         if (channel == null) { setLines(INSERT_CARD); return; }
         if (relay == null || manager == null) { setLines(List.of("RELAY MONITOR", "Attach atop a Relay")); return; }
         TowerRecord home = manager.snapshot(id);
@@ -59,9 +64,13 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     }
     public void nextPage() {
         refresh();
-        if (reading == null || reading.entries().isEmpty()) return;
-        int current = selectedIndex();
-        selected = current + 1 >= reading.entries().size() ? null : reading.entries().get(current + 1).id();
+        if (reading == null) return;
+        if (!mapPage && selected == null) mapPage = true;
+        else {
+            int next = selectedIndex() + 1;
+            selected = next >= reading.entries().size() ? null : reading.entries().get(next).id();
+            mapPage = false;
+        }
         updateDisplay();
     }
     private int selectedIndex() {
@@ -78,6 +87,16 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     private static String coordinates(BlockPos pos) { return "X " + pos.getX() + " Y " + pos.getY() + " Z " + pos.getZ(); }
     private void updateDisplay() {
         if (reading == null) return;
+        if (mapPage && level instanceof ServerLevel server) {
+            if (mapReading == null) {
+                TowerManager manager = TowerManager.get(server.getServer());
+                TowerRecord home = manager == null ? null : manager.snapshot(lastRelay);
+                if (home == null) return;
+                mapReading = RelayMapSurvey.scan(server, manager, home, reading.channel());
+            }
+            setDisplay(List.of(), mapReading);
+            return;
+        }
         List<String> text = new ArrayList<>();
         String channel = reading.channel().frequency() + " " + reading.channel().modulation();
         int index = selectedIndex();
@@ -99,19 +118,22 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
             } else {
                 text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
             }
-            text.add("Screen " + (index + 2) + "/" + (reading.entries().size() + 1));
+            text.add("Screen " + (index + 3) + "/" + (reading.entries().size() + 2));
         }
         setLines(List.copyOf(text));
     }
     private void setLines(List<String> value) {
-        if (value.equals(lines)) return;
-        lines = value;
+        setDisplay(value, null);
+    }
+    private void setDisplay(List<String> value, @Nullable MonitorMap map) {
+        if (value.equals(lines) && Objects.equals(map, displayedMap)) return;
+        lines = value; displayedMap = map;
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
     }
     public boolean bindCompass(Player player, InteractionHand hand) {
         UUID requested = selected;
         refresh();
-        if (!(level instanceof ServerLevel server) || reading == null || !player.getItemInHand(hand).is(Items.COMPASS)) return false;
+        if (!(level instanceof ServerLevel server) || reading == null || mapPage || !player.getItemInHand(hand).is(Items.COMPASS)) return false;
         if (requested != null && !requested.equals(selected)) {
             player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_target_gone"), true); return false;
         }
@@ -138,14 +160,22 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     }
     @Override public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag(); ListTag text = new ListTag();
-        lines.forEach(line -> text.add(StringTag.valueOf(line))); tag.put("MonitorLines", text);
+        if (displayedMap != null) {
+            tag.putIntArray("MonitorMap", displayedMap.cells());
+            tag.putBoolean("MonitorMapPending", displayedMap.pending());
+        } else {
+            lines.forEach(line -> text.add(StringTag.valueOf(line))); tag.put("MonitorLines", text);
+        }
         return tag;
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
         var text = tag.getList("MonitorLines", Tag.TAG_STRING); List<String> value = new ArrayList<>();
         for (int i = 0; i < Math.min(8, text.size()); i++) value.add(text.getString(i));
-        lines = value.isEmpty() ? INSERT_CARD : List.copyOf(value);
-        reading = null; selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
+        displayedMap = tag.contains("MonitorMap", Tag.TAG_INT_ARRAY)
+                ? MonitorMap.fromCells(tag.getIntArray("MonitorMap"), tag.getBoolean("MonitorMapPending")) : null;
+        lines = value.isEmpty() && displayedMap == null ? INSERT_CARD : List.copyOf(value);
+        reading = null; mapReading = null; mapPage = false;
+        selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
     }
 }

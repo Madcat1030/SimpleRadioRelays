@@ -1,4 +1,4 @@
-# Relay Monitor — Repeaters 0.9r1
+# Relay Monitor
 
 The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
 
@@ -14,7 +14,7 @@ The overview shows the antenna base coordinates and dimension, physical mast str
 
 A TX/RX node counts in both direction totals. Nodes are counted once even if a Transponder has several matching ports. The monitor itself is not an active forwarding node. Saved unloaded nodes count when persistent unloaded relays are enabled.
 
-Right-click the screen with an empty hand to cycle through heard towers, then TX-only entries, then back to the overview:
+Right-click the screen with an empty hand to cycle from the overview to the map, then through the direct-link pages and back to the overview. The direct-link pages list heard towers first:
 
 | Page | Information |
 | --- | --- |
@@ -28,9 +28,21 @@ TX-only distances round to the nearest 500 blocks. Below 500 blocks they round t
 
 Click the inserted card with an empty hand to remove it. Card actions work only through the front face. Hoppers have no inventory access; direct container integrations remain available as with existing card banks.
 
+## Network map
+
+The map puts this antenna at **0** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
+
+| Marker | Meaning |
+| --- | --- |
+| Green number | The monitor can hear this tower and can reach it through audible relays. |
+| White number | The monitor can hear this tower, but none of the outbound paths on the map reaches it. |
+| Orange `?` | The first unheard tower on an outbound branch. Its location is estimated from the last audible tower's rounded bearing and distance. |
+
+The map stops tracing a branch at its first unheard tower. An independent route can still reveal a tower beyond it. The map follows the card's frequency and modulation within this dimension, including multiple hops, relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
+
 ## Compass binding
 
-Use an ordinary compass on the screen to bind it without changing the page:
+Use an ordinary compass on the overview or a direct-link page to bind it without changing the page:
 
 - A TX/RX or RX-only page binds to that tower's actual antenna base.
 - A TX-only page binds to the centre of its displayed 16-point bearing at the displayed rounded distance. Scaled radio distances are converted to blocks in the destination dimension. The target height uses your antenna's height, clamped to that world's limits, rather than revealing the remote tower's height.
@@ -44,7 +56,7 @@ The compass uses vanilla lodestone targeting without requiring a lodestone. It k
 
 Predictions use fresh first-relay departure power, the installed catalyst/amplifier, directional reception and the existing dimensional policy. Input and output channel roles are tested separately for Transponders. A message already weakened by earlier relay hops can fail a nominal direct link.
 
-Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The renderer only draws the current synchronized text page; it performs no network or terrain work.
+Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The map is calculated only when it is displayed. The renderer only draws the synchronized page; it performs no network or terrain work.
 
 Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a Surveying count on the monitor. Survey requests do not add operational SCAN/CHECK markers to either relay. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
 

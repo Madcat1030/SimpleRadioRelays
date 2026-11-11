@@ -17,8 +17,8 @@ public final class RelaySurvey {
     }
     public record Result(ChannelKey channel, BlockPos origin, String dimension, double antenna, double effectiveAntenna,
                          int tx, int rx, int other, int pending, List<Entry> entries) {}
-    private record Arrival(RadioSpace.Leg leg, double extra, RadioLinkMath.Result signal) {}
-    private record Probe(@Nullable Arrival arrival, boolean pending) {}
+    record Arrival(RadioSpace.Leg leg, double extra, RadioLinkMath.Result signal) {}
+    record Probe(@Nullable Arrival arrival, boolean pending) {}
     private RelaySurvey() {}
 
     public static Result scan(MinecraftServer server, TowerManager manager, TowerRecord home, ChannelKey channel) {
@@ -68,15 +68,28 @@ public final class RelaySurvey {
         double power = NativeRadioAdapter.departurePower(sender, channel, 1);
         Arrival best = null; boolean pending = false;
         for (var leg : RadioSpace.between(from, to, dimensional)) {
-            var signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel);
-            if (signal == null) continue;
-            double extra = TerrainManager.surveyLoss(leg, sender, receiver);
-            if (!Double.isFinite(extra)) { pending = true; continue; }
-            if (extra > 0) signal = NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel, extra);
-            if (signal != null && (best == null || signal.severity() < best.signal().severity()
-                    || signal.severity() == best.signal().severity() && signal.power() > best.signal().power()))
-                best = new Arrival(leg, extra, signal);
+            var probe = probe(leg, sender, receiver, channel, power);
+            pending |= probe.pending();
+            var arrival = probe.arrival();
+            if (arrival == null) continue;
+            var signal = arrival.signal();
+            if (best == null || signal.severity() < best.signal().severity()
+                    || signal.severity() == best.signal().severity() && signal.power() > best.signal().power())
+                best = arrival;
         }
         return new Probe(best, pending);
+    }
+
+    static Probe probe(RadioSpace.Leg leg, TowerRecord sender, TowerRecord receiver, ChannelKey channel, double power) {
+        var signal = receive(leg, receiver, channel, power, 0);
+        if (signal == null) return new Probe(null, false);
+        double extra = TerrainManager.surveyLoss(leg, sender, receiver);
+        if (!Double.isFinite(extra)) return new Probe(null, true);
+        if (extra > 0) signal = receive(leg, receiver, channel, power, extra);
+        return new Probe(signal == null ? null : new Arrival(leg, extra, signal), false);
+    }
+
+    @Nullable static RadioLinkMath.Result receive(RadioSpace.Leg leg, TowerRecord receiver, ChannelKey channel, double power, double extra) {
+        return NativeRadioAdapter.receiveAtTower(leg, power, power, SimpleRadioFrequencing.TRANSMITTER, receiver, channel, extra);
     }
 }
