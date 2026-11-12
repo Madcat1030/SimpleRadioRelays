@@ -2,29 +2,46 @@ package dev.paul.simpleradiorepeaters.monitor;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
-/** Display cells and labels only: the client does not need tower IDs, world coordinates, or paths. */
-public record MonitorMap(List<Marker> markers, boolean pending, boolean wide) {
+/** Display cells, labels and links; tower IDs and world coordinates stay on the server. */
+public record MonitorMap(List<Marker> markers, List<Link> links, boolean pending, boolean wide) {
     public enum Kind { TX_RX, RX_ONLY, ESTIMATE }
     public record Marker(int cell, Kind kind, int address, String label) {}
-    record Site(double east, double south, Kind kind, int address) {}
+    public record Link(int fromCell, int toCell, boolean estimated) {}
+    record Site(double east, double south, Kind kind, int address, int tower) {
+        Site(double east, double south, Kind kind, int address) { this(east, south, kind, address, -1); }
+    }
     static final int BRANCHES = 14, CHILDREN = 9;
     private static final Kind[] KINDS = Kind.values();
     private static final int HALF_WIDTH = 5, HALF_HEIGHT = 3;
     private static final int LABELS = BRANCHES * (CHILDREN + 1);
     private static final int CODES_PER_CELL = LABELS * KINDS.length;
 
-    public MonitorMap { markers = List.copyOf(markers); }
+    public MonitorMap {
+        markers = List.copyOf(markers);
+        links = List.copyOf(links);
+    }
 
     static MonitorMap plot(List<Site> sites, boolean pending) {
         return plot(sites, pending, false);
     }
 
     static MonitorMap plot(List<Site> sites, boolean pending, boolean wide) {
+        return plot(sites, pending, wide, List.of());
+    }
+
+    static MonitorMap plot(List<Site> sites, boolean pending, boolean wide,
+                           List<MonitorNetworkReach.Connection> connections) {
         int density = density(sites.size(), wide), side = side(density);
         boolean[] used = new boolean[side * side];
-        used[used.length / 2] = true; // Reserve the origin even for a tower with the same X/Z.
+        int origin = used.length / 2;
+        used[origin] = true; // Reserve the origin even for a tower with the same X/Z.
+        Map<Integer, Integer> towerCells = new HashMap<>();
+        towerCells.put(0, origin);
         double extent = sites.stream().mapToDouble(s -> Math.max(Math.abs(s.east()) / HALF_WIDTH,
                 Math.abs(s.south()) / HALF_HEIGHT)).max().orElse(1);
         double scale = extent > 0 ? 1 / extent : 0;
@@ -44,30 +61,59 @@ public record MonitorMap(List<Marker> markers, boolean pending, boolean wide) {
                 if (candidate < distance) { best = cell; distance = candidate; }
             }
             used[best] = true;
+            if (wide && site.tower() > 0) towerCells.put(site.tower(), best);
             cells[i] = encode(best, site.kind(), site.address());
         }
-        return fromCells(cells, pending, wide);
+        int[] edges = new int[connections.size() * 2];
+        for (int i = 0; i < connections.size(); i++) {
+            var connection = connections.get(i);
+            edges[i * 2] = towerCells.getOrDefault(connection.from(), -1);
+            edges[i * 2 + 1] = towerCells.getOrDefault(connection.to(), -1);
+        }
+        return fromCells(cells, edges, pending, wide);
     }
 
     public static MonitorMap fromCells(int[] cells, boolean pending, boolean wide) {
+        return fromCells(cells, new int[0], pending, wide);
+    }
+
+    public static MonitorMap fromCells(int[] cells, int[] edges, boolean pending, boolean wide) {
         int side = side(density(cells.length, wide)), size = side * side;
-        boolean[] used = new boolean[size];
-        used[size / 2] = true;
+        Kind[] kinds = new Kind[size];
+        int origin = size / 2;
+        kinds[origin] = Kind.TX_RX;
         List<Marker> markers = new ArrayList<>(cells.length);
         for (int code : cells) {
             int cell = code / CODES_PER_CELL;
-            if (code < 0 || cell >= size || used[cell]) return new MonitorMap(List.of(), pending, wide);
-            used[cell] = true;
+            if (code < 0 || cell >= size || kinds[cell] != null) return new MonitorMap(List.of(), List.of(), pending, wide);
             Kind kind = KINDS[code % KINDS.length];
             int address = code / KINDS.length % LABELS;
-            if (kind == Kind.ESTIMATE && address > BRANCHES) return new MonitorMap(List.of(), pending, wide);
+            if (kind == Kind.ESTIMATE && address > BRANCHES)
+                return new MonitorMap(List.of(), List.of(), pending, wide);
+            kinds[cell] = kind;
             markers.add(new Marker(cell, kind, address, wide ? "o" : label(kind, address)));
         }
-        return new MonitorMap(markers, pending, wide);
+        var links = new LinkedHashSet<Link>();
+        if (wide) for (int i = 1; i < edges.length; i += 2) {
+            int from = Math.min(edges[i - 1], edges[i]), to = Math.max(edges[i - 1], edges[i]);
+            if (from < 0 || from == to || to >= size || kinds[from] == null || kinds[to] == null) continue;
+            if (kinds[from] == Kind.ESTIMATE && kinds[to] == Kind.ESTIMATE) continue;
+            links.add(new Link(from, to, kinds[from] == Kind.ESTIMATE || kinds[to] == Kind.ESTIMATE));
+        }
+        return new MonitorMap(markers, new ArrayList<>(links), pending, wide);
     }
 
     public int[] cells() {
         return markers.stream().mapToInt(m -> encode(m.cell(), m.kind(), m.address())).toArray();
+    }
+
+    public int[] linkCells() {
+        int[] edges = new int[links.size() * 2];
+        for (int i = 0; i < links.size(); i++) {
+            edges[i * 2] = links.get(i).fromCell();
+            edges[i * 2 + 1] = links.get(i).toCell();
+        }
+        return edges;
     }
 
     private static int encode(int cell, Kind kind, int address) {

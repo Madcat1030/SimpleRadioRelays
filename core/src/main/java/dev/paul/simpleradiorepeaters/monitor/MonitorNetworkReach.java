@@ -9,11 +9,16 @@ import java.util.function.IntPredicate;
 final class MonitorNetworkReach {
     static final int MAX_HOPS = 12;
 
+    record Connection(int from, int to) {}
+    record Result(List<MonitorReach.Node> nodes, List<Connection> connections) {}
+
     private MonitorNetworkReach() {}
 
-    static List<MonitorReach.Node> solve(int size, int maxVisits, MonitorReach.Links links, IntPredicate resets) {
+    static Result solve(int size, int maxVisits, MonitorReach.Links links, IntPredicate resets) {
         int budget = Math.min(MAX_HOPS, maxVisits);
-        int[] inbound = returnAllowance(size, budget, links, resets);
+        int[] returnVia = new int[size];
+        Arrays.fill(returnVia, -1);
+        returnAllowance(size, budget, links, resets, returnVia);
         int[] via = new int[size], decay = new int[size];
         Arrays.fill(via, -1);
         Arrays.fill(decay, Integer.MAX_VALUE);
@@ -27,11 +32,11 @@ final class MonitorNetworkReach {
                 for (int to = 1; to < size; to++) {
                     if (to == from) continue;
                     int arrival = from == 0 || resets.test(to) ? 1 : decay[from] + 1;
-                    if (via[to] >= 0 && (inbound[to] == 0 || next[to] <= arrival)) continue;
+                    if (via[to] >= 0 && (returnVia[to] < 0 || next[to] <= arrival)) continue;
                     if (links.receive(from, to, decay[from]) == null) continue;
                     if (via[to] < 0) via[to] = from;
                     // Plot an unheard tower at the edge of a branch, but do not survey onward from it.
-                    if (inbound[to] == 0 || next[to] <= arrival) continue;
+                    if (returnVia[to] < 0 || next[to] <= arrival) continue;
                     if (next[to] == decay[to]) improved.add(to);
                     next[to] = arrival;
                 }
@@ -40,13 +45,18 @@ final class MonitorNetworkReach {
             frontier = improved;
         }
         List<MonitorReach.Node> visible = new ArrayList<>();
-        for (int tower = 1; tower < size; tower++)
-            if (inbound[tower] > 0 || via[tower] >= 0)
-                visible.add(new MonitorReach.Node(tower, via[tower], via[tower] >= 0, inbound[tower] > 0));
-        return visible;
+        List<Connection> connections = new ArrayList<>();
+        for (int tower = 1; tower < size; tower++) {
+            boolean tx = via[tower] >= 0, rx = returnVia[tower] >= 0;
+            if (tx || rx) visible.add(new MonitorReach.Node(tower, via[tower], tx, rx));
+            if (tx) connections.add(new Connection(via[tower], tower));
+            if (rx) connections.add(new Connection(tower, returnVia[tower]));
+        }
+        return new Result(visible, connections);
     }
 
-    private static int[] returnAllowance(int size, int budget, MonitorReach.Links links, IntPredicate resets) {
+    private static void returnAllowance(int size, int budget, MonitorReach.Links links,
+                                        IntPredicate resets, int[] returnVia) {
         int[] allowed = new int[size];
         List<Integer> frontier = List.of(0);
         for (int hop = 0; hop < budget && !frontier.isEmpty(); hop++) {
@@ -60,13 +70,13 @@ final class MonitorNetworkReach {
                     int found = strongestAllowance(links, from, to, next[from], ceiling);
                     if (found <= next[from]) continue;
                     if (next[from] == allowed[from]) improved.add(from);
+                    if (returnVia[from] < 0) returnVia[from] = to;
                     next[from] = found;
                 }
             }
             allowed = next;
             frontier = improved;
         }
-        return allowed;
     }
 
     private static int strongestAllowance(MonitorReach.Links links, int from, int to, int known, int ceiling) {

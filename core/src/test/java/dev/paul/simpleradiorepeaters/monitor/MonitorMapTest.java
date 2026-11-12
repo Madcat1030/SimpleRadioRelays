@@ -24,13 +24,21 @@ class MonitorMapTest {
     }
 
     @Test void wideMapPreservesTheThreeLinkColorsWithOneGlyph() {
-        var map = MonitorMap.plot(List.of(new MonitorMap.Site(1000, 0, TX_RX, 0),
-                new MonitorMap.Site(3000, 0, RX_ONLY, 0), new MonitorMap.Site(5000, 0, ESTIMATE, 0)), false, true);
-        var decoded = MonitorMap.fromCells(map.cells(), false, true);
+        var map = MonitorMap.plot(List.of(new MonitorMap.Site(5000, 0, ESTIMATE, 0, 3),
+                new MonitorMap.Site(1000, 0, TX_RX, 0, 1), new MonitorMap.Site(3000, 0, RX_ONLY, 0, 2)), false, true,
+                List.of(new MonitorNetworkReach.Connection(0, 1), new MonitorNetworkReach.Connection(1, 0),
+                        new MonitorNetworkReach.Connection(2, 1), new MonitorNetworkReach.Connection(1, 3)));
+        var decoded = MonitorMap.fromCells(map.cells(), map.linkCells(), false, true);
         assertEquals(map, decoded);
         assertTrue(decoded.wide());
         assertEquals(List.of(TX_RX, RX_ONLY, ESTIMATE), decoded.markers().stream().map(MonitorMap.Marker::kind).toList());
         assertTrue(decoded.markers().stream().allMatch(marker -> marker.label().equals("o")));
+        int heard = decoded.markers().get(0).cell(), receiveOnly = decoded.markers().get(1).cell();
+        int estimate = decoded.markers().get(2).cell();
+        assertEquals(3, decoded.links().size());
+        assertTrue(decoded.links().contains(new MonitorMap.Link(heard, receiveOnly, false)));
+        assertTrue(decoded.links().contains(new MonitorMap.Link(heard, estimate, true)));
+        assertTrue(MonitorMap.fromCells(map.cells(), false, true).links().isEmpty());
     }
 
     @Test void colocatedTowersGetSeparateCellsAndLeaveTheOriginFree() {

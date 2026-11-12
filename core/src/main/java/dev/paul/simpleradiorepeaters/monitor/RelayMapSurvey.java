@@ -41,10 +41,10 @@ public final class RelayMapSurvey {
         var links = new SurveyLinks(stations, channel);
         int maxVisits = RepeatersConfig.INSTANCE.maxRelayHops;
         if (wide) {
-            var nodes = MonitorNetworkReach.solve(stations.size(), maxVisits, links,
+            var network = MonitorNetworkReach.solve(stations.size(), maxVisits, links,
                     index -> stations.get(index).tower().attachment().resetsDecay());
-            var sites = nodes.stream().map(node -> marker(stations, center, node, 0)).toList();
-            return MonitorMap.plot(sites, links.pending, true);
+            var sites = network.nodes().stream().map(node -> marker(stations, center, node, 0)).toList();
+            return MonitorMap.plot(sites, links.pending, true, network.connections());
         }
         var nodes = MonitorReach.solve(stations.size(), maxVisits, links);
 
@@ -77,11 +77,11 @@ public final class RelayMapSurvey {
     private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int address) {
         var target = stations.get(node.tower()).site().position();
         if (node.rx()) return new MonitorMap.Site(target.x - center.x, target.z - center.z,
-                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, address);
+                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, address, node.tower());
         var anchor = stations.get(node.parent()).site().position();
         double dx = target.x - anchor.x, dz = target.z - anchor.z;
         var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz), Math.hypot(dx, dz), 1);
-        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, address);
+        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, address, node.tower());
     }
 
     private static final class SurveyLinks implements MonitorReach.Links {

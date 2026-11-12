@@ -134,8 +134,11 @@ public class MonitorGameTests implements FabricGameTest {
                 check(wide != null && wide.wide() && wide.markers().size() == 1
                                 && wide.markers().get(0).kind() == MonitorMap.Kind.TX_RX && wide.markers().get(0).label().equals("o"),
                         "The next page must be the wide map, with one small glyph per visible tower");
+                check(wide.links().size() == 1 && !wide.links().get(0).estimated()
+                                && wideTag.getIntArray("MonitorMapLinks").length == 2,
+                        "The wide map must send one solid link for the two-way connection");
                 clientMonitor.load(wideTag);
-                check(wide.equals(clientMonitor.displayedMap()), "The client must reconstruct the wide map with the same zoom and colors");
+                check(wide.equals(clientMonitor.displayedMap()), "The client must reconstruct the wide map and its link");
                 pages.put("wide", wideTag.toString());
                 for (String name : List.of("both", "rx", "tx")) {
                     SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);

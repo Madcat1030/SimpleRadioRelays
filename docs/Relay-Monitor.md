@@ -30,7 +30,7 @@ Click the inserted card with an empty hand to remove it. Card actions work only 
 
 ## Network map
 
-The close map puts this antenna at **O** in the center, with north up. Positions are relative and scale to fit the screen. The map draws tower markers only; terrain still affects reach.
+The close map marks this antenna with a blue ring in the center, with north up. Positions are relative and scale to fit the screen. Terrain affects which towers appear.
 
 | Marker | Meaning |
 | --- | --- |
@@ -40,7 +40,7 @@ The close map puts this antenna at **O** in the center, with north up. Positions
 
 The nearest direct neighbors are labeled **O-A** through **O-N**. Up to nine towers in the next layer use their parent's letter, such as **A-1** or **B-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
 
-The next page zooms out to the wider network. The origin is **0** and every other tower is a small **o**. Green still means two-way, white means receive-only, and orange marks an approximate position at the first unheard tower of an outbound branch. The wide map surveys up to 12 hops in either direction, or the server's relay hop limit if it is lower.
+The next page zooms out to the wider network. The origin and all other towers use the same ring shape. The origin is blue. Green still means two-way, white means receive-only, and orange marks an approximate position at the first unheard tower of an outbound branch. Solid lines show selected legs of outbound and return routes. Dotted amber lines lead to the orange estimates. The wide map surveys up to 12 hops in either direction, or the server's relay hop limit if it is lower.
 
 Both maps follow the card's frequency and modulation within this dimension and account for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
 

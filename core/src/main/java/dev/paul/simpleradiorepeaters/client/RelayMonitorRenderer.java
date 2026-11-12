@@ -19,6 +19,10 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
             {.55f, -1}, {-.55f, -1}, {-1, -.55f}, {-1, .55f}
     };
     private static final float INNER_RADIUS_RATIO = .55f;
+    private static final int ORIGIN_COLOR = 0xff79d9ff;
+    private static final int LINK_COLOR = 0xff527880;
+    private static final int ESTIMATE_LINK_COLOR = 0xffc68348;
+    private record MapPoint(float x, float y) {}
     private final Font font;
     public RelayMonitorRenderer(BlockEntityRendererProvider.Context context) { font = context.getFont(); }
     @Override public void render(RelayMonitorBlockEntity monitor, float tick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
@@ -46,27 +50,26 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
         DeviceRendering.centeredText(font, "N", 8, 13.68, 0, 1, .46, .0065f, 0xffa4cfad, pose, buffers);
         int density = map.density();
         double width = MonitorMap.columnSpacing(density) * .9, height = MonitorMap.rowSpacing(density) * .82;
-        if (map.wide()) {
+        if (map.wide())
             DeviceRendering.centeredText(font, "NETWORK", 11.6, 13.68, 0, 4, .46, .0065f, 0xffa4cfad, pose, buffers);
-            DeviceRendering.centeredText(font, "0", 8, 10, 0, width, height, .0065f, 0xff79d9ff, pose, buffers);
-        } else {
-            DeviceRendering.centeredText(font, "O", 8, 10, 0, 1, .82, .0065f, 0xff79d9ff, pose, buffers);
+
+        var vertices = buffers.getBuffer(RenderType.debugQuads());
+        var transform = pose.last().pose();
+        float radius = (float) (height * .45 / 16);
+        if (map.wide()) {
+            for (var link : map.links())
+                drawLink(vertices, transform, mapPoint(link.fromCell(), density), mapPoint(link.toCell(), density),
+                        radius, link.estimated());
         }
-        if (map.wide() && !map.markers().isEmpty()) {
-            var vertices = buffers.getBuffer(RenderType.debugQuads());
-            var transform = pose.last().pose();
-            float radius = (float) (height * .45 / 16);
-            for (var marker : map.markers()) {
-                // A north-facing block's model X runs leftward when viewed from the front.
-                float x = (float) ((8 - MonitorMap.east(marker.cell(), density)) / 16);
-                float y = (float) ((10 - MonitorMap.south(marker.cell(), density)) / 16);
-                drawRing(vertices, transform, x, y, radius, markerColor(marker.kind()));
-            }
-        } else {
-            for (var marker : map.markers())
+        drawRing(vertices, transform, new MapPoint(.5f, .625f), radius, ORIGIN_COLOR);
+        for (var marker : map.markers()) {
+            if (map.wide()) {
+                drawRing(vertices, transform, mapPoint(marker.cell(), density), radius, markerColor(marker.kind()));
+            } else {
                 DeviceRendering.centeredText(font, marker.label(), 8 - MonitorMap.east(marker.cell(), density),
                         10 - MonitorMap.south(marker.cell(), density), 0, width, height, .0065f,
                         markerColor(marker.kind()), pose, buffers);
+            }
         }
         if (map.pending())
             DeviceRendering.centeredText(font, "Surveying", 8, 6.3, 0, 5, .4, .0065f, 0xffa4cfad, pose, buffers);
@@ -80,19 +83,55 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
         };
     }
 
-    // Solid strokes preserve the o shape when the font's thin bitmap strokes would undersample.
-    private static void drawRing(VertexConsumer vertices, Matrix4f transform, float x, float y, float radius, int color) {
-        for (int i = 0; i < RING.length; i++) {
-            float[] start = RING[i], end = RING[(i + 1) % RING.length];
-            ringVertex(vertices, transform, x, y, start, radius, color);
-            ringVertex(vertices, transform, x, y, end, radius, color);
-            ringVertex(vertices, transform, x, y, end, radius * INNER_RADIUS_RATIO, color);
-            ringVertex(vertices, transform, x, y, start, radius * INNER_RADIUS_RATIO, color);
+    private static MapPoint mapPoint(int cell, int density) {
+        // A north-facing block's model X runs leftward when viewed from the front.
+        return new MapPoint((float) ((8 - MonitorMap.east(cell, density)) / 16),
+                (float) ((10 - MonitorMap.south(cell, density)) / 16));
+    }
+
+    private static void drawLink(VertexConsumer vertices, Matrix4f transform, MapPoint from, MapPoint to,
+                                 float radius, boolean estimated) {
+        float dx = to.x() - from.x(), dy = to.y() - from.y();
+        float length = (float) Math.hypot(dx, dy);
+        float inset = radius * 1.15f;
+        if (length <= 2 * inset) return;
+        float unitX = dx / length, unitY = dy / length;
+        if (estimated) {
+            int count = Math.max(1, Math.min(32, Math.round((length - 2 * inset) / (radius * 1.1f))));
+            for (int i = 0; i < count; i++) {
+                float distance = inset + (i + .5f) * (length - 2 * inset) / count;
+                float x = from.x() + distance * unitX, y = from.y() + distance * unitY;
+                float half = radius * .23f;
+                linkQuad(vertices, transform, x - half, y, x + half, y, 0, half, ESTIMATE_LINK_COLOR);
+            }
+        } else {
+            float half = radius * .15f;
+            linkQuad(vertices, transform, from.x() + inset * unitX, from.y() + inset * unitY,
+                    to.x() - inset * unitX, to.y() - inset * unitY, -half * unitY, half * unitX, LINK_COLOR);
         }
     }
 
-    private static void ringVertex(VertexConsumer vertices, Matrix4f transform, float x, float y,
+    private static void linkQuad(VertexConsumer vertices, Matrix4f transform, float x1, float y1,
+                                 float x2, float y2, float normalX, float normalY, int color) {
+        vertices.vertex(transform, x1 + normalX, y1 + normalY, -.0007f).color(color).endVertex();
+        vertices.vertex(transform, x2 + normalX, y2 + normalY, -.0007f).color(color).endVertex();
+        vertices.vertex(transform, x2 - normalX, y2 - normalY, -.0007f).color(color).endVertex();
+        vertices.vertex(transform, x1 - normalX, y1 - normalY, -.0007f).color(color).endVertex();
+    }
+
+    // Solid strokes preserve the o shape when the font's thin bitmap strokes would undersample.
+    private static void drawRing(VertexConsumer vertices, Matrix4f transform, MapPoint center, float radius, int color) {
+        for (int i = 0; i < RING.length; i++) {
+            float[] start = RING[i], end = RING[(i + 1) % RING.length];
+            ringVertex(vertices, transform, center, start, radius, color);
+            ringVertex(vertices, transform, center, end, radius, color);
+            ringVertex(vertices, transform, center, end, radius * INNER_RADIUS_RATIO, color);
+            ringVertex(vertices, transform, center, start, radius * INNER_RADIUS_RATIO, color);
+        }
+    }
+
+    private static void ringVertex(VertexConsumer vertices, Matrix4f transform, MapPoint center,
                                    float[] offset, float radius, int color) {
-        vertices.vertex(transform, x + offset[0] * radius, y + offset[1] * radius, -.001f).color(color).endVertex();
+        vertices.vertex(transform, center.x() + offset[0] * radius, center.y() + offset[1] * radius, -.001f).color(color).endVertex();
     }
 }

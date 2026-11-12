@@ -167,6 +167,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         CompoundTag tag = super.getUpdateTag(); ListTag text = new ListTag();
         if (displayedMap != null) {
             tag.putIntArray("MonitorMap", displayedMap.cells());
+            if (!displayedMap.links().isEmpty()) tag.putIntArray("MonitorMapLinks", displayedMap.linkCells());
             tag.putBoolean("MonitorMapPending", displayedMap.pending());
             tag.putBoolean("MonitorMapWide", displayedMap.wide());
         } else {
@@ -179,7 +180,8 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         var text = tag.getList("MonitorLines", Tag.TAG_STRING); List<String> value = new ArrayList<>();
         for (int i = 0; i < Math.min(8, text.size()); i++) value.add(text.getString(i));
         displayedMap = tag.contains("MonitorMap", Tag.TAG_INT_ARRAY)
-                ? MonitorMap.fromCells(tag.getIntArray("MonitorMap"), tag.getBoolean("MonitorMapPending"), tag.getBoolean("MonitorMapWide")) : null;
+                ? MonitorMap.fromCells(tag.getIntArray("MonitorMap"), tag.getIntArray("MonitorMapLinks"),
+                        tag.getBoolean("MonitorMapPending"), tag.getBoolean("MonitorMapWide")) : null;
         lines = value.isEmpty() && displayedMap == null ? INSERT_CARD : List.copyOf(value);
         reading = null; mapReadings.clear(); mapPage = null;
         selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
