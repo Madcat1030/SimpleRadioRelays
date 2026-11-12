@@ -1,4 +1,4 @@
-# Relay Monitor — Repeaters 0.9r1
+# Relay Monitor
 
 The Relay Monitor is a passive attachment for the top of a Relay. It replaces a Repeater Bank or Transponder and never forwards audio. The underlying Relay still needs a catalyst, a valid core and an antenna.
 
@@ -14,7 +14,7 @@ The overview shows the antenna base coordinates and dimension, physical mast str
 
 A TX/RX node counts in both direction totals. Nodes are counted once even if a Transponder has several matching ports. The monitor itself is not an active forwarding node. Saved unloaded nodes count when persistent unloaded relays are enabled.
 
-Right-click the screen with an empty hand to cycle through heard towers, then TX-only entries, then back to the overview:
+Click the centered blue ring or coordinate footer to open the home overview. Click the overview to open its direct-link list when links are available, then click a row to inspect that tower. Heard towers appear first:
 
 | Page | Information |
 | --- | --- |
@@ -28,9 +28,23 @@ TX-only distances round to the nearest 500 blocks. Below 500 blocks they round t
 
 Click the inserted card with an empty hand to remove it. Card actions work only through the front face. Hoppers have no inventory access; direct container integrations remain available as with existing card banks.
 
+## Network map
+
+The network map opens when you insert a tuned card. It is north-up, with the monitor's own antenna marked by a blue ring. The coordinates along the bottom belong to the centered tower.
+
+| Marker | Meaning |
+| --- | --- |
+| Green ring | The monitor can reach and hear this tower. |
+| White ring | The monitor can hear this tower. |
+| Orange ring | The first unheard tower on an outbound branch. Its footer shows a rounded distance and bearing from the last known tower. |
+
+Solid lines show selected outbound and return legs. Dotted lines connect orange estimates to the last known tower that reached them. The map follows the tuned channel in the current dimension for up to 12 hops each way, subject to the server's lower limit. Terrain, relay decay, and Ender resets affect reach.
+
+Right-click a ring with an empty hand to center it and show towers within two drawn links. Colors and links still describe communication with the monitor's own antenna. Aim at a ring within interaction range to highlight it. Right-click the centered ring or coordinate footer to open the tower's details. Clicking the data area switches between network and direct diagnostics for that tower when both are available. Use **Back** to return to the map or the direct-link list. On a focused map, use **Home** or click the blue ring to return to the full map.
+
 ## Compass binding
 
-Use an ordinary compass on the screen to bind it without changing the page:
+Use an ordinary compass on the overview, a direct-link page, or a tower detail page to bind it without changing the page:
 
 - A TX/RX or RX-only page binds to that tower's actual antenna base.
 - A TX-only page binds to the centre of its displayed 16-point bearing at the displayed rounded distance. Scaled radio distances are converted to blocks in the destination dimension. The target height uses your antenna's height, clamped to that world's limits, rather than revealing the remote tower's height.
@@ -44,7 +58,7 @@ The compass uses vanilla lodestone targeting without requiring a lodestone. It k
 
 Predictions use fresh first-relay departure power, the installed catalyst/amplifier, directional reception and the existing dimensional policy. Input and output channel roles are tested separately for Transponders. A message already weakened by earlier relay hops can fail a nominal direct link.
 
-Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The renderer only draws the current synchronized text page; it performs no network or terrain work.
+Survey results are reused while the channel, antenna and network revision remain unchanged. Updates run on the server and at most once per second during ordinary ticking, with immediate checks for card changes and screen interactions. The map is calculated only when it is displayed. The renderer only draws the synchronized page; it performs no network or terrain work.
 
 Surveying reuses the existing cached terrain profiles and budgeted sampling queues. Unknown paths show a Surveying count on the monitor. Survey requests do not add operational SCAN/CHECK markers to either relay. Established paths keep their previous environmental penalty during remapping. No survey loads remote chunks, emits a packet or adds a forwarding port.
 

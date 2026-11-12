@@ -96,20 +96,93 @@ public class MonitorGameTests implements FabricGameTest {
             try {
                 var incoming = card(CHANNEL); player.setItemInHand(InteractionHand.MAIN_HAND, incoming);
                 var screen = hit(monitor.getBlockPos(), Direction.NORTH, .5, .625);
+                var footer = hit(monitor.getBlockPos(), Direction.NORTH, .5, MonitorScreen.FOOTER_Y / 16);
+                var back = hit(monitor.getBlockPos(), Direction.NORTH, MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                var blank = hit(monitor.getBlockPos(), Direction.NORTH, .15, .81);
+                var homeButton = hit(monitor.getBlockPos(), Direction.NORTH, MonitorScreen.HOME_X / 16, MonitorScreen.HOME_Y / 16);
                 SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                 check(incoming.isEmpty() && monitor.reading() != null && monitor.reading().tx() == 2 && monitor.reading().rx() == 2,
-                        "A tuned card on the front must fill the sole slot and open the overview");
+                        "A tuned card on the front must fill the sole slot and start surveying");
                 check(relay.channels().isEmpty() && !manager.isEligible(relay.relayId())
                                 && manager.network(world, CHANNEL).towers().stream().noneMatch(t -> t.id().equals(home.id())),
                         "A monitor card must never become a forwarding port");
                 var cached = monitor.reading(); monitor.refresh(); check(monitor.reading() == cached, "An unchanged revision/card must reuse its survey");
-                pages.put("overview", monitor.getUpdateTag().toString());
                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-                for (String name : List.of("both", "rx", "tx")) {
-                    SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
-                    pages.put(name, monitor.getUpdateTag().toString());
+                var map = monitor.displayedMap();
+                check(map != null && map.centerKind() == MonitorMap.Kind.HOME && map.markers().size() == 1
+                                && map.markers().get(0).kind() == MonitorMap.Kind.TX_RX
+                                && map.location().equals(RelayMapSurvey.coordinates(home.antennaBase())),
+                        "Tuning the monitor must open the wide map with its home coordinates and the same-channel tower");
+                var mapTag = monitor.getUpdateTag();
+                check(mapTag.getIntArray("MonitorMap").length == 1 && mapTag.getIntArray("MonitorMapLinks").length == 2
+                                && !mapTag.contains("MonitorLines") && !monitor.saveWithoutMetadata().contains("MonitorMap"),
+                        "The displayed cells and links belong in the client update, never in saved inventory data");
+                var clientMonitor = new RelayMonitorBlockEntity(monitor.getBlockPos(), monitor.getBlockState());
+                clientMonitor.load(mapTag);
+                check(map.equals(clientMonitor.displayedMap()), "A tracking client must reconstruct the map, links and coordinates");
+                monitor.refresh();
+                check(monitor.displayedMap() == map, "An unchanged map must not be resurveyed");
+                pages.put("wide", mapTag.toString());
+
+                var reachable = targets.get(0);
+                var marker = map.markers().get(0);
+                var towerHit = hit(monitor.getBlockPos(), Direction.NORTH, MonitorMap.modelX(marker.cell(), map.density()),
+                        MonitorMap.modelY(marker.cell(), map.density()));
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, towerHit);
+                var focused = monitor.displayedMap();
+                check(focused != null && focused.centerKind() == MonitorMap.Kind.TX_RX
+                                && focused.location().equals(RelayMapSurvey.coordinates(reachable.antennaBase()))
+                                && focused.markers().size() == 1 && focused.markers().get(0).kind() == MonitorMap.Kind.HOME,
+                        "Clicking a tower must center the view while preserving its link kind and the blue home ring");
+                var focusedTag = monitor.getUpdateTag();
+                clientMonitor.load(focusedTag);
+                check(focused.equals(clientMonitor.displayedMap()) && clientMonitor.showHome(),
+                        "A tracking client must reconstruct the focused map and its Home control");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, blank);
+                check(focused.equals(monitor.displayedMap()), "Clicking empty map space must leave focus unchanged");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, footer);
+                check(monitor.displayedMap() == null && monitor.lines().contains(focused.location()) && monitor.showBack(),
+                        "The coordinate footer must open the centered tower's detail page with Back");
+                var firstDetails = monitor.lines();
+                clientMonitor.load(monitor.getUpdateTag());
+                check(clientMonitor.showBack() && clientMonitor.lines().equals(firstDetails), "The client must receive the Back control");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.displayedMap() == null && monitor.lines().contains(focused.location())
+                                && monitor.lines().stream().anyMatch(line -> line.startsWith("Radio distance")),
+                        "A detail click must show the direct-link diagnostics for that same tower");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, blank);
+                check(monitor.lines().equals(firstDetails), "Detail pages must cycle within the selected tower");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, back);
+                check(focused.equals(monitor.displayedMap()), "Back must return to the focused map");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, homeButton);
+                check(map.equals(monitor.displayedMap()), "The focused map's Home control must return to the full map");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, towerHit);
+                manager.updateSnapshot(reachable.settings(reachable.channels(), false, reachable.catalystItem(),
+                        null, reachable.attachment(), reachable.transponder()));
+                monitor.refresh();
+                check(monitor.displayedMap() != null && monitor.displayedMap().markers().isEmpty()
+                                && monitor.displayedMap().centerKind() == MonitorMap.Kind.HOME,
+                        "Disabling the focused tower must return the map to home");
+                manager.updateSnapshot(reachable);
+                monitor.refresh();
+                check(map.equals(monitor.displayedMap()), "Restoring the relay must restore its marker");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Clicking the blue home ring must open its overview");
+                pages.put("overview", monitor.getUpdateTag().toString());
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.lines().get(0).startsWith("DIRECT LINKS"), "The home tower's second page must list its direct links");
+                var names = List.of("both", "rx", "tx");
+                for (int i = 0; i < names.size(); i++) {
+                    var row = hit(monitor.getBlockPos(), Direction.NORTH, .5, MonitorScreen.lineY(i + 1) / 16);
+                    SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, row);
+                    pages.put(names.get(i), monitor.getUpdateTag().toString());
+                    if (i + 1 < names.size())
+                        SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, back);
                 }
-                check(monitor.lines().get(0).contains("TX only") && monitor.lines().contains("SSE"), "The final target page must be the SSE TX-only entry");
+                check(monitor.lines().get(0).contains("TX only") && monitor.lines().contains("SSE"), "Selecting the TX-only row must show that tower");
+                var directDetails = monitor.lines();
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.lines().equals(directDetails), "A single-page tower must stay selected when clicking its data");
                 String payload = monitor.getUpdateTag().toString(); var destination = targets.get(2);
                 check(!payload.contains(String.valueOf(destination.antennaBase().getX())) && !payload.contains(String.valueOf(destination.antennaBase().getZ())),
                         "Exact TX-only coordinates must not be included anywhere in the client update tag");
@@ -136,8 +209,13 @@ public class MonitorGameTests implements FabricGameTest {
                 check(monitor.bindCompass(player, InteractionHand.MAIN_HAND)
                                 && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase()),
                         "Rebinding a now-heard tower must replace the estimate with its exact antenna base");
-                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); monitor.nextPage();
-                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Cycling past the last target must return to the overview");
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                monitor.clickScreen(MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.lines().get(0).startsWith("DIRECT LINKS"), "Back from a direct detail must return to the links list");
+                monitor.clickScreen(MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.displayedMap() != null, "Back from the home links list must return to the map");
+                monitor.clickScreen(.5, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "The home footer must lead to the overview");
                 var stack = new ItemStack(Items.COMPASS, 3); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
                 check(monitor.bindCompass(player, InteractionHand.MAIN_HAND) && stack.getCount() == 2 && !stack.hasTag(), "Only one compass in a stack may be bound");
                 boolean found = false;
@@ -260,6 +338,8 @@ public class MonitorGameTests implements FabricGameTest {
                 RelayCatalysts.GILDED, true, 64, Set.of(), null, RelayAttachment.NONE, null, base.east(1000), home.antennaTip().east(1000));
         manager.updateSnapshot(home); manager.updateSnapshot(other);
         check(RelaySurvey.scan(world.getServer(), manager, home, channel).pending() == 1, "Initial unknown terrain must be identified as pending mapping");
+        var pendingMap = RelayMapSurvey.scan(world, manager, home, channel).view(null).map();
+        check(pendingMap.pending() && pendingMap.markers().isEmpty(), "A map must not guess reach while terrain is unknown");
         helper.runAfterDelay(210, () -> {
             try {
                 var profiles = world.getDataStorage().computeIfAbsent(TerrainProfiles::load, TerrainProfiles::new, TerrainProfiles.NAME);
@@ -274,6 +354,9 @@ public class MonitorGameTests implements FabricGameTest {
                 var result = RelaySurvey.scan(world.getServer(), manager, home, channel);
                 check(result.entries().size() == 1 && Math.abs(result.entries().get(0).terrainPercent() - 25) < .001,
                         "Sixteen blocks below the sampled ground must display +25%, using the shared saved profile");
+                var mapped = RelayMapSurvey.scan(world, manager, home, channel).view(null).map();
+                check(!mapped.pending() && mapped.markers().size() == 1 && mapped.markers().get(0).kind() == MonitorMap.Kind.TX_RX,
+                        "A completed terrain profile must make the real two-way link visible on the map");
                 long sampled = ((Number) TerrainManager.statistics().get("sampled_columns")).longValue();
                 replacement.clearanceCurve[4][1] = .4;
                 TerrainManager.reconfigure(world.getServer());
