@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntPredicate;
+import dev.paul.simpleradiorepeaters.radio.RadioLinkMath;
 
 /** Bounded return and outbound searches. Node zero is the monitor's virtual endpoint. */
 final class MonitorNetworkReach {
     static final int MAX_HOPS = 12;
 
+    @FunctionalInterface interface Links { RadioLinkMath.Result receive(int from, int to, int decay); }
+    record Node(int tower, int parent, boolean tx, boolean rx) {}
     record Connection(int from, int to) {}
-    record Result(List<MonitorReach.Node> nodes, List<Connection> connections) {}
+    record Result(List<Node> nodes, List<Connection> connections) {}
 
     private MonitorNetworkReach() {}
 
-    static Result solve(int size, int maxVisits, MonitorReach.Links links, IntPredicate resets) {
+    static Result solve(int size, int maxVisits, Links links, IntPredicate resets) {
         int budget = Math.min(MAX_HOPS, maxVisits);
         int[] returnVia = new int[size];
         Arrays.fill(returnVia, -1);
@@ -44,18 +47,18 @@ final class MonitorNetworkReach {
             decay = next;
             frontier = improved;
         }
-        List<MonitorReach.Node> visible = new ArrayList<>();
+        List<Node> visible = new ArrayList<>();
         List<Connection> connections = new ArrayList<>();
         for (int tower = 1; tower < size; tower++) {
             boolean tx = via[tower] >= 0, rx = returnVia[tower] >= 0;
-            if (tx || rx) visible.add(new MonitorReach.Node(tower, via[tower], tx, rx));
+            if (tx || rx) visible.add(new Node(tower, via[tower], tx, rx));
             if (tx) connections.add(new Connection(via[tower], tower));
             if (rx) connections.add(new Connection(tower, returnVia[tower]));
         }
         return new Result(visible, connections);
     }
 
-    private static void returnAllowance(int size, int budget, MonitorReach.Links links,
+    private static void returnAllowance(int size, int budget, Links links,
                                         IntPredicate resets, int[] returnVia) {
         int[] allowed = new int[size];
         List<Integer> frontier = List.of(0);
@@ -79,7 +82,7 @@ final class MonitorNetworkReach {
         }
     }
 
-    private static int strongestAllowance(MonitorReach.Links links, int from, int to, int known, int ceiling) {
+    private static int strongestAllowance(Links links, int from, int to, int known, int ceiling) {
         // Each additional decay step can only lower departure power. Try the ceiling first,
         // then search only if this leg can improve on the route we already know.
         if (links.receive(from, to, ceiling) != null) return ceiling;

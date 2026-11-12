@@ -14,7 +14,7 @@ The overview shows the antenna base coordinates and dimension, physical mast str
 
 A TX/RX node counts in both direction totals. Nodes are counted once even if a Transponder has several matching ports. The monitor itself is not an active forwarding node. Saved unloaded nodes count when persistent unloaded relays are enabled.
 
-Right-click the screen with an empty hand to cycle through the overview, close map, wide map, and direct-link pages. The direct-link pages list heard towers first:
+Click the centered blue ring to open the overview. From the overview, right-click the screen with an empty hand to cycle through the direct-link pages and back to the map. The direct-link pages list heard towers first:
 
 | Page | Information |
 | --- | --- |
@@ -30,23 +30,21 @@ Click the inserted card with an empty hand to remove it. Card actions work only 
 
 ## Network map
 
-The close map marks this antenna with a blue ring in the center, with north up. Positions are relative and scale to fit the screen. Terrain affects which towers appear.
+The network map opens when you insert a tuned card. It is north-up, with the monitor's own antenna marked by a blue ring. The coordinates along the bottom belong to the centered tower.
 
 | Marker | Meaning |
 | --- | --- |
-| Green label | The monitor can reach and hear this tower. |
-| White label | The monitor can hear this tower, but none of the outbound paths on the map reaches it. |
-| Orange `0-?`, `A-?`, etc. | The first unheard tower on an outbound branch. The prefix identifies the last known tower; the position is estimated from its rounded bearing and distance. |
+| Green ring | The monitor can reach and hear this tower. |
+| White ring | The monitor can hear this tower. |
+| Orange ring | The first unheard tower on an outbound branch. Its footer shows a rounded distance and bearing from the last known tower. |
 
-The nearest direct neighbors are labeled **O-A** through **O-N**. Up to nine towers in the next layer use their parent's letter, such as **A-1** or **B-2**. A tower appears once, under its best outbound route if it has one, or its best return route otherwise. The map stops after two layers or at the first unheard tower in a branch, whichever comes first.
+Solid lines show selected outbound and return legs. Dotted lines connect orange estimates to the last known tower that reached them. The map follows the tuned channel in the current dimension for up to 12 hops each way, subject to the server's lower limit. Terrain, relay decay, and Ender resets affect reach.
 
-The next page zooms out to the wider network. The origin and all other towers use the same ring shape. The origin is blue. Green still means two-way, white means receive-only, and orange marks an approximate position at the first unheard tower of an outbound branch. Solid lines show selected legs of outbound and return routes. Dotted amber lines lead to the orange estimates. The wide map surveys up to 12 hops in either direction, or the server's relay hop limit if it is lower.
-
-Both maps follow the card's frequency and modulation within this dimension and account for relay power decay and Ender resets. Use the direct-link pages to inspect channel conversions and cross-dimension links.
+Right-click a ring with an empty hand to center it and show towers within two drawn links. Colors and links still describe communication with the monitor's own antenna. Right-click the centered ring to open the tower's detail page. Click that page to return to the focused map. Click open space on a focused map or the blue ring to return to the full map.
 
 ## Compass binding
 
-Use an ordinary compass on the overview or a direct-link page to bind it without changing the page:
+Use an ordinary compass on the overview, a direct-link page, or a tower detail page to bind it without changing the page:
 
 - A TX/RX or RX-only page binds to that tower's actual antenna base.
 - A TX-only page binds to the centre of its displayed 16-point bearing at the displayed rounded distance. Scaled radio distances are converted to blocks in the destination dimension. The target height uses your antenna's height, clamped to that world's limits, rather than revealing the remote tower's height.

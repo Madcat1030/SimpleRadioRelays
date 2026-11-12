@@ -35,7 +35,7 @@ public final class RelayMonitorBlock extends ChannelBankBlock {
                     return monitor.bindCompass(player, compassHand) ? InteractionResult.CONSUME : InteractionResult.FAIL;
                 }
                 if (player.getItemInHand(hand).isEmpty()) {
-                    if (!level.isClientSide) monitor.nextPage();
+                    if (!level.isClientSide) monitor.clickScreen(local.x, local.y);
                     return InteractionResult.sidedSuccess(level.isClientSide);
                 }
             }

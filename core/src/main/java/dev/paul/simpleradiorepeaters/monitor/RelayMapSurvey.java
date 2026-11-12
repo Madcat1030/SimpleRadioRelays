@@ -7,14 +7,12 @@ import dev.paul.simpleradiorepeaters.network.TowerRecord;
 import dev.paul.simpleradiorepeaters.radio.NativeRadioAdapter;
 import dev.paul.simpleradiorepeaters.radio.RadioLinkMath;
 import dev.paul.simpleradiorepeaters.radio.RadioSpace;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /** The map follows physical, same-channel legs without creating live graph or relay state. */
 public final class RelayMapSurvey {
@@ -22,69 +20,122 @@ public final class RelayMapSurvey {
 
     private RelayMapSurvey() {}
 
-    public static MonitorMap scan(ServerLevel level, TowerManager manager, TowerRecord home, ChannelKey channel) {
-        return scan(level, manager, home, channel, false);
+    public record View(MonitorMap map, Map<Integer, UUID> targets) {}
+
+    public record Tower(UUID id, MonitorMap.Kind kind, BlockPos compassTarget, @Nullable BlockPos anchor,
+                        long approximateDistance, String bearing) {
+        public boolean estimated() { return kind == MonitorMap.Kind.ESTIMATE; }
+        public String estimate() { return "~" + approximateDistance + " " + bearing; }
+        public String location() {
+            return estimated() ? estimate() + " from X " + anchor.getX() + " Z " + anchor.getZ()
+                    : coordinates(compassTarget);
+        }
     }
 
-    public static MonitorMap scan(ServerLevel level, TowerManager manager, TowerRecord home, ChannelKey channel, boolean wide) {
-        List<Station> stations = new ArrayList<>();
+    private record PlottedTower(Tower tower, double east, double south) {}
+
+    public static final class Network {
+        private final Map<Integer, PlottedTower> towers;
+        private final Map<UUID, Integer> indices = new HashMap<>();
+        private final List<MonitorNetworkReach.Connection> connections;
+        private final boolean pending;
+
+        private Network(Map<Integer, PlottedTower> towers, List<MonitorNetworkReach.Connection> connections, boolean pending) {
+            this.towers = towers;
+            towers.forEach((index, tower) -> indices.put(tower.tower().id(), index));
+            this.connections = connections;
+            this.pending = pending;
+        }
+
+        @Nullable public Tower tower(UUID id) {
+            Integer index = indices.get(id);
+            return index == null ? null : towers.get(index).tower();
+        }
+
+        public View view(@Nullable UUID focus) {
+            int center = focus == null ? 0 : indices.getOrDefault(focus, 0);
+            var origin = towers.get(center);
+            Set<Integer> visible = center == 0 ? towers.keySet() : neighborhood(center, connections);
+            List<MonitorMap.Site> sites = new ArrayList<>();
+            for (var entry : towers.entrySet()) {
+                int index = entry.getKey();
+                if (index == center || !visible.contains(index)) continue;
+                var target = entry.getValue();
+                sites.add(new MonitorMap.Site(target.east() - origin.east(), target.south() - origin.south(),
+                        target.tower().kind(), index));
+            }
+            var edges = connections.stream().filter(c -> visible.contains(c.from()) && visible.contains(c.to())).toList();
+            var plot = MonitorMap.plot(sites, edges, center, origin.tower().kind(), origin.tower().location(), pending);
+            Map<Integer, UUID> targets = new HashMap<>();
+            plot.towersByCell().forEach((cell, index) -> targets.put(cell, towers.get(index).tower().id()));
+            return new View(plot.map(), Map.copyOf(targets));
+        }
+    }
+
+    /** Follow drawn legs in either direction, without solving reachability from a different transmitter. */
+    static Set<Integer> neighborhood(int center, List<MonitorNetworkReach.Connection> connections) {
+        Set<Integer> visible = Set.of(center);
+        for (int hop = 0; hop < 2; hop++) {
+            Set<Integer> next = new HashSet<>(visible);
+            for (var link : connections) {
+                if (visible.contains(link.from())) next.add(link.to());
+                if (visible.contains(link.to())) next.add(link.from());
+            }
+            visible = next;
+        }
+        return visible;
+    }
+
+    public static String coordinates(BlockPos pos) {
+        return "X " + pos.getX() + " Y " + pos.getY() + " Z " + pos.getZ();
+    }
+
+    public static Network scan(ServerLevel level, TowerManager manager, TowerRecord home, ChannelKey channel) {
+        Map<Integer, PlottedTower> visible = new LinkedHashMap<>();
+        var homeBase = home.antennaBase();
+        visible.put(0, new PlottedTower(new Tower(home.id(), MonitorMap.Kind.HOME, homeBase, null, 0, ""),
+                homeBase.getX() + .5, homeBase.getZ() + .5));
         Station origin = station(level, home);
-        if (origin == null) return MonitorMap.plot(List.of(), false, wide);
+        if (origin == null) return new Network(visible, List.of(), false);
+
+        List<Station> stations = new ArrayList<>();
         stations.add(origin);
         manager.activeTowers().stream().filter(t -> !t.id().equals(home.id()) && t.dimension().equals(home.dimension()))
                 .filter(t -> t.ports().stream().anyMatch(p -> p.input().equals(channel) && p.output().equals(channel)))
                 .sorted(Comparator.comparing(TowerRecord::id))
                 .forEach(t -> { Station station = station(level, t); if (station != null) stations.add(station); });
-
         var center = origin.site().position();
-        stations.subList(1, stations.size()).sort(Comparator.comparingDouble(s -> distance(s.site().position(), center)));
+        stations.subList(1, stations.size()).sort(Comparator.comparingDouble(s ->
+                Math.hypot(s.site().position().x - center.x, s.site().position().z - center.z)));
         var links = new SurveyLinks(stations, channel);
-        int maxVisits = RepeatersConfig.INSTANCE.maxRelayHops;
-        if (wide) {
-            var network = MonitorNetworkReach.solve(stations.size(), maxVisits, links,
-                    index -> stations.get(index).tower().attachment().resetsDecay());
-            var sites = network.nodes().stream().map(node -> marker(stations, center, node, 0)).toList();
-            return MonitorMap.plot(sites, links.pending, true, network.connections());
-        }
-        var nodes = MonitorReach.solve(stations.size(), maxVisits, links);
-
-        List<MonitorMap.Site> visible = new ArrayList<>();
-        int[] branch = new int[stations.size()], children = new int[stations.size()];
-        Arrays.fill(branch, -1);
-        int next = 0;
-        for (var node : nodes) if (node.parent() == 0) {
-            if (node.rx()) branch[node.tower()] = next++;
-            visible.add(marker(stations, center, node, branch[node.tower()], 0));
-        }
-        var secondary = nodes.stream().filter(n -> n.parent() != 0)
-                .sorted(Comparator.comparing((MonitorReach.Node n) -> !n.rx()).thenComparingDouble(n ->
-                        distance(stations.get(n.tower()).site().position(), stations.get(n.parent()).site().position())))
-                .toList();
-        for (var node : secondary) {
-            int parent = node.parent();
-            if (branch[parent] >= 0 && children[parent] < MonitorMap.CHILDREN)
-                visible.add(marker(stations, center, node, branch[parent], ++children[parent]));
-        }
-        return MonitorMap.plot(visible, links.pending);
+        var result = MonitorNetworkReach.solve(stations.size(), RepeatersConfig.INSTANCE.maxRelayHops, links,
+                index -> stations.get(index).tower().attachment().resetsDecay());
+        for (var node : result.nodes()) visible.put(node.tower(), plottedTower(stations, node));
+        return new Network(visible, result.connections(), links.pending);
     }
 
-    private static double distance(Vec3 a, Vec3 b) { return Math.hypot(a.x - b.x, a.z - b.z); }
-
-    private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int branch, int child) {
-        return marker(stations, center, node, node.rx() ? MonitorMap.address(branch, child) : MonitorMap.estimateAddress(branch));
-    }
-
-    private static MonitorMap.Site marker(List<Station> stations, Vec3 center, MonitorReach.Node node, int address) {
-        var target = stations.get(node.tower()).site().position();
-        if (node.rx()) return new MonitorMap.Site(target.x - center.x, target.z - center.z,
-                node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY, address, node.tower());
-        var anchor = stations.get(node.parent()).site().position();
+    private static PlottedTower plottedTower(List<Station> stations, MonitorNetworkReach.Node node) {
+        var station = stations.get(node.tower());
+        var target = station.site().position();
+        var record = station.tower();
+        if (node.rx()) {
+            var kind = node.tx() ? MonitorMap.Kind.TX_RX : MonitorMap.Kind.RX_ONLY;
+            return new PlottedTower(new Tower(record.id(), kind, record.antennaBase(), null, 0, ""), target.x, target.z);
+        }
+        var source = stations.get(node.parent());
+        var anchor = source.site().position();
         double dx = target.x - anchor.x, dz = target.z - anchor.z;
-        var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, MonitorMath.bearing(dx, dz), Math.hypot(dx, dz), 1);
-        return new MonitorMap.Site(estimate.x() - center.x, estimate.z() - center.z, MonitorMap.Kind.ESTIMATE, address, node.tower());
+        double distance = Math.hypot(dx, dz);
+        String bearing = MonitorMath.bearing(dx, dz);
+        var estimate = MonitorMath.compassEstimate(anchor.x, anchor.z, bearing, distance, 1);
+        var anchorBase = source.tower().antennaBase();
+        var point = BlockPos.containing(estimate.x(), anchorBase.getY(), estimate.z());
+        var tower = new Tower(record.id(), MonitorMap.Kind.ESTIMATE, point, anchorBase,
+                MonitorMath.approximateDistance(distance), bearing);
+        return new PlottedTower(tower, estimate.x(), estimate.z());
     }
 
-    private static final class SurveyLinks implements MonitorReach.Links {
+    private static final class SurveyLinks implements MonitorNetworkReach.Links {
         private final List<Station> stations;
         private final ChannelKey channel;
         private boolean pending;

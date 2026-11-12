@@ -49,34 +49,24 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
     private void renderMap(MonitorMap map, PoseStack pose, MultiBufferSource buffers) {
         DeviceRendering.centeredText(font, "N", 8, 13.68, 0, 1, .46, .0065f, 0xffa4cfad, pose, buffers);
         int density = map.density();
-        double width = MonitorMap.columnSpacing(density) * .9, height = MonitorMap.rowSpacing(density) * .82;
-        if (map.wide())
-            DeviceRendering.centeredText(font, "NETWORK", 11.6, 13.68, 0, 4, .46, .0065f, 0xffa4cfad, pose, buffers);
-
         var vertices = buffers.getBuffer(RenderType.debugQuads());
         var transform = pose.last().pose();
-        float radius = (float) (height * .45 / 16);
-        if (map.wide()) {
-            for (var link : map.links())
-                drawLink(vertices, transform, mapPoint(link.fromCell(), density), mapPoint(link.toCell(), density),
-                        radius, link.estimated());
-        }
-        drawRing(vertices, transform, new MapPoint(.5f, .625f), radius, ORIGIN_COLOR);
-        for (var marker : map.markers()) {
-            if (map.wide()) {
-                drawRing(vertices, transform, mapPoint(marker.cell(), density), radius, markerColor(marker.kind()));
-            } else {
-                DeviceRendering.centeredText(font, marker.label(), 8 - MonitorMap.east(marker.cell(), density),
-                        10 - MonitorMap.south(marker.cell(), density), 0, width, height, .0065f,
-                        markerColor(marker.kind()), pose, buffers);
-            }
-        }
+        float radius = (float) MonitorMap.ringRadius(density);
+        for (var link : map.links())
+            drawLink(vertices, transform, mapPoint(link.fromCell(), density), mapPoint(link.toCell(), density),
+                    radius, link.estimated());
+        drawRing(vertices, transform, mapPoint(map.centerCell(), density), radius, markerColor(map.centerKind()));
+        for (var marker : map.markers())
+            drawRing(vertices, transform, mapPoint(marker.cell(), density), radius, markerColor(marker.kind()));
+        DeviceRendering.centeredText(font, map.location(), 8, 6.47, 0, 11.5, .61, .0065f,
+                map.centerKind() == MonitorMap.Kind.ESTIMATE ? markerColor(map.centerKind()) : 0xffa4cfad, pose, buffers);
         if (map.pending())
-            DeviceRendering.centeredText(font, "Surveying", 8, 6.3, 0, 5, .4, .0065f, 0xffa4cfad, pose, buffers);
+            DeviceRendering.centeredText(font, "Surveying", 11.5, 13.68, 0, 4, .43, .0065f, 0xffa4cfad, pose, buffers);
     }
 
     private static int markerColor(MonitorMap.Kind kind) {
         return switch (kind) {
+            case HOME -> ORIGIN_COLOR;
             case TX_RX -> 0xff75ed82;
             case RX_ONLY -> 0xffffffff;
             case ESTIMATE -> 0xffffa24a;
@@ -85,8 +75,7 @@ public final class RelayMonitorRenderer implements BlockEntityRenderer<RelayMoni
 
     private static MapPoint mapPoint(int cell, int density) {
         // A north-facing block's model X runs leftward when viewed from the front.
-        return new MapPoint((float) ((8 - MonitorMap.east(cell, density)) / 16),
-                (float) ((10 - MonitorMap.south(cell, density)) / 16));
+        return new MapPoint((float) MonitorMap.modelX(cell, density), (float) MonitorMap.modelY(cell, density));
     }
 
     private static void drawLink(VertexConsumer vertices, Matrix4f transform, MapPoint from, MapPoint to,
