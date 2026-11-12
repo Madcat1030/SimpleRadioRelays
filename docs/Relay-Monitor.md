@@ -14,7 +14,7 @@ The overview shows the antenna base coordinates and dimension, physical mast str
 
 A TX/RX node counts in both direction totals. Nodes are counted once even if a Transponder has several matching ports. The monitor itself is not an active forwarding node. Saved unloaded nodes count when persistent unloaded relays are enabled.
 
-Click the centered blue ring to open the overview. From the overview, right-click the screen with an empty hand to cycle through the direct-link pages and back to the map. The direct-link pages list heard towers first:
+Click the centered blue ring or coordinate footer to open the home overview. Click the overview to open its direct-link list when links are available, then click a row to inspect that tower. Heard towers appear first:
 
 | Page | Information |
 | --- | --- |
@@ -40,7 +40,7 @@ The network map opens when you insert a tuned card. It is north-up, with the mon
 
 Solid lines show selected outbound and return legs. Dotted lines connect orange estimates to the last known tower that reached them. The map follows the tuned channel in the current dimension for up to 12 hops each way, subject to the server's lower limit. Terrain, relay decay, and Ender resets affect reach.
 
-Right-click a ring with an empty hand to center it and show towers within two drawn links. Colors and links still describe communication with the monitor's own antenna. Right-click the centered ring to open the tower's detail page. Click that page to return to the focused map. Click open space on a focused map or the blue ring to return to the full map.
+Right-click a ring with an empty hand to center it and show towers within two drawn links. Colors and links still describe communication with the monitor's own antenna. Aim at a ring within interaction range to highlight it. Right-click the centered ring or coordinate footer to open the tower's details. Clicking the data area switches between network and direct diagnostics for that tower when both are available. Use **Back** to return to the map or the direct-link list. On a focused map, use **Home** or click the blue ring to return to the full map.
 
 ## Compass binding
 

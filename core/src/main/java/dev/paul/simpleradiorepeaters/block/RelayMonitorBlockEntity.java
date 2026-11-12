@@ -20,10 +20,12 @@ import java.util.*;
 /** The client receives only the visible page. Exact TX-only coordinates stay server-side. */
 public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     private static final List<String> INSERT_CARD = List.of("Insert tuned card", "for Relay diagnostics");
-    private enum Page { MAP, OVERVIEW, DIRECT, TOWER }
+    private enum Page { MAP, OVERVIEW, DIRECT_LINKS, DIRECT, TOWER }
     private List<String> lines = INSERT_CARD;
     @Nullable private MonitorMap displayedMap;
     private Page page = Page.MAP;
+    private boolean showBack, showHome, towerDirect;
+    private int directPage;
     @Nullable private RelayMapSurvey.Network network;
     @Nullable private RelayMapSurvey.View mapView;
     @Nullable private UUID focus;
@@ -37,6 +39,8 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     public List<String> lines() { return lines; }
     @Nullable public MonitorMap displayedMap() { return displayedMap; }
     @Nullable public RelaySurvey.Result reading() { return reading; }
+    public boolean showBack() { return showBack; }
+    public boolean showHome() { return showHome; }
     public static void tick(Level level, BlockPos pos, BlockState state, RelayMonitorBlockEntity monitor) {
         ChannelBankBlockEntity.tick(level, pos, state, monitor);
         ChannelKey channel = CardState.of(monitor.getItem(0)).channel();
@@ -50,7 +54,7 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         long revision = manager == null ? -1 : manager.revision();
         if (revision == lastRevision && Objects.equals(channel, lastChannel) && Objects.equals(id, lastRelay)) return;
         if (!Objects.equals(channel, lastChannel) || !Objects.equals(id, lastRelay)) {
-            selected = null; focus = null; page = Page.MAP;
+            selected = null; focus = null; page = Page.MAP; directPage = 0; towerDirect = false;
         }
         lastChannel = channel; lastRelay = id; lastRevision = revision;
         reading = null; network = null; mapView = null;
@@ -63,53 +67,85 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
             setLines(List.of("RELAY MONITOR", channel.frequency() + " " + channel.modulation(), status)); return;
         }
         reading = RelaySurvey.scan(server.getServer(), manager, home, channel);
-        if (page == Page.DIRECT && selectedIndex() < 0) {
+        if (page == Page.DIRECT && directEntry(selected) == null) {
             selected = null;
-            page = Page.OVERVIEW;
+            page = Page.DIRECT_LINKS;
         }
+        directPage = Math.min(directPage, directPageCount() - 1);
         updateDisplay();
     }
     public void clickScreen(double x, double y) {
-        // Resolve the hit against the displayed cells before a refresh can move them.
+        // Resolve map hits against the displayed cells before a refresh can move them.
         UUID clicked = displayedMap == null || mapView == null ? null
                 : mapView.targets().get(displayedMap.cellAt(x, y));
+        var shownEntries = page == Page.DIRECT_LINKS ? directEntries() : List.<RelaySurvey.Entry>of();
         Page shown = page;
         refresh();
         if (reading == null || shown != page) return;
-        if (page == Page.MAP && clicked != null) {
-            if (network == null || network.tower(clicked) == null) return;
-            UUID center = focus == null ? lastRelay : focus;
-            if (clicked.equals(center)) {
-                page = focus == null ? Page.OVERVIEW : Page.TOWER;
-            } else {
-                focus = clicked.equals(lastRelay) ? null : clicked;
+        if (page == Page.MAP) {
+            if (focus != null && MonitorScreen.home(x, y)) {
+                focus = null;
                 mapView = null;
-            }
-            updateDisplay();
-            return;
-        }
-        advancePage();
-    }
-    private void advancePage() {
-        switch (page) {
-            case MAP -> {
-                if (focus == null) page = Page.OVERVIEW;
-                else { focus = null; mapView = null; }
-            }
-            case TOWER -> page = Page.MAP;
-            case OVERVIEW, DIRECT -> {
-                int next = selectedIndex() + 1;
-                selected = next >= reading.entries().size() ? null : reading.entries().get(next).id();
-                page = selected == null ? Page.MAP : Page.DIRECT;
+            } else if (MonitorScreen.footer(x, y)) {
+                openCenteredDetails();
+            } else if (clicked != null && network != null && network.tower(clicked) != null) {
+                if (clicked.equals(focus == null ? lastRelay : focus)) openCenteredDetails();
+                else {
+                    focus = clicked.equals(lastRelay) ? null : clicked;
+                    mapView = null;
+                }
+            } else return;
+        } else if (MonitorScreen.back(x, y)) {
+            page = page == Page.DIRECT ? Page.DIRECT_LINKS : Page.MAP;
+            selected = null;
+            towerDirect = false;
+        } else {
+            switch (page) {
+                case OVERVIEW -> {
+                    if (!reading.entries().isEmpty()) { page = Page.DIRECT_LINKS; directPage = 0; }
+                }
+                case DIRECT_LINKS -> {
+                    int row = MonitorScreen.directRow(x, y);
+                    if (row >= 0 && row < shownEntries.size() && directEntry(shownEntries.get(row).id()) != null) {
+                        selected = shownEntries.get(row).id();
+                        page = Page.DIRECT;
+                    } else if (directPage + 1 < directPageCount()) directPage++;
+                    else page = Page.OVERVIEW;
+                }
+                case TOWER -> {
+                    if (focusedDirectEntry() != null) towerDirect = !towerDirect;
+                }
+                default -> { }
             }
         }
         updateDisplay();
     }
-    private int selectedIndex() {
-        if (reading != null && selected != null)
-            for (int i = 0; i < reading.entries().size(); i++) if (reading.entries().get(i).id().equals(selected)) return i;
-        return -1;
+
+    private void openCenteredDetails() {
+        page = focus == null ? Page.OVERVIEW : Page.TOWER;
+        towerDirect = false;
     }
+
+    private int directPageCount() {
+        return Math.max(1, (reading.entries().size() + MonitorScreen.DIRECT_ROWS - 1) / MonitorScreen.DIRECT_ROWS);
+    }
+
+    private List<RelaySurvey.Entry> directEntries() {
+        if (reading == null) return List.of();
+        int first = directPage * MonitorScreen.DIRECT_ROWS;
+        return reading.entries().subList(first, Math.min(first + MonitorScreen.DIRECT_ROWS, reading.entries().size()));
+    }
+
+    @Nullable private RelaySurvey.Entry directEntry(@Nullable UUID id) {
+        return id == null ? null : reading.entries().stream().filter(e -> e.id().equals(id)).findFirst().orElse(null);
+    }
+
+    @Nullable private RelaySurvey.Entry focusedDirectEntry() {
+        var tower = network == null || focus == null ? null : network.tower(focus);
+        var entry = directEntry(focus);
+        return tower == null || entry == null || tower.estimated() && entry.rx() ? null : entry;
+    }
+
     private static String dimension(String id) {
         return switch (id) {
             case "minecraft:overworld" -> "Overworld"; case "minecraft:the_nether" -> "Nether";
@@ -133,59 +169,78 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
                 page = Page.MAP;
             }
             if (page == Page.TOWER && tower != null) {
-                setLines(towerDetails(tower));
+                var direct = focusedDirectEntry();
+                setDisplay(towerDirect && direct != null ? directDetails(direct, "Direct link  2/2")
+                        : towerDetails(tower, direct != null), null, true, false);
             } else {
                 if (mapView == null) mapView = network.view(focus);
-                setDisplay(List.of(), mapView.map());
+                setDisplay(List.of(), mapView.map(), false, focus != null);
             }
             return;
         }
         List<String> text = new ArrayList<>();
-        String channel = reading.channel().frequency() + " " + reading.channel().modulation();
-        int index = selectedIndex();
-        if (index < 0) {
-            text.add("TX OVERVIEW  " + channel);
+        if (page == Page.DIRECT) {
+            text.addAll(directDetails(Objects.requireNonNull(directEntry(selected)), "Direct link from home"));
+        } else if (page == Page.DIRECT_LINKS) {
+            text.add("DIRECT LINKS  " + (directPage + 1) + "/" + directPageCount());
+            for (var entry : directEntries()) {
+                String position = entry.rx() ? coordinates(Objects.requireNonNull(entry.position()))
+                        : "~" + MonitorMath.approximateDistance(entry.distance()) + " " + entry.bearing();
+                text.add(entry.directionLabel() + "  " + position + "  " + dimension(entry.dimension()));
+            }
+        } else {
+            text.add("TX OVERVIEW  " + channelLabel());
             text.add(dimension(reading.dimension())); text.add(coordinates(reading.origin()));
             text.add(String.format(Locale.ROOT, "ANT %.1f (mast)", reading.antenna()));
             text.add(String.format(Locale.ROOT, "Effective %.1f", reading.effectiveAntenna()));
             text.add("TX " + reading.tx() + "   RX " + reading.rx());
             text.add("Other nodes " + reading.other());
             text.add(reading.pending() > 0 ? "Surveying " + reading.pending() + " paths" : "Nominal direct links");
-        } else {
-            var entry = reading.entries().get(index);
-            text.add(channel + "  " + entry.directionLabel()); text.add(dimension(entry.dimension()));
-            if (entry.rx()) {
-                text.add(coordinates(Objects.requireNonNull(entry.position())));
-                text.add(String.format(Locale.ROOT, "Radio distance %.0f blocks", entry.distance()));
-                text.add(String.format(Locale.ROOT, "Terrain +%.1f%%", entry.terrainPercent()));
-            } else {
-                text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
-            }
-            text.add("Screen " + (index + 3) + "/" + (reading.entries().size() + 2));
         }
-        setLines(List.copyOf(text));
+        setDisplay(text, null, true, false);
     }
-    private List<String> towerDetails(RelayMapSurvey.Tower tower) {
-        String channel = reading.channel().frequency() + " " + reading.channel().modulation();
+
+    private String channelLabel() { return reading.channel().frequency() + " " + reading.channel().modulation(); }
+
+    private List<String> directDetails(RelaySurvey.Entry entry, String caption) {
+        List<String> text = new ArrayList<>();
+        text.add(channelLabel() + "  " + entry.directionLabel()); text.add(dimension(entry.dimension()));
+        if (entry.rx()) {
+            text.add(coordinates(Objects.requireNonNull(entry.position())));
+            text.add(String.format(Locale.ROOT, "Radio distance %.0f blocks", entry.distance()));
+            text.add(String.format(Locale.ROOT, "Terrain +%.1f%%", entry.terrainPercent()));
+        } else {
+            text.add(entry.bearing()); text.add("~" + MonitorMath.approximateDistance(entry.distance()) + " blocks");
+        }
+        text.add(caption);
+        return text;
+    }
+
+    private List<String> towerDetails(RelayMapSurvey.Tower tower, boolean hasDirect) {
         String direction = switch (tower.kind()) {
             case TX_RX -> "TX/RX";
             case RX_ONLY -> "RX only";
             case ESTIMATE -> "TX only";
             case HOME -> "Home";
         };
-        if (tower.estimated()) return List.of(channel + "  " + direction, dimension(reading.dimension()),
-                tower.estimate() + " from", coordinates(Objects.requireNonNull(tower.anchor())), "Estimated location", "Click to return to map");
-        return List.of(channel + "  " + direction, dimension(reading.dimension()), tower.location(),
-                "Network reach from home", "Click to return to map");
+        List<String> text = new ArrayList<>(List.of(channelLabel() + "  " + direction, dimension(reading.dimension())));
+        if (tower.estimated()) {
+            text.add(tower.estimate() + " from");
+            text.add(coordinates(Objects.requireNonNull(tower.anchor())));
+            text.add("Estimated location");
+        } else text.add(tower.location());
+        text.add(hasDirect ? "Network reach  1/2" : "Network reach from home");
+        return text;
     }
-    private void setLines(List<String> value) {
-        setDisplay(value, null);
-    }
-    private void setDisplay(List<String> value, @Nullable MonitorMap map) {
-        if (value.equals(lines) && Objects.equals(map, displayedMap)) return;
-        lines = value; displayedMap = map;
+
+    private void setLines(List<String> value) { setDisplay(value, null, false, false); }
+
+    private void setDisplay(List<String> value, @Nullable MonitorMap map, boolean back, boolean home) {
+        if (value.equals(lines) && Objects.equals(map, displayedMap) && back == showBack && home == showHome) return;
+        lines = List.copyOf(value); displayedMap = map; showBack = back; showHome = home;
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
     }
+
     public boolean bindCompass(Player player, InteractionHand hand) {
         UUID requested = selected;
         UUID requestedFocus = focus;
@@ -195,16 +250,18 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
         if (requestedPage == Page.TOWER) {
             var tower = network == null || requestedFocus == null ? null : network.tower(requestedFocus);
             if (page != Page.TOWER || tower == null) return false;
-            return bindCompass(player, hand, tower.compassTarget(), reading.dimension(), tower.estimated());
+            var direct = towerDirect ? focusedDirectEntry() : null;
+            return direct == null ? bindCompass(player, hand, tower.compassTarget(), reading.dimension(), tower.estimated())
+                    : bindCompass(player, hand, direct.compassTarget(), direct.dimension(), !direct.rx());
         }
-        if (page == Page.MAP || !(level instanceof ServerLevel server)) return false;
+        if (page == Page.MAP || page == Page.DIRECT_LINKS || !(level instanceof ServerLevel server)) return false;
         if (requested != null && !requested.equals(selected)) {
             player.displayClientMessage(Component.translatable("message.simpleradio_repeaters.monitor_target_gone"), true); return false;
         }
         TowerManager manager = TowerManager.get(server.getServer());
         TowerRecord target = manager == null ? null : manager.snapshot(selected == null ? lastRelay : selected);
         if (target == null) return false;
-        var entry = selected == null ? null : reading.entries().stream().filter(e -> e.id().equals(selected)).findFirst().orElse(null);
+        var entry = directEntry(selected);
         if (selected != null && entry == null) return false;
         boolean estimated = entry != null && !entry.rx();
         BlockPos position = entry == null ? reading.origin() : entry.compassTarget();
@@ -227,6 +284,8 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
     }
     @Override public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag(); ListTag text = new ListTag();
+        if (showBack) tag.putBoolean("MonitorBack", true);
+        if (showHome) tag.putBoolean("MonitorHome", true);
         if (displayedMap != null) {
             tag.putIntArray("MonitorMap", displayedMap.cells());
             if (!displayedMap.links().isEmpty()) tag.putIntArray("MonitorMapLinks", displayedMap.linkCells());
@@ -248,7 +307,9 @@ public final class RelayMonitorBlockEntity extends ChannelBankBlockEntity {
                         tag.getBoolean("MonitorMapPending"), tag.contains("MonitorMapCenter") ? tag.getInt("MonitorMapCenter")
                                 : MonitorMap.Kind.HOME.ordinal(), tag.getString("MonitorMapLocation")) : null;
         lines = value.isEmpty() && displayedMap == null ? INSERT_CARD : List.copyOf(value);
+        showBack = tag.getBoolean("MonitorBack"); showHome = tag.getBoolean("MonitorHome");
         reading = null; network = null; mapView = null; focus = null; page = Page.MAP;
+        directPage = 0; towerDirect = false;
         selected = null; lastRelay = null; lastChannel = null; lastRevision = Long.MIN_VALUE;
     }
 }

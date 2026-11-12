@@ -96,6 +96,10 @@ public class MonitorGameTests implements FabricGameTest {
             try {
                 var incoming = card(CHANNEL); player.setItemInHand(InteractionHand.MAIN_HAND, incoming);
                 var screen = hit(monitor.getBlockPos(), Direction.NORTH, .5, .625);
+                var footer = hit(monitor.getBlockPos(), Direction.NORTH, .5, MonitorScreen.FOOTER_Y / 16);
+                var back = hit(monitor.getBlockPos(), Direction.NORTH, MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                var blank = hit(monitor.getBlockPos(), Direction.NORTH, .15, .81);
+                var homeButton = hit(monitor.getBlockPos(), Direction.NORTH, MonitorScreen.HOME_X / 16, MonitorScreen.HOME_Y / 16);
                 SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                 check(incoming.isEmpty() && monitor.reading() != null && monitor.reading().tx() == 2 && monitor.reading().rx() == 2,
                         "A tuned card on the front must fill the sole slot and start surveying");
@@ -132,12 +136,27 @@ public class MonitorGameTests implements FabricGameTest {
                         "Clicking a tower must center the view while preserving its link kind and the blue home ring");
                 var focusedTag = monitor.getUpdateTag();
                 clientMonitor.load(focusedTag);
-                check(focused.equals(clientMonitor.displayedMap()), "A tracking client must reconstruct the focused map");
+                check(focused.equals(clientMonitor.displayedMap()) && clientMonitor.showHome(),
+                        "A tracking client must reconstruct the focused map and its Home control");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, blank);
+                check(focused.equals(monitor.displayedMap()), "Clicking empty map space must leave focus unchanged");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, footer);
+                check(monitor.displayedMap() == null && monitor.lines().contains(focused.location()) && monitor.showBack(),
+                        "The coordinate footer must open the centered tower's detail page with Back");
+                var firstDetails = monitor.lines();
+                clientMonitor.load(monitor.getUpdateTag());
+                check(clientMonitor.showBack() && clientMonitor.lines().equals(firstDetails), "The client must receive the Back control");
                 SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
-                check(monitor.displayedMap() == null && monitor.lines().contains(focused.location()),
-                        "Clicking the centered tower must open its detail page");
-                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
-                check(focused.equals(monitor.displayedMap()), "The detail page must return to the focused map");
+                check(monitor.displayedMap() == null && monitor.lines().contains(focused.location())
+                                && monitor.lines().stream().anyMatch(line -> line.startsWith("Radio distance")),
+                        "A detail click must show the direct-link diagnostics for that same tower");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, blank);
+                check(monitor.lines().equals(firstDetails), "Detail pages must cycle within the selected tower");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, back);
+                check(focused.equals(monitor.displayedMap()), "Back must return to the focused map");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, homeButton);
+                check(map.equals(monitor.displayedMap()), "The focused map's Home control must return to the full map");
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, towerHit);
                 manager.updateSnapshot(reachable.settings(reachable.channels(), false, reachable.catalystItem(),
                         null, reachable.attachment(), reachable.transponder()));
                 monitor.refresh();
@@ -150,11 +169,20 @@ public class MonitorGameTests implements FabricGameTest {
                 SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
                 check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "Clicking the blue home ring must open its overview");
                 pages.put("overview", monitor.getUpdateTag().toString());
-                for (String name : List.of("both", "rx", "tx")) {
-                    SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
-                    pages.put(name, monitor.getUpdateTag().toString());
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.lines().get(0).startsWith("DIRECT LINKS"), "The home tower's second page must list its direct links");
+                var names = List.of("both", "rx", "tx");
+                for (int i = 0; i < names.size(); i++) {
+                    var row = hit(monitor.getBlockPos(), Direction.NORTH, .5, MonitorScreen.lineY(i + 1) / 16);
+                    SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, row);
+                    pages.put(names.get(i), monitor.getUpdateTag().toString());
+                    if (i + 1 < names.size())
+                        SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, back);
                 }
-                check(monitor.lines().get(0).contains("TX only") && monitor.lines().contains("SSE"), "The final target page must be the SSE TX-only entry");
+                check(monitor.lines().get(0).contains("TX only") && monitor.lines().contains("SSE"), "Selecting the TX-only row must show that tower");
+                var directDetails = monitor.lines();
+                SimpleRadioRepeaters.RELAY_MONITOR.use(monitor.getBlockState(), world, monitor.getBlockPos(), player, InteractionHand.MAIN_HAND, screen);
+                check(monitor.lines().equals(directDetails), "A single-page tower must stay selected when clicking its data");
                 String payload = monitor.getUpdateTag().toString(); var destination = targets.get(2);
                 check(!payload.contains(String.valueOf(destination.antennaBase().getX())) && !payload.contains(String.valueOf(destination.antennaBase().getZ())),
                         "Exact TX-only coordinates must not be included anywhere in the client update tag");
@@ -181,10 +209,13 @@ public class MonitorGameTests implements FabricGameTest {
                 check(monitor.bindCompass(player, InteractionHand.MAIN_HAND)
                                 && NbtUtils.readBlockPos(compass.getTag().getCompound(CompassItem.TAG_LODESTONE_POS)).equals(destination.antennaBase()),
                         "Rebinding a now-heard tower must replace the estimate with its exact antenna base");
-                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); monitor.clickScreen(.5, .625);
-                check(monitor.displayedMap() != null, "Cycling past the last target must return to the wide map");
-                monitor.clickScreen(.5, .625);
-                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "The home ring must lead to the overview");
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                monitor.clickScreen(MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.lines().get(0).startsWith("DIRECT LINKS"), "Back from a direct detail must return to the links list");
+                monitor.clickScreen(MonitorScreen.BACK_X / 16, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.displayedMap() != null, "Back from the home links list must return to the map");
+                monitor.clickScreen(.5, MonitorScreen.FOOTER_Y / 16);
+                check(monitor.lines().get(0).startsWith("TX OVERVIEW"), "The home footer must lead to the overview");
                 var stack = new ItemStack(Items.COMPASS, 3); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
                 check(monitor.bindCompass(player, InteractionHand.MAIN_HAND) && stack.getCount() == 2 && !stack.hasTag(), "Only one compass in a stack may be bound");
                 boolean found = false;

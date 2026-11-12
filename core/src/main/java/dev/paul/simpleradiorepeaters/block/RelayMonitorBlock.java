@@ -1,6 +1,7 @@
 package dev.paul.simpleradiorepeaters.block;
 
 import dev.paul.simpleradiorepeaters.SimpleRadioRepeaters;
+import dev.paul.simpleradiorepeaters.monitor.MonitorScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
@@ -16,9 +17,6 @@ public final class RelayMonitorBlock extends ChannelBankBlock {
     @Override protected int cardAt(Vec3 local) {
         return local.x * 16 >= 5 && local.x * 16 <= 11 && local.y * 16 >= 1 && local.y * 16 <= 5 ? 0 : -1;
     }
-    private static boolean screen(Vec3 local) {
-        return local.x * 16 >= 2 && local.x * 16 <= 14 && local.y * 16 >= 6 && local.y * 16 <= 14;
-    }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new RelayMonitorBlockEntity(pos, state); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, SimpleRadioRepeaters.RELAY_MONITOR_ENTITY, RelayMonitorBlockEntity::tick);
@@ -26,7 +24,7 @@ public final class RelayMonitorBlock extends ChannelBankBlock {
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hit.getDirection() == state.getValue(FACING) && level.getBlockEntity(pos) instanceof RelayMonitorBlockEntity monitor) {
             Vec3 local = BankConnection.localHit(pos, state.getValue(FACING), hit.getLocation());
-            if (screen(local)) {
+            if (MonitorScreen.contains(local.x, local.y)) {
                 InteractionHand compassHand = player.getItemInHand(hand).is(Items.COMPASS) ? hand
                         : hand == InteractionHand.MAIN_HAND && player.getMainHandItem().isEmpty() && player.getOffhandItem().is(Items.COMPASS)
                         ? InteractionHand.OFF_HAND : null;
